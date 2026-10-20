@@ -75,7 +75,7 @@ export default function Home() {
                     {t('hero.startBtn')} <ArrowRight className="ml-2 h-5 w-5" />
                   </a>
                 </Button>
-                <Button variant="outline" size="lg" className="text-lg px-8 py-6 rounded-xl shadow-hard hover:translate-y-1 hover:shadow-none transition-all border-2 border-border bg-background" onClick={() => window.open('https://github.com/jasonczc/haqi', '_blank')}>
+                <Button variant="outline" size="lg" className="text-lg px-8 py-6 rounded-xl shadow-hard hover:translate-y-1 hover:shadow-none transition-all border-2 border-border bg-background" onClick={() => window.open('https://github.com/matemind/matemind', '_blank')}>
                   {t('hero.githubBtn')}
                 </Button>
               </div>
@@ -93,7 +93,7 @@ export default function Home() {
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-[2.5rem] blur opacity-30 animate-pulse"></div>
                 <img 
                   src="/images/hero-illustration.webp" 
-                  alt="Vibe Coding Illustration" 
+                  alt="Matemind illustration" 
                   className="relative rounded-[2rem] border-4 border-border shadow-hard-lg bg-card transform transition-transform hover:scale-[1.02] duration-500"
                 />
                 
@@ -122,7 +122,7 @@ export default function Home() {
                   className="absolute top-1/2 -right-16 bg-green-500 text-white px-6 py-3 rounded-full border-4 border-border shadow-hard transform rotate-12 hover:rotate-0 transition-transform cursor-default z-20"
                   style={{ y: useTransform(scrollY, [0, 500], [0, 30]) }}
                 >
-                  <span className="font-bold font-mono">git push --force</span>
+                  <span className="font-bold font-mono">Aye, captain.</span>
                 </motion.div>
               </motion.div>
             </div>
@@ -299,8 +299,8 @@ export default function Home() {
                   <h3 className="font-bold">{t('installation.npm.step1')}</h3>
                 </div>
                 <div className="bg-slate-950 text-slate-50 p-4 rounded-xl font-mono text-sm flex justify-between items-center border-2 border-slate-800">
-                  <code>npx @jasonczc/haqi hub --relay</code>
-                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800" onClick={() => copyToClipboard("npx @jasonczc/haqi hub --relay", "hub")}>
+                  <code>npx matemind hub --relay</code>
+                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800" onClick={() => copyToClipboard("npx matemind hub --relay", "hub")}>
                     {copied === "hub" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
@@ -311,8 +311,8 @@ export default function Home() {
                   <h3 className="font-bold">{t('installation.npm.step2')}</h3>
                 </div>
                 <div className="bg-slate-950 text-slate-50 p-4 rounded-xl font-mono text-sm flex justify-between items-center border-2 border-slate-800">
-                  <code>npx @jasonczc/haqi</code>
-                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800" onClick={() => copyToClipboard("npx @jasonczc/haqi", "session")}>
+                  <code>npx matemind</code>
+                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800" onClick={() => copyToClipboard("npx matemind", "session")}>
                     {copied === "session" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>

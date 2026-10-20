@@ -2,19 +2,21 @@
 
 ## General
 
-### What is HAQI?
+### What is Matemind?
 
-HAQI is a local-first, self-hosted platform for running and controlling AI coding agents (Claude Code, Codex, Gemini, OpenCode) remotely. It lets you start coding sessions on your computer and monitor/control them from your phone.
+Matemind is the first mate for your AI coding agents. It runs Claude Code, Codex, Cursor Agent, Gemini and OpenCode sessions on your own computer. You watch and control them from your phone. Matemind also learns your standards, collects reports and runs reviews, so you read less and decide less.
 
-### What does HAQI stand for?
+### What does the name mean?
 
-HAQI (哈皮) is a Chinese transliteration of "Happy", reflecting the project's goal of making AI coding assistance a happier experience by freeing you from the terminal.
+Matemind = *first mate* + *mastermind*. You are the captain. Your AI agents are the crew. Matemind is the first mate: it understands you, splits the work, keeps watch and reports back.
 
-### Is HAQI free?
+Matemind is derived from [hapi](https://github.com/tiann/hapi) and [haqi](https://github.com/jasonczc/haqi). See [Why Matemind](./why-matemind.md).
 
-Yes, HAQI is open source and free to use under the AGPL-3.0-only license.
+### Is Matemind free?
 
-### What AI agents does HAQI support?
+Yes, Matemind is open source and free to use under the AGPL-3.0-only license.
+
+### What AI agents does Matemind support?
 
 - **Claude Code** (recommended)
 - **OpenAI Codex**
@@ -26,11 +28,11 @@ Yes, HAQI is open source and free to use under the AGPL-3.0-only license.
 
 ### Do I need a hub?
 
-HAQI includes an embedded hub. Just run `haqi hub` on your machine - no external hub required.
+Matemind includes an embedded hub. Just run `matemind hub` on your machine - no external hub required.
 
-`haqi server` remains supported as an alias.
+`matemind server` remains supported as an alias.
 
-### How do I access HAQI from my phone?
+### How do I access Matemind from my phone?
 
 For local network access:
 ```
@@ -48,13 +50,20 @@ The `CLI_API_TOKEN` is a shared secret that authenticates:
 - Web app logins
 - Telegram account binding
 
-It's auto-generated on first hub start and saved to `~/.hapi/settings.json`.
+It's auto-generated on first hub start and saved to `~/.matemind/settings.json`.
 
 ### Do you support multiple accounts?
 
-Yes. We support lightweight multi-account access via namespaces for shared team hubs. See [Namespace (Advanced)](./namespace.md).
+Yes, in two ways:
 
-### Can I use HAQI without Telegram?
+- **Multiple users on one hub.** Namespaces give lightweight multi-user access for shared team hubs. See [Namespace (Advanced)](./namespace.md).
+- **Multiple Claude accounts.** Add them in Settings → Claude accounts. You see the quota left on each account and can switch a session by hand. An experimental option switches to the next account when one hits its usage limit.
+
+### I used HAQI or hapi before. Do I lose my data?
+
+No. If `~/.matemind` does not exist and `~/.hapi` does, Matemind uses `~/.hapi` as is. It does not copy or move it. Legacy `HAPI_*` and `HAQI_*` environment variables fill the matching `MATEMIND_*` variables when those are unset.
+
+### Can I use Matemind without Telegram?
 
 Yes. Telegram is optional. You can use the web app directly in any browser or install it as a PWA.
 
@@ -63,13 +72,13 @@ Yes. Telegram is optional. You can use the web app directly in any browser or in
 ### How do I approve permissions remotely?
 
 1. When your AI agent requests permission (e.g., to edit a file), you'll see a notification
-2. Open HAQI on your phone
+2. Open Matemind on your phone
 3. Navigate to the active session
 4. Approve or deny the pending permission
 
 ### How do I receive notifications?
 
-HAQI supports two methods:
+Matemind supports two methods:
 
 1. **PWA Push Notifications** - Enable when prompted, works even when app is closed
 2. **Telegram Bot** - See [Telegram Setup](./installation.md#telegram-setup)
@@ -78,7 +87,7 @@ HAQI supports two methods:
 
 Yes, with runner mode:
 
-1. Run `haqi runner start` on your computer
+1. Run `matemind runner start` on your computer
 2. Your machine appears in the "Machines" list in the web app
 3. Tap to spawn new sessions from anywhere
 
@@ -105,16 +114,16 @@ Set `ELEVENLABS_API_KEY`, open a session in the web app, and click the microphon
 
 ### Is my data safe?
 
-Yes. HAQI is local-first:
+Yes. Matemind is local-first:
 - All data stays on your machine
 - Nothing is uploaded to external servers
-- The database is stored locally in `~/.hapi/`
+- The database is stored locally in `~/.matemind/`
 
 ### How secure is the token authentication?
 
 The auto-generated token is 256-bit (cryptographically secure). For external access, always use HTTPS via a tunnel.
 
-### Can others access my HAQI instance?
+### Can others access my Matemind instance?
 
 Only if they have your access token. For additional security:
 - Use a strong, unique token
@@ -125,27 +134,27 @@ Only if they have your access token. For additional security:
 
 ### "Connection refused" error
 
-- Ensure hub is running: `haqi hub`
+- Ensure hub is running: `matemind hub`
 - Check firewall allows port 3006
-- Verify `HAPI_API_URL` is correct
+- Verify `MATEMIND_API_URL` is correct
 
 ### "Invalid token" error
 
-- Re-run `haqi auth login`
+- Re-run `matemind auth login`
 - Check token matches in CLI and hub
-- Verify `~/.hapi/settings.json` has correct `cliApiToken`
+- Verify `~/.matemind/settings.json` has correct `cliApiToken`
 
 ### Runner won't start
 
 ```bash
 # Check status
-haqi runner status
+matemind runner status
 
 # Clear stale lock file
-rm ~/.hapi/runner.state.json.lock
+rm ~/.matemind/runner.state.json.lock
 
 # Check logs
-haqi runner logs
+matemind runner logs
 ```
 
 ### Claude Code not found
@@ -154,7 +163,7 @@ Install Claude Code or set custom path:
 ```bash
 npm install -g @anthropic-ai/claude-code
 # or
-export HAPI_CLAUDE_PATH=/path/to/claude
+export MATEMIND_CLAUDE_PATH=/path/to/claude
 ```
 
 ### Cursor Agent not found
@@ -173,27 +182,27 @@ Ensure `agent` is on your PATH.
 ### How do I run diagnostics?
 
 ```bash
-haqi doctor
+matemind doctor
 ```
 
 This checks hub connectivity, token validity, agent availability, and more.
 
 ## Comparison
 
-### HAQI vs Happy
+### Matemind vs Happy
 
-| Aspect | Happy | HAQI |
+| Aspect | Happy | Matemind |
 |--------|-------|------|
 | Design | Cloud-first | Local-first |
 | Users | Multi-user | Single user |
 | Deployment | Multiple services | Single binary |
 | Data | Encrypted on server | Never leaves your machine |
 
-See [Why HAQI](./why-hapi.md) for detailed comparison.
+See [Why Matemind](./why-matemind.md) for detailed comparison.
 
-### HAQI vs running Claude Code directly
+### Matemind vs running Claude Code directly
 
-| Feature | Claude Code | HAQI + Claude Code |
+| Feature | Claude Code | Matemind + Claude Code |
 |---------|-------------|-------------------|
 | Remote access | No | Yes |
 | Mobile control | No | Yes |
@@ -205,11 +214,11 @@ See [Why HAQI](./why-hapi.md) for detailed comparison.
 
 ### How can I contribute?
 
-Visit our [GitHub repository](https://github.com/jasonczc/haqi) to:
+Visit our [GitHub repository](https://github.com/matemind/matemind) to:
 - Report issues
 - Submit pull requests
 - Suggest features
 
 ### Where do I report bugs?
 
-Open an issue on [GitHub Issues](https://github.com/jasonczc/haqi/issues).
+Open an issue on [GitHub Issues](https://github.com/matemind/matemind/issues).

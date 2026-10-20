@@ -30,10 +30,10 @@ Set the environment variable before starting the hub:
 
 ```bash
 export ELEVENLABS_API_KEY="your-api-key"
-haqi hub --relay
+matemind hub --relay
 ```
 
-The hub automatically creates a "Haqi Voice Assistant" agent in your ElevenLabs account on first use.
+The hub automatically creates a "Matemind Voice Assistant" agent in your ElevenLabs account on first use.
 
 ### 3. (Optional) Custom Agent
 
@@ -85,10 +85,10 @@ The voice assistant has two tools to interact with your coding agent:
 ### Architecture
 
 ```
-Browser → WebRTC → ElevenLabs ConvAI → Voice Assistant → HAQI Hub → Coding Agent
+Browser → WebRTC → ElevenLabs ConvAI → Voice Assistant → Matemind Hub → Coding Agent
 ```
 
-The voice connection uses WebRTC for low-latency audio streaming. The HAQI hub provides conversation tokens and handles authentication.
+The voice connection uses WebRTC for low-latency audio streaming. The Matemind hub provides conversation tokens and handles authentication.
 
 ## Tips
 

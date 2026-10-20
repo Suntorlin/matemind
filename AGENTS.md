@@ -4,7 +4,7 @@ Work style: telegraph; noun-phrases ok; drop grammar;
 
 Short guide for AI agents in this repo. Prefer progressive loading: start with the root README, then package READMEs as needed.
 
-## What is HAQI?
+## What is Matemind?
 
 Local-first platform for running AI coding agents (Claude Code, Codex, Gemini) with remote control via web/phone. CLI wraps agents and connects to hub; hub serves web app and handles real-time sync.
 
@@ -60,7 +60,7 @@ Bun workspaces; `shared` consumed by cli, hub, web.
 - Zod for runtime validation (schemas in `shared/src/schemas.ts`)
 - Write necessary tests ONLY.
 - Web UI: follow `web/DESIGN.md` (tokens + `components/ui` primitives only; 44px touch targets; light + dark)
-- The repo is public: no secrets, private hosts, personal paths, emails or internal IPs; no screenshots, recordings, logs or agent state (`.playwright-mcp/`, `.omx/`, `test-results/`). Use placeholders (`haqi.example.com`, `/Users/me`, `test@example.com`). Git hooks and CI run `scripts/safety/check-public-safety.ts`; install the hooks once with `bun run safety:install-hooks`
+- The repo is public: no secrets, private hosts, personal paths, emails or internal IPs; no screenshots, recordings, logs or agent state (`.playwright-mcp/`, `.omx/`, `test-results/`). Use placeholders (`matemind.example.com`, `/Users/me`, `test@example.com`). Git hooks and CI run `scripts/safety/check-public-safety.ts`; install the hooks once with `bun run safety:install-hooks`
 
 ## Common commands (repo root)
 
@@ -74,33 +74,33 @@ bun run build:single-exe # All-in-one binary
 
 ## Local dev isolation (stable + dev)
 
-Do not share one `HAPI_HOME` between installed binary and source `bun run dev`.
+Do not share one `MATEMIND_HOME` between installed binary and source `bun run dev`.
 Reason: avoids SQLite schema mismatch + port conflicts.
 
 ```bash
-# Stable runtime (installed haqi/hapi)
-export HAPI_HOME="$HOME/.hapi-stable"
-export HAPI_LISTEN_PORT=3006
+# Stable runtime (installed matemind)
+export MATEMIND_HOME="$HOME/.matemind-stable"
+export MATEMIND_LISTEN_PORT=3006
 
 # Source dev runtime (hub/web from repo)
-export HAPI_HOME="$HOME/.hapi-dev"
-export HAPI_LISTEN_PORT=3016
-export HAPI_PUBLIC_URL="http://localhost:3016"
+export MATEMIND_HOME="$HOME/.matemind-dev"
+export MATEMIND_LISTEN_PORT=3016
+export MATEMIND_PUBLIC_URL="http://localhost:3016"
 ```
 
 Quick split workflow:
 
 ```bash
 # Terminal A: stable runtime
-export HAPI_HOME="$HOME/.hapi-stable"
-export HAPI_LISTEN_PORT=3006
-haqi runner start
-haqi hub
+export MATEMIND_HOME="$HOME/.matemind-stable"
+export MATEMIND_LISTEN_PORT=3006
+matemind runner start
+matemind hub
 
 # Terminal B: source dev runtime
-export HAPI_HOME="$HOME/.hapi-dev"
-export HAPI_LISTEN_PORT=3016
-export HAPI_PUBLIC_URL="http://localhost:3016"
+export MATEMIND_HOME="$HOME/.matemind-dev"
+export MATEMIND_LISTEN_PORT=3016
+export MATEMIND_PUBLIC_URL="http://localhost:3016"
 bun run dev
 ```
 
@@ -113,18 +113,18 @@ Use this flow after web/cli changes that must be verified in running hub:
 bun run build:single-exe
 
 # Deploy binary to user install path
-cp -a ~/.local/bin/haqi ~/.local/bin/haqi.bak.$(date +%Y%m%d-%H%M%S)
-install -m 755 ./cli/dist-exe/bun-linux-x64/hapi ~/.local/bin/haqi
+cp -a ~/.local/bin/matemind ~/.local/bin/matemind.bak.$(date +%Y%m%d-%H%M%S)
+install -m 755 ./cli/dist-exe/bun-linux-x64/matemind ~/.local/bin/matemind
 
 # Restart services
-haqi runner stop || true
-haqi runner start
+matemind runner stop || true
+matemind runner start
 
 # Verify
 ./scripts/hapi-local.sh status
 ```
 
-Expected: `/health` OK; process command shows `~/.local/bin/haqi hub`.
+Expected: `/health` OK; process command shows `~/.local/bin/matemind hub`.
 
 ## Key source dirs
 

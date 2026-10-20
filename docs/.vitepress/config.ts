@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'HAQI',
-  description: 'Control your AI agents from anywhere',
+  title: 'Matemind',
+  description: 'The first mate for your AI coding agents.',
   base: '/docs/',
 
   head: [
@@ -14,7 +14,7 @@ export default defineConfig({
 
     nav: [
       { text: 'Quick Start', link: '/guide/quick-start' },
-      { text: 'App', link: 'https://app.hapi.run', target: '_blank' }
+      { text: 'GitHub', link: 'https://github.com/matemind/matemind', target: '_blank' }
     ],
 
     sidebar: [
@@ -24,16 +24,16 @@ export default defineConfig({
       { text: 'How it Works', link: '/guide/how-it-works' },
       { text: 'Cursor Agent', link: '/guide/cursor' },
       { text: 'Voice Assistant', link: '/guide/voice-assistant' },
-      { text: 'Why HAQI', link: '/guide/why-hapi' },
+      { text: 'Why Matemind', link: '/guide/why-matemind' },
       { text: 'FAQ', link: '/guide/faq' }
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/tiann/hapi' }
+      { icon: 'github', link: 'https://github.com/matemind/matemind' }
     ],
 
     footer: {
-      message: 'Released under the LGPL-3.0 License.',
+      message: 'Released under the AGPL-3.0 License. Derived from hapi and haqi.',
       copyright: 'Copyright © 2024-present'
     },
 

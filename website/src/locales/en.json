@@ -8,126 +8,126 @@
   },
   "hero": {
     "version": "{{version}} is now available",
-    "title": "Vibe Coding <br/> <span class=\"text-primary\">Anytime, Anywhere.</span>",
-    "subtitle": "Go for a hike, grab a coffee, or just relax. Your AI agents work in the background. We'll notify you via your favorite messaging app only when they need a nod.",
-    "startBtn": "Start Your Freedom",
+    "title": "Say what you want. <br/> <span class=\"text-primary block mt-4 text-3xl md:text-5xl\">Matemind splits it up, keeps watch, and gives you the bottom line.</span>",
+    "subtitle": "The first mate for your AI coding agents. Your agents do the work on your machine. Matemind learns your standards, watches the sessions, and reports back to your phone.",
+    "startBtn": "Read the docs",
     "githubBtn": "View on GitHub",
     "notification": {
-      "title": "Instant Notification",
-      "content": "\"Task completed! 3 files updated.<br/>Ready for review?\""
+      "title": "Review passed",
+      "content": "\"3 files changed. Reviewer: pass.<br/>Report ready to share.\""
     }
   },
   "showcase": {
-    "handoff": "Seamless Handoff",
-    "title": "Start on Desktop. <br class=\"hidden md:block\" /> <span class=\"text-primary\">Continue Anywhere. Switch Back Anytime.</span>",
-    "subtitle": "Your session lives on your machine. Your phone is just a window. Work locally with native Claude Code or Codex, switch to remote when away, double-space to switch back instantly.",
+    "handoff": "Seamless handoff",
+    "title": "Start in the terminal. <br class=\"hidden md:block\" /> <span class=\"text-primary\">Continue on your phone. Switch back any time.</span>",
+    "subtitle": "Your session runs on your machine. Your phone is a window into it. Work in the terminal with the official Claude Code or Codex. Switch to the phone when you leave. Press space twice to switch back.",
     "localCore": {
-      "title": "Local Core",
-      "desc": "Heavy lifting happens on your powerful desktop machine. No cloud limits."
+      "title": "Runs on your machine",
+      "desc": "Agents run on your own computer. Your data stays there."
     },
     "remoteControl": {
-      "title": "Remote Control",
-      "desc": "Access everything via PWA or messaging apps. Zero latency feel."
+      "title": "Control from your phone",
+      "desc": "Use the web app, the PWA, or the Telegram Mini App."
     },
     "modeSwitch": {
-      "title": "Switch Freely",
-      "desc": "Move between terminal and mobile seamlessly. Double-space to return to local. Session state stays perfectly synced."
+      "title": "Switch any time",
+      "desc": "Move between the terminal and the phone. The session keeps its context."
     },
     "screenshots": {
       "startAnywhere": {
-        "title": "Start Anywhere",
-        "desc": "Launch sessions with Claude, Codex, or Gemini directly from your phone."
+        "title": "Start from your phone",
+        "desc": "Start Claude Code, Codex, Cursor, Gemini or OpenCode sessions from the phone."
       },
       "seamlessChat": {
-        "title": "Seamless Chat",
-        "desc": "Continue your coding conversation exactly where you left off."
+        "title": "Continue the chat",
+        "desc": "Pick up the conversation where you left it."
       },
       "reviewCode": {
-        "title": "Review Code",
-        "desc": "Full syntax highlighting for reviewing changes on the go."
+        "title": "Read the changes",
+        "desc": "Read diffs with syntax highlighting."
       },
       "fullTerminal": {
-        "title": "Full Terminal Access",
-        "desc": "Execute commands and manage your environment remotely."
+        "title": "Terminal",
+        "desc": "Run commands on the working machine."
       },
       "powerfulCommands": {
-        "title": "Powerful Commands",
-        "desc": "Use /review, /undo, and more to control the agent efficiently."
+        "title": "Slash commands",
+        "desc": "Use the agent's slash commands and skills from the phone."
       },
       "manageWorkspaces": {
-        "title": "Manage Workspaces",
-        "desc": "Switch between multiple active sessions and worktrees instantly."
+        "title": "Many sessions, one list",
+        "desc": "Tag, pin and snooze sessions. See which one needs you."
       }
     }
   },
   "lifestyle": {
-    "title": "The \"Vibe Coding\" Lifestyle",
-    "subtitle": "HAPI isn't just a tool; it's a declaration of independence from your desk.",
+    "title": "What Matemind adds",
+    "subtitle": "Matemind does not orchestrate agents. It understands you. Your agents are the crew.",
     "cards": {
       "explore": {
-        "title": "Go Explore",
-        "desc": "Agents run locally on your powerful desktop. You? You're miles away, enjoying the view."
+        "title": "Understand you",
+        "desc": "Matemind proposes memories from your own words, each with your quote. You approve them. Group chat sends tasks to sessions with @name."
       },
       "sip": {
-        "title": "Sip & Approve",
-        "desc": "Get a ping on your phone. Review the plan. Tap \"Approve\". Go back to your latte."
+        "title": "Keep watch",
+        "desc": "Tags, tasks, pin and snooze keep many sessions in order. Approve requests from your phone. Track quota across Claude accounts."
       },
       "walk": {
-        "title": "Walk Away",
-        "desc": "Literally. Walk away from the screen. HAPI keeps the session alive and secure until you return."
+        "title": "Bottom line",
+        "desc": "Agents publish reports with share links. A reviewer session checks the work before it reaches you."
       }
     }
   },
   "features": {
-    "title": "Power When You Need It",
+    "title": "Less to read, fewer decisions",
     "telegram": {
-      "title": "Messaging App Integration",
-      "desc": "The perfect balance of distance and control. Get notified via Telegram or other apps only when your input is truly needed."
+      "title": "Group chat between sessions",
+      "desc": "Put sessions in a group. @name sends a task to one session. @all sends it to every online member. A shared note tracks goal, progress, to-dos and risks."
     },
     "yolo": {
-      "title": "YOLO Mode",
-      "desc": "Trust your agents? Enable YOLO mode to bypass approvals and let them sprint while you sleep."
+      "title": "Review loop",
+      "desc": "Pick a worker and a reviewer. The reviewer passes the work, sends it back with feedback, or asks you. The loop stops at a round limit."
     },
     "terminal": {
-      "title": "Full Terminal Access",
-      "desc": "Need to step in? You have a full terminal in your pocket. Fix it and forget it."
+      "title": "Reports you can share",
+      "desc": "Agents write reports through MCP tools. Share a report with a public link. No login needed to read it."
     }
   },
   "howItWorks": {
-    "title": "How it Works",
+    "title": "How it works",
     "step1": {
-      "title": "1. Start on Desktop",
-      "desc": "Launch HAPI on your machine. It keeps your session alive and ready for remote access."
+      "title": "1. Start on your machine",
+      "desc": "Run the Matemind hub and start a session. It keeps the session alive for remote access."
     },
     "step2": {
-      "title": "2. Connect Mobile",
-      "desc": "Open the PWA or Mini App. You now have full control over your local dev environment."
+      "title": "2. Open on your phone",
+      "desc": "Open the web app or the Telegram Mini App. Log in with your access token."
     },
     "step3": {
-      "title": "3. Vibe Code",
-      "desc": "Let agents do the heavy lifting. Approve changes, run commands, and enjoy your freedom."
+      "title": "3. Say what you want",
+      "desc": "Your agents do the work. Matemind keeps watch and gives you the bottom line."
     }
   },
   "installation": {
-    "title": "Get Started in Seconds",
-    "e2ee": "🔒 End-to-end encrypted with WireGuard + TLS",
+    "title": "Get started",
+    "e2ee": "🔒 The relay is end-to-end encrypted with WireGuard + TLS",
     "npm": {
-      "step1": "1. Start the Server",
-      "step2": "2. Start a Coding Session",
+      "step1": "1. Start the hub",
+      "step2": "2. Start a coding session",
       "step3": "3. Open the URL",
-      "step3Hint": "URL and QR code shown in terminal"
+      "step3Hint": "The terminal shows the URL and a QR code"
     }
   },
   "cta": {
-    "title": "Ready to Vibe?",
-    "subtitle": "Join the revolution. Stop watching progress bars and start enjoying your life.",
-    "btn": "Get Started Now"
+    "title": "Be the captain.",
+    "subtitle": "Say what you want. Your agents do the work. Matemind reports back.",
+    "btn": "Get started"
   },
   "footer": {
-    "desc": "Vibe Coding Anytime, Anywhere. <br/> The local-first AI agent platform for developers who love freedom.",
+    "desc": "The first mate for your AI coding agents. <br/> Open source. Runs on your own machine.",
     "product": "Product",
     "community": "Community",
-    "copyright": "© {{year}} HAPI Team. Open source under AGPL License.",
-    "designedWith": "Designed with <span class=\"text-red-500\">♥</span> for Vibe Coding."
+    "copyright": "© {{year}} Matemind contributors. Open source under AGPL-3.0. Derived from hapi and haqi.",
+    "designedWith": "Your agents are the crew. You are the captain."
   }
 }

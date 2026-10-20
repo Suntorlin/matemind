@@ -1,6 +1,6 @@
-# hapi-web
+# matemind-web
 
-React Mini App / PWA for monitoring and controlling hapi sessions.
+React Mini App / PWA for monitoring and controlling Matemind sessions.
 
 ## What it does
 
@@ -133,7 +133,7 @@ bun run dev:web
 ```
 
 If testing in Telegram, set:
-- `HAPI_PUBLIC_URL` to the public HTTPS URL of the dev server.
+- `MATEMIND_PUBLIC_URL` to the public HTTPS URL of the dev server.
 - `CORS_ORIGINS` to include the dev server origin.
 
 ## Build
@@ -142,11 +142,11 @@ If testing in Telegram, set:
 bun run build:web
 ```
 
-The built assets land in `web/dist` and are served by haqi-hub. The single executable can embed these assets.
+The built assets land in `web/dist` and are served by matemind-hub. The single executable can embed these assets.
 
 ## Standalone hosting
 
-You can host `web/dist` on a static host (GitHub Pages, Cloudflare Pages) and point it at any haqi hub:
+You can host `web/dist` on a static host (GitHub Pages, Cloudflare Pages) and point it at any Matemind hub:
 
 1. Build the web app. If your static host uses a subpath, set the Vite base:
 
@@ -155,7 +155,7 @@ bun run build:web -- --base /<repo>/
 ```
 
 2. Deploy `web/dist` to your static host.
-3. Set hub CORS to allow the static origin (`HAPI_PUBLIC_URL` or `CORS_ORIGINS`).
-4. Open the static site, click the top-right Hub button on the login screen, and enter the haqi hub origin.
+3. Set hub CORS to allow the static origin (`MATEMIND_PUBLIC_URL` or `CORS_ORIGINS`).
+4. Open the static site, click the top-right Hub button on the login screen, and enter the Matemind hub origin.
 
 Clear the hub override in the same dialog to return to same-origin behavior.

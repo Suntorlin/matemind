@@ -1,25 +1,65 @@
-# Why HAQI?
+# Why Matemind?
 
-[Happy](https://github.com/slopus/happy) is an excellent project. So why build HAQI?
-
-**The short answer**: Happy uses a centralized server that stores your encrypted data. HAQI is decentralized — each user runs their own hub, and the relay server only forwards encrypted traffic without storing anything. These different goals lead to fundamentally different architectures.
+Matemind is hapi plus a layer that understands you. It keeps hapi's local-first design. It adds memory, observability, reports and review on top.
 
 ## TL;DR
 
-| Aspect | Happy | HAQI |
-|--------|-------|------|
+| Question | Answer |
+|---|---|
+| What does Matemind keep from hapi? | Local-first hub, single binary, relay, remote control, approvals, terminal, voice, PWA, Telegram Mini App |
+| What does Matemind add? | Memory from your own words, group chat between sessions, reports with share links, a review loop, tools to organise many sessions, multiple Claude accounts |
+| What does hapi have that Matemind does not? | Native iOS and Android apps, and any upstream feature added after the fork |
+| Who should pick Matemind? | You run many agent sessions and want fewer things to read and decide |
+| Who should pick hapi? | You want native mobile apps, or a smaller tool that only does remote control |
+
+## What Matemind adds to hapi
+
+hapi lets you control your agent sessions from your phone. Matemind starts from you, not from the sessions. You are the captain. Your agents are the crew. Matemind is the first mate.
+
+### Understand you
+
+- **Memory from your own words.** The hub reads your own messages and proposes lasting rules. Each rule keeps your exact quote. You approve each rule before it counts.
+- **Agent proposals wait.** Agents can call `memory_propose`. Matemind only watches these proposals. A proposal goes to you after 3 mentions in 30 days, or when you say the same thing. An agent cannot claim that you said something.
+- **Group chat between sessions.** `@name` sends a task to one session. `@all` sends it to every online member. One member keeps a shared group note with roles, goal, progress, to-dos and risks.
+
+Memory is experimental. It records and asks for approval. It does not yet add approved memories to sessions.
+
+### Keep watch
+
+- **Organise many sessions.** Tags, tasks, pin to top and snooze. They sync across devices.
+- **Phone-first list.** A chat-app style list with a pinned row and LIVE / ASK badges, so you see at a glance which session needs you.
+- **Multiple Claude accounts.** See the quota left on each account and switch by hand. An experimental option switches when an account hits its limit.
+- **Usage and cost.** Token totals and cost estimates from local Claude and Codex logs.
+
+### Bottom line
+
+- **Reports.** Agents publish reports through MCP tools (`mcp__matemind__report_*`). A report can get a public share link.
+- **Review loop.** A reviewer session checks a worker session against your acceptance criteria. It passes the work, sends it back, stops, or asks you.
+- **Brief view.** Show only the conclusion of each turn, the replies, or all steps.
+
+## What hapi has that Matemind does not
+
+We want you to pick the right tool. These are the gaps we know of.
+
+- **Native mobile apps.** Upstream hapi has native iOS (SwiftUI/UIKit) and Android (Kotlin Compose) clients. Matemind has only the web app, which you can install as a PWA.
+- **Newer upstream features.** hapi keeps moving. Check the [hapi README](https://github.com/tiann/hapi) for features added after Matemind forked. We have not checked each one against Matemind.
+- **The relay service.** `matemind hub --relay` uses the relay that upstream hapi runs (`relay.hapi.run` by default). Matemind does not run its own relay yet.
+- **Simplicity.** Matemind has more screens and more settings. If you only need remote control, hapi is smaller.
+
+## Matemind and Happy
+
+[Happy](https://github.com/slopus/happy) is an excellent project. hapi was built as a local-first alternative to it, and Matemind keeps that choice.
+
+**The short answer**: Happy uses a centralized server that stores your encrypted data. Matemind is decentralized: each user runs their own hub, and the relay server only forwards encrypted traffic without storing anything.
+
+| Aspect | Happy | Matemind |
+|--------|-------|----------|
 | **Architecture** | Centralized (cloud server stores encrypted data) | Decentralized (each user runs own hub) |
-| **Users** | Multi-user on shared server | Any number (each runs own hub) |
 | **Data** | Encrypted on server (server cannot read) | Stays on your machine |
 | **Encryption** | Application-layer E2EE (client encrypts before sending) | WireGuard + TLS via relay; or none needed if self-hosted |
 | **Deployment** | Multiple services (PostgreSQL, Redis, app server) | Single binary |
-| **Complexity** | High (E2EE, key management, scaling) | Low (one command) |
 
-**Choose HAQI if**: You want data sovereignty, self-hosting, and minimal setup.
-
-**Choose Happy if**: You need a managed cloud service with multi-user collaboration.
-
-## Architecture Comparison
+## Architecture: Happy vs Matemind
 
 ### Happy: Centralized Cloud
 
@@ -52,12 +92,12 @@ Happy's centralized design requires:
 
 The server stores encrypted data — it never sees plaintext, but it does hold your data.
 
-### HAQI: Decentralized
+### Matemind: Decentralized
 
-Each user runs their own hub. HAQI offers two modes of remote access:
+Matemind keeps this design from hapi. Each user runs their own hub. Matemind offers two modes of remote access:
 
 - **Self-hosted** (own server / Cloudflare Tunnel / Tailscale) — You control the full network path, no E2EE needed
-- **Public relay** (`haqi hub --relay`) — E2E encrypted via tunwg (WireGuard + TLS); the relay only forwards opaque packets
+- **Public relay** (`matemind hub --relay`) — E2E encrypted via tunwg (WireGuard + TLS); the relay only forwards opaque packets
 - **Single embedded database** — SQLite, no external services
 - **One-command deployment** — Single binary, zero config
 
@@ -132,7 +172,7 @@ The relay server only forwards encrypted packets — it cannot read your data.
 
 ### Data Location
 
-| Aspect | Happy | HAQI |
+| Aspect | Happy | Matemind |
 |--------|-------|------|
 | **Where data lives** | Cloud server (encrypted blobs) | Your own machine |
 | **Who stores it** | Central server holds encrypted data | Only your hub, locally |
@@ -156,7 +196,7 @@ The relay server only forwards encrypted packets — it cannot read your data.
 └───────────────────────────────────────────────────────────────────┘
 ```
 
-**HAQI** bundles everything:
+**Matemind** bundles everything:
 
 ```
 ┌───────────────────────────────────────────────────────────────────┐
@@ -172,7 +212,7 @@ The relay server only forwards encrypted packets — it cannot read your data.
 
 ### Security Approach
 
-| Aspect | Happy | HAQI (self-hosted) | HAQI (relay) |
+| Aspect | Happy | Matemind (self-hosted) | Matemind (relay) |
 |--------|-------|-------------------|--------------|
 | **Problem** | Data on untrusted server | Remote access to local hub | Remote access via third-party relay |
 | **Solution** | Application-layer E2EE | HTTPS (you control the path) | WireGuard + TLS (tunwg) |
@@ -198,7 +238,7 @@ Goal: Multi-user cloud platform
 
 **Result**: Sophisticated infrastructure with zero-knowledge server
 
-### HAQI: Decentralized
+### Matemind: Decentralized
 
 ```
 Goal: Self-hosted tool — each user runs their own hub
@@ -220,22 +260,10 @@ Goal: Self-hosted tool — each user runs their own hub
 
 ## Summary
 
-| Dimension | Happy | HAQI |
-|-----------|-------|------|
-| **Architecture** | Centralized cloud server | Decentralized (each user runs own hub) |
-| **Server's role** | Stores encrypted data | Relay only forwards (or none if self-hosted) |
-| **Data location** | Server (encrypted, zero-knowledge) | Local (plaintext, your machine) |
-| **Deployment** | Multiple services (PostgreSQL, Redis, Node.js) | Single binary (embedded SQLite) |
-| **Encryption** | Application-layer E2EE (client-side) | WireGuard + TLS (relay) or HTTPS (self-hosted) |
-| **Scaling** | Horizontal (multi-user on shared server) | Per-user (each runs own hub) |
-| **Target user** | Managed cloud service users | Self-hosters who want data sovereignty |
-
-## Conclusion
-
-The architectural differences stem from a centralized vs decentralized design:
-
-- **Happy**: Centralized cloud server that stores your encrypted data. The server never sees plaintext (zero-knowledge), but it does hold your data. This requires application-layer E2EE, key management, and distributed infrastructure (PostgreSQL, Redis, scaling).
-
-- **HAQI**: Decentralized — each user runs their own hub. Your data stays on your machine. For remote access, you can self-host (own server or tunnel — no E2EE needed since you control the path) or use the public relay (WireGuard + TLS via tunwg — the relay only forwards encrypted packets it cannot read). This achieves one-command deployment with zero external dependencies.
-
-The core tradeoff: Happy solves the "untrusted server" problem with sophisticated encryption. HAQI avoids the problem entirely by keeping your data on your own machine.
+| Dimension | Happy | hapi | Matemind |
+|-----------|-------|------|----------|
+| **Architecture** | Centralized cloud server | Each user runs own hub | Each user runs own hub |
+| **Data location** | Server (encrypted) | Your machine | Your machine |
+| **Deployment** | Multiple services | Single binary | Single binary |
+| **Focus** | Managed cloud service | Remote control of sessions | Understanding the user; watching and reviewing many sessions |
+| **Native mobile apps** | Yes | Yes | No (web app and PWA only) |

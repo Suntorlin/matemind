@@ -101,7 +101,7 @@ export async function runSessionHookForwarder(args: string[]): Promise<void> {
                 headers: {
                     'Content-Type': 'application/json',
                     'Content-Length': body.length,
-                    'x-hapi-hook-token': token
+                    'x-matemind-hook-token': token
                 }
             }, (res) => {
                 const responseChunks: Buffer[] = [];

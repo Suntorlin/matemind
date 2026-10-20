@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-const PROJECT_QUICK_CREATE_KEY = 'hapi:projectQuickCreate'
+const PROJECT_QUICK_CREATE_KEY = 'matemind:projectQuickCreate'
 
 function normalizeProjectQuickCreate(value: string | null): boolean {
     return value === '1' || value === 'true'

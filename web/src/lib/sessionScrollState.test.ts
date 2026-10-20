@@ -24,7 +24,7 @@ describe('sessionScrollState', () => {
     })
 
     it('normalizes invalid stored values', () => {
-        window.localStorage.setItem('hapi:sessionScrollState:v1', JSON.stringify({
+        window.localStorage.setItem('matemind:sessionScrollState:v1', JSON.stringify({
             'session-1:brief': {
                 top: -50,
                 topIndex: 3.8,

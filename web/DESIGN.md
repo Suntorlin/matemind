@@ -1,4 +1,4 @@
-# HAQI Web Design System
+# Matemind Web Design System
 
 Single entry for how the web app should look and behave. Read this before adding or restyling UI.
 Live preview of every primitive (light/dark): `bun run dev` then open `/design.html` (`?theme=dark`).

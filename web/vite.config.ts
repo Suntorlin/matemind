@@ -60,9 +60,9 @@ export default defineConfig({
             filename: 'sw.ts',
             manifest: {
                 id: base,
-                name: 'HAQI',
-                short_name: 'HAQI',
-                description: 'AI-powered development assistant',
+                name: 'Matemind',
+                short_name: 'Matemind',
+                description: 'The first mate for your AI coding agents.',
                 categories: ['developer tools', 'productivity'],
                 shortcuts: [
                     { name: 'New chat', short_name: 'New', url: `${base}sessions/new`, icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }] }

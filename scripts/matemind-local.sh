@@ -5,14 +5,14 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLI_DIR="${ROOT_DIR}/cli"
 WEB_DIR="${ROOT_DIR}/web"
-HAPI_HOME_DIR="${HAPI_HOME:-${HOME}/.hapi}"
-RUNNER_STATE_FILE="${HAPI_HOME_DIR}/runner.state.json"
-SERVER_LOG_FILE="${HAPI_HOME_DIR}/logs/hapi-local-server.log"
-DEV_LOG_FILE="${HAPI_HOME_DIR}/logs/hapi-local-dev.log"
-SCREEN_SESSION="${HAPI_LOCAL_SCREEN_SESSION:-hapi-local-server}"
-DEV_SCREEN_SESSION="${HAPI_LOCAL_DEV_SCREEN_SESSION:-hapi-local-dev}"
-SERVER_PORT="${HAPI_LISTEN_PORT:-3006}"
-WEB_DEV_PORT="${HAPI_WEB_DEV_PORT:-5173}"
+MATEMIND_HOME_DIR="${MATEMIND_HOME:-${HOME}/.matemind}"
+RUNNER_STATE_FILE="${MATEMIND_HOME_DIR}/runner.state.json"
+SERVER_LOG_FILE="${MATEMIND_HOME_DIR}/logs/matemind-local-server.log"
+DEV_LOG_FILE="${MATEMIND_HOME_DIR}/logs/matemind-local-dev.log"
+SCREEN_SESSION="${MATEMIND_LOCAL_SCREEN_SESSION:-matemind-local-server}"
+DEV_SCREEN_SESSION="${MATEMIND_LOCAL_DEV_SCREEN_SESSION:-matemind-local-dev}"
+SERVER_PORT="${MATEMIND_LISTEN_PORT:-3006}"
+WEB_DEV_PORT="${MATEMIND_WEB_DEV_PORT:-5173}"
 
 BUN_BIN_CANDIDATE="${BUN_BIN:-${HOME}/.bun/bin/bun}"
 
@@ -26,7 +26,7 @@ else
     exit 1
 fi
 
-mkdir -p "${HAPI_HOME_DIR}/logs"
+mkdir -p "${MATEMIND_HOME_DIR}/logs"
 
 print_usage() {
     cat <<EOF
@@ -35,7 +35,7 @@ print_usage() {
 
 命令:
   setup      安装依赖并构建 web
-  start      启动本地分支 runner + server（复用 ~/.hapi 配置）
+  start      启动本地分支 runner + server（复用 ~/.matemind 配置）
   dev        启动开发热更新（runner + hub watch + web vite）
   dev-restart 强制重启开发热更新环境
   stop       停止本地分支 runner + server
@@ -197,9 +197,9 @@ is_local_hub_cmd() {
     [[ "${cmd}" == *"${CLI_DIR}"* && "${cmd}" == *"src/index.ts hub"* ]]
 }
 
-is_hapi_server_cmd() {
+is_matemind_server_cmd() {
     local cmd="$1"
-    [[ "${cmd}" == *"hapi"* && ( "${cmd}" == *"server"* || "${cmd}" == *"hub"* ) ]]
+    [[ "${cmd}" == *"matemind"* && ( "${cmd}" == *"server"* || "${cmd}" == *"hub"* ) ]]
 }
 
 is_web_dev_ready() {
@@ -287,9 +287,9 @@ cmd_dev() {
     ensure_deps
 
     if [ "${SERVER_PORT}" != "3006" ]; then
-        echo "❌ dev 模式要求 HAPI_LISTEN_PORT=3006（web/vite 代理固定指向 3006）"
+        echo "❌ dev 模式要求 MATEMIND_LISTEN_PORT=3006（web/vite 代理固定指向 3006）"
         echo "   当前端口: ${SERVER_PORT}"
-        echo "   可用方式: HAPI_LISTEN_PORT=3006 $(basename "$0") dev"
+        echo "   可用方式: MATEMIND_LISTEN_PORT=3006 $(basename "$0") dev"
         exit 1
     fi
 
@@ -386,8 +386,8 @@ cmd_stop() {
 
     pkill -f "src/index.ts server" 2>/dev/null || true
     pkill -f "src/index.ts hub" 2>/dev/null || true
-    pkill -f "/bin/haqi server" 2>/dev/null || true
-    pkill -f "/bin/haqi hub" 2>/dev/null || true
+    pkill -f "/bin/matemind server" 2>/dev/null || true
+    pkill -f "/bin/matemind hub" 2>/dev/null || true
     pkill -f "${ROOT_DIR}.*bun run dev" 2>/dev/null || true
     pkill -f "${ROOT_DIR}.*concurrently .*dev:hub.*dev:web" 2>/dev/null || true
 
@@ -396,7 +396,7 @@ cmd_stop() {
     if [ -n "${port_pid}" ]; then
         local cmd
         cmd="$(pid_cmd "${port_pid}")"
-        if is_hapi_server_cmd "${cmd}"; then
+        if is_matemind_server_cmd "${cmd}"; then
             kill "${port_pid}" 2>/dev/null || true
         fi
     fi
@@ -412,7 +412,7 @@ cmd_restart() {
 
 cmd_status() {
     local version
-    version="$(cd "${CLI_DIR}" && "${BUN_BIN}" src/index.ts --version | sed -n 's/^haqi version: //p')"
+    version="$(cd "${CLI_DIR}" && "${BUN_BIN}" src/index.ts --version | sed -n 's/^matemind version: //p')"
     echo "📌 本地源码 CLI 版本: ${version:-unknown}"
 
     if [ -f "${RUNNER_STATE_FILE}" ]; then

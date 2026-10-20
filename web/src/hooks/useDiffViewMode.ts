@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { DiffModeEnum } from '@git-diff-view/react'
 
-const DIFF_VIEW_MODE_STORAGE_KEY = 'hapi:diffViewMode'
+const DIFF_VIEW_MODE_STORAGE_KEY = 'matemind:diffViewMode'
 
 function normalizeDiffViewMode(value: unknown): DiffModeEnum {
     if (value === 'split') return DiffModeEnum.SplitGitHub

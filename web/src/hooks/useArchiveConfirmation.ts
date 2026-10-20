@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-const ARCHIVE_CONFIRMATION_SKIP_KEY = 'hapi:skipArchiveConfirm'
+const ARCHIVE_CONFIRMATION_SKIP_KEY = 'matemind:skipArchiveConfirm'
 
 function normalizeSkipArchiveConfirm(value: string | null): boolean {
     return value === '1' || value === 'true'

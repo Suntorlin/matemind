@@ -2,14 +2,14 @@
  * OpenCode configuration file generator.
  *
  * Generates opencode.json with MCP server configuration and instructions
- * for the hapi change_title tool.
+ * for the matemind change_title tool.
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const CONFIG_FILENAME = 'opencode.json';
-const INSTRUCTIONS_FILENAME = 'haqi-instructions.md';
+const INSTRUCTIONS_FILENAME = 'matemind-instructions.md';
 
 interface McpServerEntry {
     command: string;
@@ -30,7 +30,7 @@ interface OpencodeConfig {
  * Ensures the opencode.json config file exists with MCP server and instructions.
  *
  * @param rootPath - The OPENCODE_CONFIG_DIR path
- * @param mcpServer - The hapi MCP server command configuration
+ * @param mcpServer - The matemind MCP server command configuration
  * @param instructions - The instruction text to write to the instructions file
  */
 export function ensureOpencodeConfig(
@@ -49,12 +49,7 @@ export function ensureOpencodeConfig(
     const config: OpencodeConfig = {
         $schema: 'https://opencode.ai/config.json',
         mcp: {
-            haqi: {
-                type: 'local',
-                command: [mcpServer.command, ...mcpServer.args],
-                enabled: true
-            },
-            hapi: {
+            matemind: {
                 type: 'local',
                 command: [mcpServer.command, ...mcpServer.args],
                 enabled: true

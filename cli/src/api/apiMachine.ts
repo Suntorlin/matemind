@@ -1,14 +1,14 @@
 /**
- * WebSocket client for machine/runner communication with hapi-hub
+ * WebSocket client for machine/runner communication with matemind-hub
  */
 
 import { io, type Socket } from 'socket.io-client'
 import { stat } from 'node:fs/promises'
 import { readPool, savePool, checkPoolAccount } from '@/claude/accounts/registry'
-import { ClaudeAccountSelectionSchema } from '@hapi/protocol/schemas'
+import { ClaudeAccountSelectionSchema } from '@matemind/protocol/schemas'
 import { logger } from '@/ui/logger'
 import { configuration } from '@/configuration'
-import type { Update, UpdateMachineBody } from '@hapi/protocol'
+import type { Update, UpdateMachineBody } from '@matemind/protocol'
 import {
     activateCodexCredential,
     deleteCodexCredential,

@@ -42,7 +42,7 @@ function isUnauthorizedAuthError(error: unknown): boolean {
 }
 
 // Reusing a still-valid JWT on reload skips the /api/auth round trip before any data loads.
-const AUTH_CACHE_PREFIX = 'hapi_auth_cache::'
+const AUTH_CACHE_PREFIX = 'matemind_auth_cache::'
 const CACHED_TOKEN_MIN_TTL_MS = 2 * 60_000
 
 type CachedAuth = {

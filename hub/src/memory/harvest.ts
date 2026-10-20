@@ -6,7 +6,7 @@ import { basename, join } from 'node:path'
 
 /**
  * Claude Code's own auto-memory: one markdown file per memory under
- * <CLAUDE_CONFIG_DIR>/projects/<encoded cwd>/memory/. HAQI runs Claude on several
+ * <CLAUDE_CONFIG_DIR>/projects/<encoded cwd>/memory/. Matemind runs Claude on several
  * accounts, so the same project has one such folder per account.
  */
 
@@ -20,9 +20,9 @@ export type ClaudeMemoryFile = {
     mtimeMs: number
 }
 
-function configDirs(hapiHome: string): string[] {
+function configDirs(matemindHome: string): string[] {
     const dirs = new Set<string>()
-    const pool = join(hapiHome, 'claude-accounts')
+    const pool = join(matemindHome, 'claude-accounts')
     if (existsSync(pool)) {
         for (const name of readdirSync(pool)) {
             const dir = join(pool, name)
@@ -34,7 +34,7 @@ function configDirs(hapiHome: string): string[] {
     return [...dirs]
 }
 
-/** "-Users-me-src-haqi-wt-x" -> "/Users/me/src/haqi-wt-x", resolving dashes inside names against the disk. */
+/** "-Users-me-src-matemind-wt-x" -> "/Users/me/src/matemind-wt-x", resolving dashes inside names against the disk. */
 export function decodeProjectDir(encoded: string): string | null {
     const parts = encoded.replace(/^-/, '').split('-')
     const walk = (base: string, index: number): string | null => {
@@ -87,9 +87,9 @@ function parseMemoryFile(raw: string): { text: string; kind: string | null } | n
     return { text, kind: field('type') }
 }
 
-export function listClaudeMemoryFiles(hapiHome: string): ClaudeMemoryFile[] {
+export function listClaudeMemoryFiles(matemindHome: string): ClaudeMemoryFile[] {
     const files: ClaudeMemoryFile[] = []
-    for (const configDir of configDirs(hapiHome)) {
+    for (const configDir of configDirs(matemindHome)) {
         const projectsDir = join(configDir, 'projects')
         if (!existsSync(projectsDir)) continue
         for (const encoded of readdirSync(projectsDir)) {
@@ -118,8 +118,8 @@ export function listClaudeMemoryFiles(hapiHome: string): ClaudeMemoryFile[] {
 }
 
 /** Bullet lines of the hand-written global MEMORY.md, as candidates the user said. */
-export function listMemoryMdBullets(hapiHome: string): Array<{ text: string; hash: string }> {
-    const path = join(hapiHome, 'MEMORY.md')
+export function listMemoryMdBullets(matemindHome: string): Array<{ text: string; hash: string }> {
+    const path = join(matemindHome, 'MEMORY.md')
     if (!existsSync(path)) return []
     return readFileSync(path, 'utf8')
         .split('\n')

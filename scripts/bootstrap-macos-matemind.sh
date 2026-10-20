@@ -5,22 +5,22 @@ set -Eeuo pipefail
 SCRIPT_VERSION="2026-02-28"
 
 PROJECTS_DIR="${HOME}/Projects"
-HAQI_DIR="${PROJECTS_DIR}/haqi"
-HAPI_HOME="${HOME}/.hapi-stable"
-HAPI_PORT="3006"
+MATEMIND_DIR="${PROJECTS_DIR}/matemind"
+MATEMIND_HOME="${HOME}/.matemind-stable"
+MATEMIND_PORT="3006"
 LAUNCH_AGENTS_DIR="${HOME}/Library/LaunchAgents"
 SSH_DIR="${HOME}/.ssh"
 GITHUB_KEY_PATH="${SSH_DIR}/id_ed25519_github"
 AUTHORIZED_KEYS="${SSH_DIR}/authorized_keys"
-SSHD_DROPIN="/etc/ssh/sshd_config.d/99-haqi-keyonly.conf"
+SSHD_DROPIN="/etc/ssh/sshd_config.d/99-matemind-keyonly.conf"
 
 CF_DIR="${HOME}/.cloudflared"
 CF_CONFIG_FILE="${CF_DIR}/config.yml"
-CF_TUNNEL_LABEL="com.haqi.cloudflared"
+CF_TUNNEL_LABEL="com.matemind.cloudflared"
 CF_TUNNEL_PLIST="${LAUNCH_AGENTS_DIR}/${CF_TUNNEL_LABEL}.plist"
 
-HUB_LABEL="com.haqi.hub"
-RUNNER_LABEL="com.haqi.runner"
+HUB_LABEL="com.matemind.hub"
+RUNNER_LABEL="com.matemind.runner"
 HUB_PLIST="${LAUNCH_AGENTS_DIR}/${HUB_LABEL}.plist"
 RUNNER_PLIST="${LAUNCH_AGENTS_DIR}/${RUNNER_LABEL}.plist"
 
@@ -288,7 +288,7 @@ setup_github_ssh() {
     local ssh_config="${SSH_DIR}/config"
     local github_block
     github_block=$'Host github.com\n    HostName github.com\n    User git\n    IdentityFile ~/.ssh/id_ed25519_github\n    IdentitiesOnly yes\n    AddKeysToAgent yes\n    UseKeychain yes'
-    ensure_block_in_file "$ssh_config" "# >>> HAQI github ssh >>>" "# <<< HAQI github ssh <<<" "$github_block"
+    ensure_block_in_file "$ssh_config" "# >>> Matemind github ssh >>>" "# <<< Matemind github ssh <<<" "$github_block"
     chmod 600 "$ssh_config"
 
     local known_hosts="${SSH_DIR}/known_hosts"
@@ -359,7 +359,7 @@ Include /etc/ssh/sshd_config.d/*.conf\
     local tmp_dropin
     tmp_dropin="$(mktemp)"
     cat >"$tmp_dropin" <<'EOF'
-# Managed by HAQI bootstrap script.
+# Managed by Matemind bootstrap script.
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 ChallengeResponseAuthentication no
@@ -404,48 +404,48 @@ EOF
     fi
 }
 
-clone_or_update_haqi_repo() {
-    log "Step 8/11 - Clone or update jasonczc/haqi in ${HAQI_DIR}"
+clone_or_update_matemind_repo() {
+    log "Step 8/11 - Clone or update matemind/matemind in ${MATEMIND_DIR}"
     ensure_dir "$PROJECTS_DIR"
 
-    if [[ -d "${HAQI_DIR}/.git" ]]; then
+    if [[ -d "${MATEMIND_DIR}/.git" ]]; then
         log "Repo already exists. Pulling latest changes..."
-        git -C "$HAQI_DIR" fetch --all --prune
-        git -C "$HAQI_DIR" pull --ff-only || warn "git pull failed; resolve manually."
+        git -C "$MATEMIND_DIR" fetch --all --prune
+        git -C "$MATEMIND_DIR" pull --ff-only || warn "git pull failed; resolve manually."
         return 0
     fi
 
-    if [[ -e "$HAQI_DIR" && ! -d "${HAQI_DIR}/.git" ]]; then
-        warn "${HAQI_DIR} exists but is not a git repo. Skipping clone."
+    if [[ -e "$MATEMIND_DIR" && ! -d "${MATEMIND_DIR}/.git" ]]; then
+        warn "${MATEMIND_DIR} exists but is not a git repo. Skipping clone."
         return 0
     fi
 
-    if git clone git@github.com:jasonczc/haqi.git "$HAQI_DIR"; then
+    if git clone git@github.com:matemind/matemind.git "$MATEMIND_DIR"; then
         log "Cloned via SSH."
     else
         warn "SSH clone failed; falling back to HTTPS."
-        git clone https://github.com/jasonczc/haqi.git "$HAQI_DIR"
+        git clone https://github.com/matemind/matemind.git "$MATEMIND_DIR"
     fi
 }
 
-find_haqi_bin() {
-    if have_cmd haqi; then
-        command -v haqi
+find_matemind_bin() {
+    if have_cmd matemind; then
+        command -v matemind
         return 0
     fi
-    if have_cmd hapi; then
-        command -v hapi
+    if have_cmd matemind; then
+        command -v matemind
         return 0
     fi
     return 1
 }
 
-install_haqi_systemwide() {
-    log "Step 9/11 - Install HAQI to system"
+install_matemind_systemwide() {
+    log "Step 9/11 - Install Matemind to system"
 
     local existing_bin
-    if existing_bin="$(find_haqi_bin 2>/dev/null)"; then
-        log "HAQI already installed: ${existing_bin}"
+    if existing_bin="$(find_matemind_bin 2>/dev/null)"; then
+        log "Matemind already installed: ${existing_bin}"
         return 0
     fi
 
@@ -454,25 +454,25 @@ install_haqi_systemwide() {
         brew tap tiann/tap
     fi
 
-    if brew list --formula hapi >/dev/null 2>&1; then
-        log "hapi formula already installed."
+    if brew list --formula matemind >/dev/null 2>&1; then
+        log "matemind formula already installed."
     else
         brew install tiann/tap/hapi
     fi
 
-    local haqi_bin
-    if haqi_bin="$(find_haqi_bin 2>/dev/null)"; then
-        log "HAQI installed: ${haqi_bin}"
+    local matemind_bin
+    if matemind_bin="$(find_matemind_bin 2>/dev/null)"; then
+        log "Matemind installed: ${matemind_bin}"
     else
-        warn "Cannot find haqi/hapi command after brew install."
+        warn "Cannot find matemind/matemind command after brew install."
     fi
 }
 
 write_hub_plist() {
-    local haqi_bin="$1"
+    local matemind_bin="$1"
     local public_url="$2"
     ensure_dir "$LAUNCH_AGENTS_DIR"
-    ensure_dir "${HAPI_HOME}/logs"
+    ensure_dir "${MATEMIND_HOME}/logs"
 
     cat >"$HUB_PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -483,35 +483,35 @@ write_hub_plist() {
     <string>${HUB_LABEL}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>${haqi_bin}</string>
+        <string>${matemind_bin}</string>
         <string>hub</string>
         <string>--relay</string>
     </array>
     <key>EnvironmentVariables</key>
     <dict>
-        <key>HAPI_HOME</key>
-        <string>${HAPI_HOME}</string>
-        <key>HAPI_LISTEN_PORT</key>
-        <string>${HAPI_PORT}</string>
-$( [[ -n "$public_url" ]] && printf '        <key>HAPI_PUBLIC_URL</key>\n        <string>%s</string>\n' "$public_url" )
+        <key>MATEMIND_HOME</key>
+        <string>${MATEMIND_HOME}</string>
+        <key>MATEMIND_LISTEN_PORT</key>
+        <string>${MATEMIND_PORT}</string>
+$( [[ -n "$public_url" ]] && printf '        <key>MATEMIND_PUBLIC_URL</key>\n        <string>%s</string>\n' "$public_url" )
     </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>${HAPI_HOME}/logs/hub.log</string>
+    <string>${MATEMIND_HOME}/logs/hub.log</string>
     <key>StandardErrorPath</key>
-    <string>${HAPI_HOME}/logs/hub.log</string>
+    <string>${MATEMIND_HOME}/logs/hub.log</string>
 </dict>
 </plist>
 EOF
 }
 
 write_runner_plist() {
-    local haqi_bin="$1"
+    local matemind_bin="$1"
     ensure_dir "$LAUNCH_AGENTS_DIR"
-    ensure_dir "${HAPI_HOME}/logs"
+    ensure_dir "${MATEMIND_HOME}/logs"
 
     cat >"$RUNNER_PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -522,25 +522,25 @@ write_runner_plist() {
     <string>${RUNNER_LABEL}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>${haqi_bin}</string>
+        <string>${matemind_bin}</string>
         <string>runner</string>
         <string>start-sync</string>
     </array>
     <key>EnvironmentVariables</key>
     <dict>
-        <key>HAPI_HOME</key>
-        <string>${HAPI_HOME}</string>
-        <key>HAPI_LISTEN_PORT</key>
-        <string>${HAPI_PORT}</string>
+        <key>MATEMIND_HOME</key>
+        <string>${MATEMIND_HOME}</string>
+        <key>MATEMIND_LISTEN_PORT</key>
+        <string>${MATEMIND_PORT}</string>
     </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>${HAPI_HOME}/logs/runner.log</string>
+    <string>${MATEMIND_HOME}/logs/runner.log</string>
     <key>StandardErrorPath</key>
-    <string>${HAPI_HOME}/logs/runner.log</string>
+    <string>${MATEMIND_HOME}/logs/runner.log</string>
 </dict>
 </plist>
 EOF
@@ -556,31 +556,31 @@ launchctl_reload_user_agent() {
     launchctl kickstart -k "gui/${UID}/${label}" >/dev/null 2>&1 || true
 }
 
-configure_haqi_launchd_services() {
-    log "Step 10/11 - Configure HAQI launchd services (auto start on login)"
+configure_matemind_launchd_services() {
+    log "Step 10/11 - Configure Matemind launchd services (auto start on login)"
 
-    local haqi_bin
-    haqi_bin="$(find_haqi_bin)" || {
-        err "Cannot configure service: haqi/hapi command not found."
+    local matemind_bin
+    matemind_bin="$(find_matemind_bin)" || {
+        err "Cannot configure service: matemind/matemind command not found."
         exit 1
     }
 
-    write_hub_plist "$haqi_bin" "$PUBLIC_URL"
-    write_runner_plist "$haqi_bin"
+    write_hub_plist "$matemind_bin" "$PUBLIC_URL"
+    write_runner_plist "$matemind_bin"
 
     launchctl_reload_user_agent "$HUB_LABEL" "$HUB_PLIST"
     launchctl_reload_user_agent "$RUNNER_LABEL" "$RUNNER_PLIST"
 
-    local health_url="http://127.0.0.1:${HAPI_PORT}/health"
+    local health_url="http://127.0.0.1:${MATEMIND_PORT}/health"
     local i
     for i in {1..15}; do
         if curl -fsS "$health_url" >/dev/null 2>&1; then
-            log "HAQI hub health check OK: ${health_url}"
+            log "Matemind hub health check OK: ${health_url}"
             return 0
         fi
         sleep 2
     done
-    warn "Hub health check failed at ${health_url}. Check logs: ${HAPI_HOME}/logs/hub.log"
+    warn "Hub health check failed at ${health_url}. Check logs: ${MATEMIND_HOME}/logs/hub.log"
 }
 
 cloudflared_tunnel_id_by_name() {
@@ -589,7 +589,7 @@ cloudflared_tunnel_id_by_name() {
 }
 
 configure_cloudflare_tunnel() {
-    log "Step 11/11 - Configure Cloudflare Tunnel (SSH + HAQI)"
+    log "Step 11/11 - Configure Cloudflare Tunnel (SSH + Matemind)"
 
     if ! have_cmd cloudflared; then
         warn "cloudflared not found. Skipping tunnel setup."
@@ -621,17 +621,17 @@ configure_cloudflare_tunnel() {
     host_tag="$(scutil --get LocalHostName 2>/dev/null || hostname)"
     host_tag="${host_tag,,}"
 
-    local default_tunnel_name="haqi-${host_tag}"
+    local default_tunnel_name="matemind-${host_tag}"
     local tunnel_name
     read -r -p "Tunnel name [${default_tunnel_name}]: " tunnel_name || true
     tunnel_name="${tunnel_name:-$default_tunnel_name}"
 
-    local default_haqi_host="haqi-${host_tag}.${domain}"
+    local default_matemind_host="matemind-${host_tag}.${domain}"
     local default_ssh_host="ssh-${host_tag}.${domain}"
-    local haqi_host ssh_host
-    read -r -p "HAQI hostname [${default_haqi_host}]: " haqi_host || true
+    local matemind_host ssh_host
+    read -r -p "Matemind hostname [${default_matemind_host}]: " matemind_host || true
     read -r -p "SSH hostname [${default_ssh_host}]: " ssh_host || true
-    haqi_host="${haqi_host:-$default_haqi_host}"
+    matemind_host="${matemind_host:-$default_matemind_host}"
     ssh_host="${ssh_host:-$default_ssh_host}"
 
     local tunnel_id
@@ -649,15 +649,15 @@ configure_cloudflare_tunnel() {
         return 1
     fi
 
-    cloudflared tunnel route dns "$tunnel_name" "$haqi_host" || true
+    cloudflared tunnel route dns "$tunnel_name" "$matemind_host" || true
     cloudflared tunnel route dns "$tunnel_name" "$ssh_host" || true
 
     cat >"$CF_CONFIG_FILE" <<EOF
 tunnel: ${tunnel_id}
 credentials-file: ${CF_DIR}/${tunnel_id}.json
 ingress:
-    - hostname: ${haqi_host}
-      service: http://localhost:${HAPI_PORT}
+    - hostname: ${matemind_host}
+      service: http://localhost:${MATEMIND_PORT}
     - hostname: ${ssh_host}
       service: ssh://localhost:22
     - service: http_status:404
@@ -683,40 +683,40 @@ EOF
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>${HAPI_HOME}/logs/cloudflared.log</string>
+    <string>${MATEMIND_HOME}/logs/cloudflared.log</string>
     <key>StandardErrorPath</key>
-    <string>${HAPI_HOME}/logs/cloudflared.log</string>
+    <string>${MATEMIND_HOME}/logs/cloudflared.log</string>
 </dict>
 </plist>
 EOF
 
-    ensure_dir "${HAPI_HOME}/logs"
+    ensure_dir "${MATEMIND_HOME}/logs"
     launchctl_reload_user_agent "$CF_TUNNEL_LABEL" "$CF_TUNNEL_PLIST"
 
-    PUBLIC_URL="https://${haqi_host}"
+    PUBLIC_URL="https://${matemind_host}"
     log "Cloudflare tunnel configured."
-    log "HAQI public URL: ${PUBLIC_URL}"
+    log "Matemind public URL: ${PUBLIC_URL}"
     log "SSH endpoint hostname: ${ssh_host}"
 
-    if prompt_yes_no "Update HAQI service with HAPI_PUBLIC_URL=${PUBLIC_URL} and reload?" "Y"; then
-        configure_haqi_launchd_services
+    if prompt_yes_no "Update Matemind service with MATEMIND_PUBLIC_URL=${PUBLIC_URL} and reload?" "Y"; then
+        configure_matemind_launchd_services
     fi
 }
 
 print_summary() {
-    local haqi_bin="not found"
-    haqi_bin="$(find_haqi_bin 2>/dev/null || echo "not found")"
+    local matemind_bin="not found"
+    matemind_bin="$(find_matemind_bin 2>/dev/null || echo "not found")"
 
     cat <<EOF
 
 =========================================================
-HAQI macOS bootstrap completed
+Matemind macOS bootstrap completed
 script version: ${SCRIPT_VERSION}
 
-HAQI binary:      ${haqi_bin}
-HAQI home:        ${HAPI_HOME}
-HAQI local URL:   http://127.0.0.1:${HAPI_PORT}
-HAQI public URL:  ${PUBLIC_URL:-"(not configured)"}
+Matemind binary:      ${matemind_bin}
+Matemind home:        ${MATEMIND_HOME}
+Matemind local URL:   http://127.0.0.1:${MATEMIND_PORT}
+Matemind public URL:  ${PUBLIC_URL:-"(not configured)"}
 
 LaunchAgents:
   - ${HUB_PLIST}
@@ -724,9 +724,9 @@ LaunchAgents:
   - ${CF_TUNNEL_PLIST} (if configured)
 
 Logs:
-  - ${HAPI_HOME}/logs/hub.log
-  - ${HAPI_HOME}/logs/runner.log
-  - ${HAPI_HOME}/logs/cloudflared.log
+  - ${MATEMIND_HOME}/logs/hub.log
+  - ${MATEMIND_HOME}/logs/runner.log
+  - ${MATEMIND_HOME}/logs/cloudflared.log
 =========================================================
 EOF
 }
@@ -741,9 +741,9 @@ main() {
     setup_github_ssh
     allow_user_provided_ssh_pubkey
     enable_ssh_server_key_only
-    clone_or_update_haqi_repo
-    install_haqi_systemwide
-    configure_haqi_launchd_services
+    clone_or_update_matemind_repo
+    install_matemind_systemwide
+    configure_matemind_launchd_services
     configure_cloudflare_tunnel
     print_summary
 }

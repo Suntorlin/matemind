@@ -5,7 +5,7 @@ import {
     type TeamControlRequest,
     type TeamState,
     type TeamTask
-} from '@hapi/protocol/schemas'
+} from '@matemind/protocol/schemas'
 import type { SyncEngine } from '../../sync/syncEngine'
 import type { WebAppEnv } from '../middleware/auth'
 import { requireSessionFromParam, requireSyncEngine } from './guards'

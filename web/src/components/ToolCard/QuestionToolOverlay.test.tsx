@@ -75,7 +75,7 @@ describe('QuestionToolOverlay', () => {
             writable: true,
             value: localStorageStub
         })
-        window.localStorage.setItem('hapi-lang', 'en')
+        window.localStorage.setItem('matemind-lang', 'en')
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
             value: vi.fn().mockImplementation(() => ({

@@ -123,8 +123,8 @@ describe('registerAppServerPermissionHandlers', () => {
         const result = await handler?.({
             threadId: 'thread-1',
             turnId: 'turn-1',
-            serverName: 'haqi',
-            message: 'Allow the haqi MCP server to run tool "change_title"?',
+            serverName: 'matemind',
+            message: 'Allow the matemind MCP server to run tool "change_title"?',
             requestedSchema: {
                 type: 'object',
                 properties: {}
@@ -133,9 +133,9 @@ describe('registerAppServerPermissionHandlers', () => {
 
         expect(handleToolCall).toHaveBeenCalledWith(
             'turn-1',
-            'mcp__haqi__change_title',
+            'mcp__matemind__change_title',
             {
-                message: 'Allow the haqi MCP server to run tool "change_title"?'
+                message: 'Allow the matemind MCP server to run tool "change_title"?'
             }
         );
         expect(result).toEqual({
@@ -165,8 +165,8 @@ describe('registerAppServerPermissionHandlers', () => {
         const handler = handlers.get('mcpServer/elicitation/request');
         const result = await handler?.({
             threadId: 'thread-1',
-            serverName: 'haqi',
-            message: 'Allow the haqi MCP server to run tool "report_list"?',
+            serverName: 'matemind',
+            message: 'Allow the matemind MCP server to run tool "report_list"?',
             requestedSchema: {
                 type: 'object',
                 properties: {}

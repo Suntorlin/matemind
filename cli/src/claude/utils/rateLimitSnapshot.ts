@@ -1,4 +1,4 @@
-import type { ClaudeRateLimitEntry, ClaudeRateLimitSnapshot, ClaudeRateLimitType } from '@hapi/protocol/schemas';
+import type { ClaudeRateLimitEntry, ClaudeRateLimitSnapshot, ClaudeRateLimitType } from '@matemind/protocol/schemas';
 
 // Mirrors a subset of cc's SDKRateLimitInfoSchema. We accept the wider shape
 // from the SDK and pick what we need.

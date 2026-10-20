@@ -9,8 +9,8 @@ import { getProjectPath } from "./utils/path";
 import { awaitFileExist } from "@/modules/watcher/awaitFileExist";
 import { buildClaudeSystemPrompt } from "./utils/systemPrompt";
 import { PermissionResult } from "./sdk/types";
-import { getHapiBlobsDir } from "@/constants/uploadPaths";
-import { isPureContextModeEnabled } from "@/agent/utils/haqiAgentInstructions";
+import { getMatemindBlobsDir } from "@/constants/uploadPaths";
+import { isPureContextModeEnabled } from "@/agent/utils/matemindAgentInstructions";
 import { getDefaultClaudeCodePath } from "./sdk/utils";
 
 export async function claudeRemote(opts: {
@@ -154,7 +154,7 @@ export async function claudeRemote(opts: {
         abort: opts.signal,
         pathToClaudeCodeExecutable: getDefaultClaudeCodePath(),
         settingsPath: opts.hookSettingsPath,
-        additionalDirectories: [getHapiBlobsDir()],
+        additionalDirectories: [getMatemindBlobsDir()],
     }
 
     // Track thinking state

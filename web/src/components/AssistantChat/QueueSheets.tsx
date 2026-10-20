@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { PermissionMode } from '@hapi/protocol'
+import type { PermissionMode } from '@matemind/protocol'
 import type { QueueEntry, QueueSummary, SessionUsageOverview } from '@/types/api'
 import { BottomSheet, SheetNote, SheetRow, SheetSection } from '@/components/mobile/BottomSheet'
 import { permissionModeText } from '@/lib/option-labels'

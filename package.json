@@ -1,5 +1,5 @@
 {
-    "name": "hapi",
+    "name": "matemind",
     "private": true,
     "workspaces": ["cli", "shared", "hub", "web", "website", "docs"],
     "scripts": {
@@ -22,8 +22,7 @@
         "test:cli": "cd cli && bun run test",
         "test:hub": "cd hub && bun run test",
         "test:web": "cd web && bun run test",
-        "brand:apply": "bun run scripts/brand/apply-haqi-brand.ts",
-        "brand:check": "bun run scripts/brand/check-haqi-brand.ts",
+        "brand:check": "bun run scripts/brand/check-brand.ts",
         "safety:check": "bun run scripts/safety/check-public-safety.ts --tree",
         "safety:self-test": "bun run scripts/safety/check-public-safety.ts --self-test",
         "safety:install-hooks": "git config core.hooksPath .githooks && echo \"[public-safety] git hooks installed (.githooks)\"",

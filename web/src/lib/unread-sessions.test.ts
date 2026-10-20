@@ -11,9 +11,9 @@ describe('unread sessions', () => {
         markSessionUnread('a')
         markSessionUnread('b')
         resetUnreadSessions() // re-read storage, as after a reload
-        expect(JSON.parse(window.localStorage.getItem('hapi:unreadSessions') ?? '[]')).toEqual(['a', 'b'])
+        expect(JSON.parse(window.localStorage.getItem('matemind:unreadSessions') ?? '[]')).toEqual(['a', 'b'])
 
         markSessionRead('a')
-        expect(JSON.parse(window.localStorage.getItem('hapi:unreadSessions') ?? '[]')).toEqual(['b'])
+        expect(JSON.parse(window.localStorage.getItem('matemind:unreadSessions') ?? '[]')).toEqual(['b'])
     })
 })

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
-const QUEUE_INLINE_PANEL_KEY = 'hapi:queueInlinePanel'
-const LEGACY_CODEX_QUEUE_INLINE_PANEL_KEY = 'hapi:codexQueueInlinePanel'
+const QUEUE_INLINE_PANEL_KEY = 'matemind:queueInlinePanel'
+const LEGACY_CODEX_QUEUE_INLINE_PANEL_KEY = 'matemind:codexQueueInlinePanel'
 
 export type QueueInlinePanelMode = 'off' | 'compact' | 'full'
 export type CodexQueueInlinePanelMode = QueueInlinePanelMode

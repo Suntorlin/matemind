@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LOCAL_CTL="${ROOT_DIR}/scripts/hapi-local.sh"
+LOCAL_CTL="${ROOT_DIR}/scripts/matemind-local.sh"
 
 BUN_BIN_CANDIDATE="${BUN_BIN:-${HOME}/.bun/bin/bun}"
 if [ -x "${BUN_BIN_CANDIDATE}" ]; then
@@ -22,7 +22,7 @@ usage() {
 
 默认行为:
   1) 构建最新单文件二进制（含 web 资源）
-  2) 备份当前 /opt/homebrew/bin/{haqi,hapi}（若存在）
+  2) 备份当前 /opt/homebrew/bin/matemind（若存在）
   3) 替换二进制
   4) 重启本地 runner + hub
 
@@ -30,8 +30,7 @@ usage() {
   --skip-build       跳过构建（使用现有 cli/dist-exe 产物）
   --skip-restart     跳过 stop/start（仅替换文件）
   --source <path>    指定源二进制路径（默认按当前系统推断）
-  --haqi <path>      指定 haqi 安装路径（默认 command -v haqi 或 /opt/homebrew/bin/haqi）
-  --hapi <path>      指定 hapi 安装路径（默认 command -v hapi 或 /opt/homebrew/bin/hapi）
+  --matemind <path>  指定 matemind 安装路径（默认 command -v matemind 或 /opt/homebrew/bin/matemind）
   --no-backup        不备份旧二进制
   -h, --help         显示帮助
 EOF
@@ -75,7 +74,7 @@ host_target_dir() {
         ;;
     esac
 
-    echo "${ROOT_DIR}/cli/dist-exe/bun-${os}-${arch}/hapi"
+    echo "${ROOT_DIR}/cli/dist-exe/bun-${os}-${arch}/matemind"
 }
 
 ensure_writable_parent() {
@@ -88,7 +87,7 @@ ensure_writable_parent() {
     fi
     if [ ! -w "${parent}" ]; then
         echo "❌ 目录不可写: ${parent}"
-        echo "   可改用 --haqi/--hapi 指到可写路径，或手动提权执行"
+        echo "   可改用 --matemind 指到可写路径，或手动提权执行"
         exit 1
     fi
 }
@@ -122,8 +121,7 @@ SKIP_BUILD=0
 SKIP_RESTART=0
 NO_BACKUP=0
 SOURCE_BIN=""
-HAQI_PATH=""
-HAPI_PATH=""
+MATEMIND_PATH=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -143,12 +141,8 @@ while [ $# -gt 0 ]; do
         SOURCE_BIN="${2:-}"
         shift 2
         ;;
-    --haqi)
-        HAQI_PATH="${2:-}"
-        shift 2
-        ;;
-    --hapi)
-        HAPI_PATH="${2:-}"
+    --matemind)
+        MATEMIND_PATH="${2:-}"
         shift 2
         ;;
     -h|--help)
@@ -167,25 +161,19 @@ if [ -z "${SOURCE_BIN}" ]; then
     SOURCE_BIN="$(host_target_dir)"
 fi
 
-if [ -z "${HAQI_PATH}" ]; then
-    HAQI_PATH="$(command -v haqi 2>/dev/null || true)"
-    if [ -z "${HAQI_PATH}" ] && [ -e /opt/homebrew/bin/haqi ]; then
-        HAQI_PATH="/opt/homebrew/bin/haqi"
-    fi
-fi
-if [ -z "${HAPI_PATH}" ]; then
-    HAPI_PATH="$(command -v hapi 2>/dev/null || true)"
-    if [ -z "${HAPI_PATH}" ] && [ -e /opt/homebrew/bin/hapi ]; then
-        HAPI_PATH="/opt/homebrew/bin/hapi"
+if [ -z "${MATEMIND_PATH}" ]; then
+    MATEMIND_PATH="$(command -v matemind 2>/dev/null || true)"
+    if [ -z "${MATEMIND_PATH}" ] && [ -e /opt/homebrew/bin/matemind ]; then
+        MATEMIND_PATH="/opt/homebrew/bin/matemind"
     fi
 fi
 
-if [ -z "${HAQI_PATH}" ] && [ -z "${HAPI_PATH}" ]; then
-    echo "❌ 未找到 haqi/hapi 安装路径，请使用 --haqi 或 --hapi 指定"
+if [ -z "${MATEMIND_PATH}" ]; then
+    echo "❌ 未找到 matemind 安装路径，请使用 --matemind 指定"
     exit 1
 fi
 
-BACKUP_DIR="${HAPI_HOME:-${HOME}/.hapi}/backups/bin"
+BACKUP_DIR="${MATEMIND_HOME:-${HOME}/.matemind}/backups/bin"
 
 log "仓库: ${ROOT_DIR}"
 log "目标 commit: $(cd "${ROOT_DIR}" && git rev-parse --short HEAD)"
@@ -219,26 +207,18 @@ if [ "${NO_BACKUP}" = "1" ]; then
     DO_BACKUP=0
 fi
 
-if [ -n "${HAQI_PATH}" ]; then
-    install_one "${SOURCE_BIN}" "${HAQI_PATH}" "${BACKUP_DIR}" "${DO_BACKUP}"
-fi
-if [ -n "${HAPI_PATH}" ]; then
-    install_one "${SOURCE_BIN}" "${HAPI_PATH}" "${BACKUP_DIR}" "${DO_BACKUP}"
-fi
+install_one "${SOURCE_BIN}" "${MATEMIND_PATH}" "${BACKUP_DIR}" "${DO_BACKUP}"
 
-if [ -n "${HAQI_PATH}" ] && [ -x "${HAQI_PATH}" ]; then
-    log "haqi 版本: $("${HAQI_PATH}" --version | tr '\n' ' ')"
-    log "haqi SHA256: $(sha256_file "${HAQI_PATH}")"
-fi
-if [ -n "${HAPI_PATH}" ] && [ -x "${HAPI_PATH}" ]; then
-    log "hapi SHA256: $(sha256_file "${HAPI_PATH}")"
+if [ -n "${MATEMIND_PATH}" ] && [ -x "${MATEMIND_PATH}" ]; then
+    log "matemind 版本: $("${MATEMIND_PATH}" --version | tr '\n' ' ')"
+    log "matemind SHA256: $(sha256_file "${MATEMIND_PATH}")"
 fi
 
 if [ "${SKIP_RESTART}" = "0" ] && [ -x "${LOCAL_CTL}" ]; then
     log "启动本地 runner/hub..."
     bash "${LOCAL_CTL}" start
 
-    local_health_url="http://127.0.0.1:${HAPI_LISTEN_PORT:-3006}/health"
+    local_health_url="http://127.0.0.1:${MATEMIND_LISTEN_PORT:-3006}/health"
     if curl -fsS "${local_health_url}" >/dev/null 2>&1; then
         log "健康检查 OK: ${local_health_url}"
         curl -fsS "${local_health_url}"

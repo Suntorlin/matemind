@@ -6,13 +6,13 @@ import type { EnhancedMode } from './loop'
 import type { SDKMessage } from '@/claude/sdk'
 import { claudeRemote } from './claudeRemote'
 
-const previousClaudePath = process.env.HAPI_CLAUDE_PATH
+const previousClaudePath = process.env.MATEMIND_CLAUDE_PATH
 
 afterEach(() => {
     if (previousClaudePath === undefined) {
-        delete process.env.HAPI_CLAUDE_PATH
+        delete process.env.MATEMIND_CLAUDE_PATH
     } else {
-        process.env.HAPI_CLAUDE_PATH = previousClaudePath
+        process.env.MATEMIND_CLAUDE_PATH = previousClaudePath
     }
 })
 
@@ -83,9 +83,9 @@ function textOf(message: SDKMessage): string | null {
 
 describe('Claude remote turns started by Claude itself', () => {
     it('can resume a copied transcript idle and waits for the first real message', async () => {
-        const dir = mkdtempSync(join(tmpdir(), 'haqi-claude-idle-resume-'))
+        const dir = mkdtempSync(join(tmpdir(), 'matemind-claude-idle-resume-'))
         try {
-            process.env.HAPI_CLAUDE_PATH = writeFakeClaudeExecutable(dir)
+            process.env.MATEMIND_CLAUDE_PATH = writeFakeClaudeExecutable(dir)
             const mode: EnhancedMode = { permissionMode: 'default' }
             const texts: string[] = []
             let nextMessageCalls = 0
@@ -120,9 +120,9 @@ describe('Claude remote turns started by Claude itself', () => {
     }, 10_000)
 
     it('forwards a turn that starts while waiting for the next user message', async () => {
-        const dir = mkdtempSync(join(tmpdir(), 'haqi-claude-background-turn-'))
+        const dir = mkdtempSync(join(tmpdir(), 'matemind-claude-background-turn-'))
         try {
-            process.env.HAPI_CLAUDE_PATH = writeFakeClaudeExecutable(dir)
+            process.env.MATEMIND_CLAUDE_PATH = writeFakeClaudeExecutable(dir)
 
             const mode: EnhancedMode = { permissionMode: 'default' }
             const texts: string[] = []
@@ -187,7 +187,7 @@ describe('Claude remote turns started by Claude itself', () => {
     }, 10_000)
 
     it('finishes the running turn before exiting for a pending relaunch', async () => {
-        const dir = mkdtempSync(join(tmpdir(), 'haqi-claude-pending-relaunch-'))
+        const dir = mkdtempSync(join(tmpdir(), 'matemind-claude-pending-relaunch-'))
         try {
             // First turn ends, then Claude starts a turn on its own whose
             // result only arrives after a delay.
@@ -213,7 +213,7 @@ rl.on('line', (line) => {
 })
 `, 'utf8')
             chmodSync(fakeClaudePath, 0o755)
-            process.env.HAPI_CLAUDE_PATH = fakeClaudePath
+            process.env.MATEMIND_CLAUDE_PATH = fakeClaudePath
 
             const mode: EnhancedMode = { permissionMode: 'default' }
             const texts: string[] = []

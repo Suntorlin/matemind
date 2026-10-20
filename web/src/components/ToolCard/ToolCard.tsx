@@ -3,7 +3,7 @@ import { TOOL_PROGRESS_STALE_AFTER_MS, type ToolProgressSignal } from '@/chat/to
 import type { ApiClient } from '@/api/client'
 import type { SessionMetadataSummary } from '@/types/api'
 import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { isObject, safeStringify } from '@hapi/protocol'
+import { isObject, safeStringify } from '@matemind/protocol'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CodeBlock } from '@/components/CodeBlock'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'

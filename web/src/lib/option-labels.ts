@@ -1,4 +1,4 @@
-import { getPermissionModeLabel, type PermissionMode } from '@hapi/protocol'
+import { getPermissionModeLabel, type PermissionMode } from '@matemind/protocol'
 
 type Translate = (key: string, params?: Record<string, string | number>) => string
 

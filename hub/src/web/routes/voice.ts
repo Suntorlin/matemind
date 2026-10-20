@@ -7,7 +7,7 @@ import {
     ELEVENLABS_API_BASE,
     VOICE_AGENT_NAME,
     buildVoiceAgentConfig
-} from '@hapi/protocol/voice'
+} from '@matemind/protocol/voice'
 
 const tokenRequestSchema = z.object({
     customAgentId: z.string().optional(),
@@ -32,9 +32,9 @@ async function isPureContextModeEnabled(): Promise<boolean> {
 }
 
 /**
- * Find an existing "Hapi Voice Assistant" agent
+ * Find an existing "Matemind Voice Assistant" agent
  */
-async function findHapiAgent(apiKey: string): Promise<string | null> {
+async function findMatemindAgent(apiKey: string): Promise<string | null> {
     try {
         const response = await fetch(`${ELEVENLABS_API_BASE}/convai/agents`, {
             method: 'GET',
@@ -50,18 +50,18 @@ async function findHapiAgent(apiKey: string): Promise<string | null> {
 
         const data = await response.json() as { agents?: ElevenLabsAgent[] }
         const agents: ElevenLabsAgent[] = data.agents || []
-        const hapiAgent = agents.find(agent => agent.name === VOICE_AGENT_NAME)
+        const matemindAgent = agents.find(agent => agent.name === VOICE_AGENT_NAME)
 
-        return hapiAgent?.agent_id || null
+        return matemindAgent?.agent_id || null
     } catch {
         return null
     }
 }
 
 /**
- * Create or update "Hapi Voice Assistant" agent config.
+ * Create or update "Matemind Voice Assistant" agent config.
  */
-async function createHapiAgent(
+async function createMatemindAgent(
     apiKey: string,
     pureContextMode: boolean,
     existingAgentId?: string
@@ -100,7 +100,7 @@ async function createHapiAgent(
 }
 
 /**
- * Get or create agent ID - finds existing or creates new "Hapi Voice Assistant" agent
+ * Get or create agent ID - finds existing or creates new "Matemind Voice Assistant" agent
  */
 async function getOrCreateAgentId(apiKey: string): Promise<string | null> {
     const pureContextMode = await isPureContextModeEnabled()
@@ -113,15 +113,15 @@ async function getOrCreateAgentId(apiKey: string): Promise<string | null> {
 
     // Try to find existing agent
     console.log('[Voice] No agent ID configured, searching for existing agent...')
-    let agentId = await findHapiAgent(apiKey)
+    let agentId = await findMatemindAgent(apiKey)
 
     if (agentId) {
         console.log('[Voice] Found existing agent, syncing config:', agentId)
-        agentId = await createHapiAgent(apiKey, pureContextMode, agentId)
+        agentId = await createMatemindAgent(apiKey, pureContextMode, agentId)
     } else {
         // Create new agent
         console.log('[Voice] No existing agent found, creating new one...')
-        agentId = await createHapiAgent(apiKey, pureContextMode)
+        agentId = await createMatemindAgent(apiKey, pureContextMode)
         if (agentId) {
             console.log('[Voice] Created new agent:', agentId)
         }
@@ -163,7 +163,7 @@ export function createVoiceRoutes(): Hono<WebAppEnv> {
 
         // If agent ID comes from env default, keep config synced with pure-context mode.
         if (agentId && !customAgentId) {
-            const syncedAgentId = await createHapiAgent(apiKey, pureContextMode, agentId)
+            const syncedAgentId = await createMatemindAgent(apiKey, pureContextMode, agentId)
             if (!syncedAgentId) {
                 return c.json({
                     allowed: false,

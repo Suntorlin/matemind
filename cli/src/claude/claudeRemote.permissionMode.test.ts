@@ -22,19 +22,19 @@ type FakeClaudeLogEntry = {
     response?: unknown
 }
 
-const previousClaudePath = process.env.HAPI_CLAUDE_PATH
-const previousFakeLog = process.env.HAQI_FAKE_CLAUDE_LOG
+const previousClaudePath = process.env.MATEMIND_CLAUDE_PATH
+const previousFakeLog = process.env.MATEMIND_FAKE_CLAUDE_LOG
 
 afterEach(() => {
     if (previousClaudePath === undefined) {
-        delete process.env.HAPI_CLAUDE_PATH
+        delete process.env.MATEMIND_CLAUDE_PATH
     } else {
-        process.env.HAPI_CLAUDE_PATH = previousClaudePath
+        process.env.MATEMIND_CLAUDE_PATH = previousClaudePath
     }
     if (previousFakeLog === undefined) {
-        delete process.env.HAQI_FAKE_CLAUDE_LOG
+        delete process.env.MATEMIND_FAKE_CLAUDE_LOG
     } else {
-        process.env.HAQI_FAKE_CLAUDE_LOG = previousFakeLog
+        process.env.MATEMIND_FAKE_CLAUDE_LOG = previousFakeLog
     }
 })
 
@@ -44,7 +44,7 @@ function writeFakeClaudeExecutable(dir: string): string {
 import { writeFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 
-const logPath = process.env.HAQI_FAKE_CLAUDE_LOG
+const logPath = process.env.MATEMIND_FAKE_CLAUDE_LOG
 const events = []
 const controlResponses = []
 const pendingResolvers = []
@@ -203,12 +203,12 @@ function createSessionHarness() {
 
 describe('Claude remote permission mode changes', () => {
     it('applies session permission mode changes to later tool checks while the same turn is running', async () => {
-        const dir = mkdtempSync(join(tmpdir(), 'haqi-claude-live-permission-'))
+        const dir = mkdtempSync(join(tmpdir(), 'matemind-claude-live-permission-'))
         try {
             const fakeClaudePath = writeFakeClaudeExecutable(dir)
             const logPath = join(dir, 'fake-claude-log.json')
-            process.env.HAPI_CLAUDE_PATH = fakeClaudePath
-            process.env.HAQI_FAKE_CLAUDE_LOG = logPath
+            process.env.MATEMIND_CLAUDE_PATH = fakeClaudePath
+            process.env.MATEMIND_FAKE_CLAUDE_LOG = logPath
 
             const harness = createSessionHarness()
             const permissionHandler = new PermissionHandler(harness.session)

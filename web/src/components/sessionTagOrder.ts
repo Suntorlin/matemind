@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'hapi:sessionTagOrder'
+const STORAGE_KEY = 'matemind:sessionTagOrder'
 
 export function normalizeSessionTagOrder(value: string | null): string[] {
     if (!value) return []

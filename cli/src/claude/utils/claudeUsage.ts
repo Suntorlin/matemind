@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
-import type { ClaudeUsageLimit } from '@hapi/protocol/schemas';
+import type { ClaudeUsageLimit } from '@matemind/protocol/schemas';
 import { logger } from '@/ui/logger';
 
 const CredentialsSchema = z.object({

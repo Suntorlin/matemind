@@ -1,7 +1,7 @@
 /**
  * Unified MCP bridge setup for Codex local and remote modes.
  *
- * This module provides a single source of truth for starting the hapi MCP
+ * This module provides a single source of truth for starting the matemind MCP
  * bridge server and generating the MCP server configuration that Codex needs.
  */
 
@@ -23,9 +23,9 @@ export interface McpServerEntry {
 export type McpServersConfig = Record<string, McpServerEntry>;
 
 /**
- * Result of starting the hapi MCP bridge.
+ * Result of starting the matemind MCP bridge.
  */
-export interface HapiMcpBridge {
+export interface MatemindMcpBridge {
     /** The running server instance */
     server: {
         url: string;
@@ -36,13 +36,13 @@ export interface HapiMcpBridge {
 }
 
 /**
- * Start the hapi MCP bridge server and return the configuration
+ * Start the matemind MCP bridge server and return the configuration
  * needed to connect Codex to it.
  *
  * This is the single source of truth for MCP bridge setup,
  * used by both local and remote launchers.
  */
-export async function buildHapiMcpBridge(client: ApiSessionClient): Promise<HapiMcpBridge> {
+export async function buildMatemindMcpBridge(client: ApiSessionClient): Promise<MatemindMcpBridge> {
     const happyServer = await startHappyServer(client);
     const bridgeCommand = getHappyCliCommand(['mcp', '--url', happyServer.url]);
 
@@ -52,11 +52,7 @@ export async function buildHapiMcpBridge(client: ApiSessionClient): Promise<Hapi
             stop: happyServer.stop
         },
         mcpServers: {
-            haqi: {
-                command: bridgeCommand.command,
-                args: bridgeCommand.args
-            },
-            hapi: {
+            matemind: {
                 command: bridgeCommand.command,
                 args: bridgeCommand.args
             }

@@ -32,19 +32,19 @@ function buildCredentialJson(overrides?: Record<string, unknown>): string {
 
 describe('codex credentials', () => {
     let rootDir = ''
-    let hapiHome = ''
+    let matemindHome = ''
     let codexHome = ''
 
     beforeEach(async () => {
-        rootDir = await mkdtemp(join(tmpdir(), 'haqi-codex-credentials-'))
-        hapiHome = join(rootDir, 'hapi-home')
+        rootDir = await mkdtemp(join(tmpdir(), 'matemind-codex-credentials-'))
+        matemindHome = join(rootDir, 'matemind-home')
         codexHome = join(rootDir, 'codex-home')
-        process.env.HAPI_HOME = hapiHome
+        process.env.MATEMIND_HOME = matemindHome
         process.env.CODEX_HOME = codexHome
     })
 
     afterEach(async () => {
-        delete process.env.HAPI_HOME
+        delete process.env.MATEMIND_HOME
         delete process.env.CODEX_HOME
         await rm(rootDir, { recursive: true, force: true })
     })
@@ -53,9 +53,9 @@ describe('codex credentials', () => {
         const credentials = await import('./credentials')
         const { configuration } = await import('@/configuration')
         Object.assign(configuration, {
-            codexCredentialsDir: join(hapiHome, 'codex-credentials'),
-            codexCredentialsProfilesDir: join(hapiHome, 'codex-credentials', 'profiles'),
-            codexCredentialsIndexFile: join(hapiHome, 'codex-credentials', 'index.json')
+            codexCredentialsDir: join(matemindHome, 'codex-credentials'),
+            codexCredentialsProfilesDir: join(matemindHome, 'codex-credentials', 'profiles'),
+            codexCredentialsIndexFile: join(matemindHome, 'codex-credentials', 'index.json')
         })
         return credentials
     }

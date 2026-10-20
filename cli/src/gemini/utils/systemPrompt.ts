@@ -1,5 +1,5 @@
 import { trimIdent } from '@/utils/trimIdent';
-import { buildPromptWithHaqiAgentInstructions, isPureContextModeEnabled } from '@/agent/utils/haqiAgentInstructions';
+import { buildPromptWithMatemindAgentInstructions, isPureContextModeEnabled } from '@/agent/utils/matemindAgentInstructions';
 
 export const geminiSystemPrompt = trimIdent(`
     Keep durable memory in MEMORY.md.
@@ -10,5 +10,5 @@ export function buildGeminiSystemPrompt(startDir: string): string {
     if (isPureContextModeEnabled()) {
         return '';
     }
-    return buildPromptWithHaqiAgentInstructions(geminiSystemPrompt, startDir);
+    return buildPromptWithMatemindAgentInstructions(geminiSystemPrompt, startDir);
 }

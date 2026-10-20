@@ -9,7 +9,7 @@ import type {
     CodexCredentialProfile,
     CodexCredentialStateResponse,
     CodexCredentialSummary
-} from '@hapi/protocol'
+} from '@matemind/protocol'
 
 const INDEX_VERSION = 1
 const LOCK_RETRY_INTERVAL_MS = 100

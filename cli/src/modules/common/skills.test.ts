@@ -26,7 +26,7 @@ describe('listSkills', () => {
     let codexHome: string;
 
     beforeEach(async () => {
-        sandboxDir = await mkdtemp(join(tmpdir(), 'hapi-skills-'));
+        sandboxDir = await mkdtemp(join(tmpdir(), 'matemind-skills-'));
         homeDir = join(sandboxDir, 'home');
         codexHome = join(sandboxDir, 'codex-home');
         process.env.HOME = homeDir;

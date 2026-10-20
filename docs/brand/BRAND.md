@@ -69,3 +69,62 @@ AGPL-3.0 stays. Matemind is derived from:
 - **happy-cli** by Kirill Dubovitskiy — https://github.com/slopus/happy-cli (MIT)
 
 Keep every existing copyright line and licence text. Add, never remove.
+
+## 6. Visual identity
+
+### The mark: split sail
+
+The mark is a sail cut into three bands, set on one bar. The sail is what you want. The bands are the work Matemind splits it into. The bar is the bottom line it brings back. We picked it over "Common ground" (two overlapping rings) and "Lookout" (a porthole): it tells the tagline in one shape, reads as a sail at 16 px, and needs no colour to work.
+
+Concepts and the contact sheet: `docs/brand/concepts/`.
+
+### Wordmark
+
+| Item | Value |
+|---|---|
+| Font | Geist SemiBold (600), SIL Open Font License 1.1 (github.com/vercel/geist-font) |
+| Tracking | -0.01 em |
+| Case | "Matemind", capital M only |
+| File | Outlined paths in `matemind-wordmark.svg`; no font needed to show it |
+| Live text fallback | `Geist, -apple-system, system-ui, sans-serif`, weight 600 |
+
+In the lockup, the mark is 1.5 x the cap height. The bottom of the bar sits on the text baseline. The gap between mark and text is 0.45 x the cap height.
+
+### Colours
+
+| Role | Light background | Dark background |
+|---|---|---|
+| Primary: sail, wordmark | `#09090b` | `#fafafa` |
+| Accent: the bottom-line bar | `#2f6bff` | `#6b95ff` |
+| App icon tile | `#18181b` (both modes) | `#18181b` |
+
+The primary colours are the app's `--social-fg` tokens (see `web/DESIGN.md`). The accent belongs to the logo only. In the UI, brand red (`#ff3040`) still means unread or live. Contrast: accent `#2f6bff` on white is 4.5:1; `#6b95ff` on `#09090b` is 7.0:1.
+
+### Clear space and minimum size
+
+1. Clear space: keep empty space of at least 25% of the mark height on every side. This applies to the mark and to the lockup.
+2. Mark minimum: 16 px. From 16 to 64 px, use `matemind-app-icon-small.svg`; it is drawn on a 16 px pixel grid.
+3. Lockup minimum: 20 px mark height (the wordmark is then about 85 px wide). Below that, use the mark alone.
+4. Single colour (Safari pinned tab, notification badge, print): use `matemind-mark-mono.svg`. The bar takes the same colour as the sail.
+
+### Do and don't
+
+| Do | Don't |
+|---|---|
+| Use the mark in one colour when colour is not available | Recolour the sail, or put the accent on the sail |
+| Keep the bar under the sail and full width | Remove the bar, or show the sail without its gaps |
+| Use the dark tile (`#18181b`) for app icons on any wallpaper | Rotate, outline, add shadows or gradients, or add text inside the mark |
+
+### Assets (`docs/brand/assets/`)
+
+| File | Use |
+|---|---|
+| `matemind-mark.svg`, `matemind-mark-dark.svg` | Mark for light / dark backgrounds |
+| `matemind-mark-mono.svg` | Single colour (mask icons) |
+| `matemind-wordmark.svg`, `matemind-wordmark-dark.svg` | Wordmark, outlined |
+| `matemind-lockup.svg`, `matemind-lockup-dark.svg` | Mark + wordmark |
+| `matemind-app-icon.svg` | App icon master (rounded tile) |
+| `matemind-app-icon-small.svg` | Pixel-grid tile for 16-64 px (favicon) |
+| `matemind-badge-96.png` | White mark on transparent, for Android notification badges |
+| `matemind-social.png` | 1280 x 640 social preview |
+| `*.png` | Renders of the files above |

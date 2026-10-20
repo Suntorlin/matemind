@@ -1,6 +1,6 @@
-# haqi-hub
+# matemind-hub
 
-Telegram bot + HTTP API + realtime updates for haqi hub.
+Telegram bot + HTTP API + realtime updates for the Matemind hub.
 
 ## What it does
 
@@ -15,6 +15,9 @@ Telegram bot + HTTP API + realtime updates for haqi hub.
 
 See `src/configuration.ts` for all options.
 
+Legacy names still work. At start-up, a legacy `HAPI_X` or `HAQI_X` variable fills `MATEMIND_X` when `MATEMIND_X` is unset.
+If `~/.matemind` does not exist and `~/.hapi` does, the hub uses `~/.hapi` as is. In a legacy home it keeps using `hapi.db`.
+
 ### Required
 
 - `CLI_API_TOKEN` - Base shared secret used by CLI and web login. Clients append `:<namespace>` for isolation. Auto-generated on first run if not set.
@@ -22,7 +25,7 @@ See `src/configuration.ts` for all options.
 ### Optional (Telegram)
 
 - `TELEGRAM_BOT_TOKEN` - Token from @BotFather.
-- `HAPI_PUBLIC_URL` - Public HTTPS URL for Telegram Mini App access. Also used to derive default CORS origins for the web app.
+- `MATEMIND_PUBLIC_URL` - Public HTTPS URL for Telegram Mini App access. Also used to derive default CORS origins for the web app.
 
 ### Optional (Voice)
 
@@ -31,16 +34,16 @@ See `src/configuration.ts` for all options.
 
 ### Optional
 
-- `HAPI_LISTEN_HOST` - HTTP bind address (default: 127.0.0.1).
-- `HAPI_LISTEN_PORT` - HTTP port (default: 3006).
+- `MATEMIND_LISTEN_HOST` - HTTP bind address (default: 127.0.0.1).
+- `MATEMIND_LISTEN_PORT` - HTTP port (default: 3006).
 - `CORS_ORIGINS` - Comma-separated origins, or `*`.
-- `HAPI_REPORT_PUBLIC_BASE_URL` - Override domain used when generating report share links (defaults to `HAPI_PUBLIC_URL` / hub public URL).
-- `HAPI_HOME` - Data directory (default: ~/.hapi).
-- `DB_PATH` - SQLite database path (default: HAPI_HOME/hapi.db).
+- `MATEMIND_REPORT_PUBLIC_BASE_URL` - Override domain used when generating report share links (defaults to `MATEMIND_PUBLIC_URL` / hub public URL).
+- `MATEMIND_HOME` - Data directory (default: ~/.matemind).
+- `DB_PATH` - SQLite database path (default: MATEMIND_HOME/matemind.db).
 - `TELEGRAM_NOTIFICATION` - Enable/disable Telegram notifications (default: true).
-- `HAPI_RELAY_API` - Relay API domain (default: relay.hapi.run).
-- `HAPI_RELAY_AUTH` - Relay auth key (default: hapi).
-- `HAPI_RELAY_FORCE_TCP` - Force TCP relay mode (true/1).
+- `MATEMIND_RELAY_API` - Relay API domain (default: relay.hapi.run, the relay run by upstream hapi).
+- `MATEMIND_RELAY_AUTH` - Relay auth key (default: hapi; used by the upstream relay).
+- `MATEMIND_RELAY_FORCE_TCP` - Force TCP relay mode (true/1).
 - `VAPID_SUBJECT` - Contact email/URL for Web Push.
 
 ## Running
@@ -50,15 +53,15 @@ Binary (single executable):
 ```bash
 export TELEGRAM_BOT_TOKEN="..."
 export CLI_API_TOKEN="shared-secret"
-export HAPI_PUBLIC_URL="https://your-domain.example"
+export MATEMIND_PUBLIC_URL="https://your-domain.example"
 
-haqi hub
+matemind hub
 ```
 
-`haqi server` remains supported as an alias.
+`matemind server` remains supported as an alias.
 
 If you only need web + CLI, you can omit TELEGRAM_BOT_TOKEN.
-To enable Telegram, set TELEGRAM_BOT_TOKEN and HAPI_PUBLIC_URL, start the hub, open `/app`
+To enable Telegram, set TELEGRAM_BOT_TOKEN and MATEMIND_PUBLIC_URL, start the hub, open `/app`
 in the bot chat, and bind the Mini App with `CLI_API_TOKEN:<namespace>` when prompted.
 
 From source:
@@ -260,15 +263,15 @@ The hub build output is `hub/dist/index.js`, and the web assets are in `web/dist
 
 ## Networking notes
 
-- Telegram Mini Apps require HTTPS and a public URL. If the hub has no public IP, use Cloudflare Tunnel or Tailscale and set `HAPI_PUBLIC_URL` to the HTTPS endpoint.
-- If the web app is hosted on a different origin, set `CORS_ORIGINS` (or `HAPI_PUBLIC_URL`) to include that static host origin.
+- Telegram Mini Apps require HTTPS and a public URL. If the hub has no public IP, use Cloudflare Tunnel or Tailscale and set `MATEMIND_PUBLIC_URL` to the HTTPS endpoint.
+- If the web app is hosted on a different origin, set `CORS_ORIGINS` (or `MATEMIND_PUBLIC_URL`) to include that static host origin.
 
 ## Standalone web hosting
 
 The web UI can be hosted separately from the hub (for example on GitHub Pages or Cloudflare Pages):
 
 1. Build and deploy `web/dist` from the repo root.
-2. Set `CORS_ORIGINS` (or `HAPI_PUBLIC_URL`) to the static host origin.
-3. Open the static site, click the Hub button on the login screen, and enter the haqi hub origin.
+2. Set `CORS_ORIGINS` (or `MATEMIND_PUBLIC_URL`) to the static host origin.
+3. Open the static site, click the Hub button on the login screen, and enter the Matemind hub origin.
 
 Leaving the hub override empty preserves the default same-origin behavior when the hub serves the web assets directly.

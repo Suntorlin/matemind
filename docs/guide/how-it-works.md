@@ -1,6 +1,6 @@
 # How it Works
 
-HAQI consists of three interconnected components that work together to provide remote AI agent control.
+Matemind consists of three interconnected components that work together to provide remote AI agent control.
 
 ## Architecture Overview
 
@@ -10,7 +10,7 @@ HAQI consists of three interconnected components that work together to provide r
 │                                                                            │
 │   ┌──────────────┐         ┌──────────────┐         ┌──────────────┐       │
 │   │              │         │              │         │              │       │
-│   │   HAQI CLI   │◄───────►│  HAQI Hub    │◄───────►│   Web App    │       │
+│   │ Matemind CLI │◄───────►│ Matemind Hub │◄───────►│   Web App    │       │
 │   │              │ Socket  │              │   SSE   │  (embedded)  │       │
 │   │  + AI Agent  │   .IO   │  + SQLite    │         │              │       │
 │   │              │         │  + REST API  │         │              │       │
@@ -45,26 +45,26 @@ HAQI consists of three interconnected components that work together to provide r
 
 ## Components
 
-### HAQI CLI
+### Matemind CLI
 
 The CLI is a wrapper around AI coding agents (Claude Code, Codex, Cursor Agent, Gemini, OpenCode). It:
 
 - Starts and manages coding sessions
-- Registers sessions with the HAQI hub
+- Registers sessions with the Matemind hub
 - Relays messages and permission requests
 - Provides MCP (Model Context Protocol) tools
 
 **Key Commands:**
 ```bash
-haqi              # Start Claude Code session
-haqi codex        # Start OpenAI Codex session
-haqi cursor       # Start Cursor Agent session
-haqi gemini       # Start Google Gemini session
-haqi opencode     # Start OpenCode session
-haqi runner start # Run background service for remote session spawning
+matemind              # Start Claude Code session
+matemind codex        # Start OpenAI Codex session
+matemind cursor       # Start Cursor Agent session
+matemind gemini       # Start Google Gemini session
+matemind opencode     # Start OpenCode session
+matemind runner start # Run background service for remote session spawning
 ```
 
-### HAQI Hub
+### Matemind Hub
 
 The hub is the central service that connects everything:
 
@@ -89,7 +89,7 @@ A React-based PWA that provides the mobile interface:
 ### Starting a Session
 
 ```
-1. User runs `haqi` in terminal
+1. User runs `matemind` in terminal
          │
          ▼
 2. CLI starts Claude Code (or other agent)
@@ -171,7 +171,7 @@ For remote access outside your local network:
 
 ## Seamless Handoff
 
-HAQI's defining feature is the ability to seamlessly hand off control between local terminal and remote devices without losing session state.
+Matemind's defining feature is the ability to seamlessly hand off control between local terminal and remote devices without losing session state.
 
 ### Local Mode
 

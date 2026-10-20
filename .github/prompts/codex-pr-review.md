@@ -27,9 +27,9 @@ Before any analysis, load PR metadata, latest head SHA, and diff from the GitHub
 
 Workflow-provided env:
 - `CURRENT_HEAD_SHA` - PR head SHA for this run
-- `LATEST_BOT_REVIEW_ID` - most recent prior HAPI Bot review id, if any
-- `LATEST_BOT_REVIEW_COMMIT` - commit SHA reviewed by that prior HAPI Bot review, if any
-- `IS_FOLLOW_UP_REVIEW` - `true` when contributor pushed new commits after the last HAPI Bot review
+- `LATEST_BOT_REVIEW_ID` - most recent prior Matemind Bot review id, if any
+- `LATEST_BOT_REVIEW_COMMIT` - commit SHA reviewed by that prior Matemind Bot review, if any
+- `IS_FOLLOW_UP_REVIEW` - `true` when contributor pushed new commits after the last Matemind Bot review
 
 ```bash
 pr_number=$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")
@@ -56,9 +56,9 @@ fi
 ## Task
 
 1. **Load context (progressive)**: `README.md`, `AGENTS.md`, then only needed package README/source files.
-2. **Determine review mode**: `initial` when no prior HAPI Bot review exists for another commit, otherwise `follow-up after new commits`.
+2. **Determine review mode**: `initial` when no prior Matemind Bot review exists for another commit, otherwise `follow-up after new commits`.
 3. **Review the latest PR diff in full**: correctness, security, regressions, data loss, performance, and maintainability.
-4. **Follow-up context**: when `IS_FOLLOW_UP_REVIEW=true`, use the previous HAPI Bot review and compare diff only as context for what changed since the last bot pass. Do not limit the review to those changes.
+4. **Follow-up context**: when `IS_FOLLOW_UP_REVIEW=true`, use the previous Matemind Bot review and compare diff only as context for what changed since the last bot pass. Do not limit the review to those changes.
 5. **Check tests**: note missing or inadequate coverage.
 6. **Respond** with an evidence-based review comment (no code changes).
 
@@ -70,7 +70,7 @@ fi
 - **No speculation**: if uncertain, say so; if not found, say “Not found in repo/docs”.
 - **Missing info**: ask only when required; max 4 questions.
 - **Language**: match the PR’s language (Chinese or English); if mixed, use the dominant language.
-- **Signature**: end with `*HAPI Bot*`. Keep this exact text: the workflows search for it.
+- **Signature**: end with `*Matemind Bot*`. Keep this exact text: the workflows search for it.
 - **Diff focus**: only comment on added/modified lines; use unchanged code only for context.
 - **Fresh-head only**: before posting, re-fetch live PR head SHA; if it differs from `CURRENT_HEAD_SHA`, stop without posting a stale review.
 - **Attribution**: report only issues introduced or directly triggered by the diff; anchor comments to diff lines, citing related context if needed.

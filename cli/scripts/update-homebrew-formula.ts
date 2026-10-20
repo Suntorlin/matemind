@@ -67,7 +67,7 @@ function generateFormula(version: string, shas: PlatformSha): string {
 # frozen_string_literal: true
 
 class Matemind < Formula
-  desc "App for agentic coding - access coding agent anywhere"
+  desc "The first mate for your AI coding agents"
   homepage "https://github.com/matemind/matemind"
   version "${version}"
   license "MIT"

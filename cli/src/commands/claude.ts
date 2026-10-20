@@ -83,7 +83,7 @@ export const claudeCommand: CommandDefinition = {
 
         if (showHelp) {
             console.log(`
-${chalk.bold('matemind')} - Claude Code On the Go
+${chalk.bold('matemind')} - The first mate for your AI coding agents
 
 ${chalk.bold('Usage:')}
   matemind [options]         Start Claude with Telegram control (direct-connect)

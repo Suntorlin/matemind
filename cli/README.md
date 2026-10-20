@@ -1,10 +1,10 @@
-# haqi CLI
+# matemind CLI
 
-Run Claude Code, Codex, Cursor Agent, Gemini, or OpenCode sessions from your terminal and control them remotely through the haqi hub.
+Run Claude Code, Codex, Cursor Agent, Gemini, or OpenCode sessions from your terminal and control them remotely through the Matemind hub.
 
 ## What it does
 
-- Starts Claude Code sessions and registers them with haqi-hub.
+- Starts Claude Code sessions and registers them with matemind-hub.
 - Starts Codex mode for OpenAI-based sessions.
 - Starts Cursor Agent mode for Cursor CLI sessions.
 - Starts Gemini mode via ACP (Anthropic Code Plugins).
@@ -16,91 +16,96 @@ Run Claude Code, Codex, Cursor Agent, Gemini, or OpenCode sessions from your ter
 ## Typical flow
 
 1. Start the hub and set env vars (see ../hub/README.md).
-2. Set the same CLI_API_TOKEN on this machine or run `haqi auth login`.
-3. Run `haqi` to start a session.
+2. Set the same CLI_API_TOKEN on this machine or run `matemind auth login`.
+3. Run `matemind` to start a session.
 4. Use the web app or Telegram Mini App to monitor and control.
 
 ## Commands
 
 ### Session commands
 
-- `haqi` - Start a Claude Code session (passes through Claude CLI flags). See `src/index.ts`.
-- `haqi codex` - Start Codex mode. See `src/codex/runCodex.ts`.
-- `haqi codex resume <sessionId>` - Resume existing Codex session.
-- `haqi cursor` - Start Cursor Agent mode. See `src/cursor/runCursor.ts`.
-  Supports `haqi cursor resume <chatId>`, `haqi cursor --continue`, `--mode plan|ask`, `--yolo`, `--model`.
+- `matemind` - Start a Claude Code session (passes through Claude CLI flags). See `src/index.ts`.
+- `matemind codex` - Start Codex mode. See `src/codex/runCodex.ts`.
+- `matemind codex resume <sessionId>` - Resume existing Codex session.
+- `matemind cursor` - Start Cursor Agent mode. See `src/cursor/runCursor.ts`.
+  Supports `matemind cursor resume <chatId>`, `matemind cursor --continue`, `--mode plan|ask`, `--yolo`, `--model`.
   Local and remote modes supported; remote uses `agent -p` with stream-json.
-- `haqi gemini` - Start Gemini mode via ACP. See `src/agent/runners/runAgentSession.ts`.
+- `matemind gemini` - Start Gemini mode via ACP. See `src/agent/runners/runAgentSession.ts`.
   Note: Gemini runs in remote mode only; it waits for messages from the hub UI/Telegram.
-- `haqi opencode` - Start OpenCode mode via ACP. See `src/opencode/runOpencode.ts`.
+- `matemind opencode` - Start OpenCode mode via ACP. See `src/opencode/runOpencode.ts`.
   Note: OpenCode supports local and remote modes; local mode streams via OpenCode plugins.
 
 ### Authentication
 
-- `haqi auth status` - Show authentication configuration and token source.
-- `haqi auth login` - Interactively enter and save CLI_API_TOKEN.
-- `haqi auth logout` - Clear saved credentials.
+- `matemind auth status` - Show authentication configuration and token source.
+- `matemind auth login` - Interactively enter and save CLI_API_TOKEN.
+- `matemind auth logout` - Clear saved credentials.
 
 See `src/commands/auth.ts`.
 
 ### Runner management
 
-- `haqi runner start` - Start runner as detached process.
-- `haqi runner stop` - Stop runner gracefully.
-- `haqi runner status` - Show runner diagnostics.
-- `haqi runner list` - List active sessions managed by runner.
-- `haqi runner stop-session <sessionId>` - Terminate specific session.
-- `haqi runner logs` - Print path to latest runner log file.
+- `matemind runner start` - Start runner as detached process.
+- `matemind runner stop` - Stop runner gracefully.
+- `matemind runner status` - Show runner diagnostics.
+- `matemind runner list` - List active sessions managed by runner.
+- `matemind runner stop-session <sessionId>` - Terminate specific session.
+- `matemind runner logs` - Print path to latest runner log file.
 
 See `src/runner/run.ts`.
 
 ### Diagnostics
 
-- `haqi doctor` - Show full diagnostics (version, runner status, logs, processes).
-- `haqi doctor clean` - Kill runaway HAQI processes.
+- `matemind doctor` - Show full diagnostics (version, runner status, logs, processes).
+- `matemind doctor clean` - Kill runaway Matemind processes.
 
 See `src/ui/doctor.ts`.
 
 ### Other
 
-- `haqi mcp` - Start MCP stdio bridge. See `src/codex/happyMcpStdioBridge.ts`.
-- `haqi hub` - Start the bundled hub (single binary workflow).
-- `haqi server` - Alias for `haqi hub`.
+- `matemind mcp` - Start MCP stdio bridge. See `src/codex/happyMcpStdioBridge.ts`.
+- `matemind hub` - Start the bundled hub (single binary workflow).
+- `matemind server` - Alias for `matemind hub`.
 
 ## Configuration
 
 See `src/configuration.ts` for all options.
 
+Legacy names still work. At start-up, a legacy `HAPI_X` or `HAQI_X` variable fills `MATEMIND_X` when `MATEMIND_X` is unset.
+
 ### Required
 
-- `CLI_API_TOKEN` - Shared secret; must match the hub. Can be set via env or `~/.hapi/settings.json` (env wins).
-- `HAPI_API_URL` - Hub base URL (default: http://localhost:3006).
+- `CLI_API_TOKEN` - Shared secret; must match the hub. Can be set via env or `~/.matemind/settings.json` (env wins).
+- `MATEMIND_API_URL` - Hub base URL (default: http://localhost:3006).
 
 ### Optional
 
-- `HAPI_HOME` - Config/data directory (default: ~/.hapi).
-- `HAPI_EXPERIMENTAL` - Enable experimental features (true/1/yes).
-- `HAPI_CLAUDE_PATH` - Path to a specific `claude` executable.
-- `HAPI_HTTP_MCP_URL` - Default MCP target for `haqi mcp`.
-- `HAPI_CODEX_ENABLE_REPORT_PROMPT` - Enable the extra Codex developer prompt section that teaches report MCP usage, including default report share creation and public share link format like `<report-public-base-url>/share/r/<token>` (default: disabled).
-- `HAPI_GEMINI_PROMPT_TIMEOUT_MS` - Gemini ACP prompt timeout in milliseconds (default: 1800000; set `0` or negative to disable).
+- `MATEMIND_HOME` - Config/data directory (default: ~/.matemind).
+- `MATEMIND_EXPERIMENTAL` - Enable experimental features (true/1/yes).
+- `MATEMIND_CLAUDE_PATH` - Path to a specific `claude` executable.
+- `MATEMIND_HTTP_MCP_URL` - Default MCP target for `matemind mcp`.
+- `MATEMIND_CODEX_ENABLE_REPORT_PROMPT` - Enable the extra Codex developer prompt section that teaches report MCP usage, including default report share creation and public share link format like `<report-public-base-url>/share/r/<token>` (default: disabled).
+- `MATEMIND_GEMINI_PROMPT_TIMEOUT_MS` - Gemini ACP prompt timeout in milliseconds (default: 1800000; set `0` or negative to disable).
 
 ### Runner
 
-- `HAPI_RUNNER_HEARTBEAT_INTERVAL` - Heartbeat interval in ms (default: 60000).
-- `HAPI_RUNNER_HTTP_TIMEOUT` - HTTP timeout for runner control in ms (default: 10000).
+- `MATEMIND_RUNNER_HEARTBEAT_INTERVAL` - Heartbeat interval in ms (default: 60000).
+- `MATEMIND_RUNNER_HTTP_TIMEOUT` - HTTP timeout for runner control in ms (default: 10000).
 
 ### Worktree (set by runner)
 
-- `HAPI_WORKTREE_BASE_PATH` - Base repository path.
-- `HAPI_WORKTREE_BRANCH` - Current branch name.
-- `HAPI_WORKTREE_NAME` - Worktree name.
-- `HAPI_WORKTREE_PATH` - Full worktree path.
-- `HAPI_WORKTREE_CREATED_AT` - Creation timestamp (ms).
+- `MATEMIND_WORKTREE_BASE_PATH` - Base repository path.
+- `MATEMIND_WORKTREE_BRANCH` - Current branch name.
+- `MATEMIND_WORKTREE_NAME` - Worktree name.
+- `MATEMIND_WORKTREE_PATH` - Full worktree path.
+- `MATEMIND_WORKTREE_CREATED_AT` - Creation timestamp (ms).
 
 ## Storage
 
-Data is stored in `~/.hapi/` (or `$HAPI_HOME`):
+Data is stored in `~/.matemind/` (or `$MATEMIND_HOME`).
+If `~/.matemind` does not exist and `~/.hapi` does, Matemind uses `~/.hapi` as is. It does not copy or move it.
+
+Files:
 
 - `settings.json` - User settings (machineId, token, onboarding flag). See `src/persistence.ts`.
 - `runner.state.json` - Runner state (pid, port, version, heartbeat).
@@ -109,7 +114,7 @@ Data is stored in `~/.hapi/` (or `$HAPI_HOME`):
 ## Requirements
 
 - Claude CLI installed and logged in (`claude` on PATH).
-- Cursor Agent CLI installed (`agent` on PATH) for `haqi cursor`. Install: `curl https://cursor.com/install -fsS | bash` (macOS/Linux), `irm 'https://cursor.com/install?win32=true' | iex` (Windows).
+- Cursor Agent CLI installed (`agent` on PATH) for `matemind cursor`. Install: `curl https://cursor.com/install -fsS | bash` (macOS/Linux), `irm 'https://cursor.com/install?win32=true' | iex` (Windows).
 - OpenCode CLI installed (`opencode` on PATH).
 - Bun for building from source.
 
@@ -132,10 +137,10 @@ bun run build:single-exe
 ## Deploy locally after build (Linux)
 
 ```bash
-cp -a ~/.local/bin/haqi ~/.local/bin/haqi.bak.$(date +%Y%m%d-%H%M%S)
-install -m 755 ./cli/dist-exe/bun-linux-x64/hapi ~/.local/bin/haqi
-haqi runner stop || true
-haqi runner start
+cp -a ~/.local/bin/matemind ~/.local/bin/matemind.bak.$(date +%Y%m%d-%H%M%S)
+install -m 755 ./cli/dist-exe/bun-linux-x64/matemind ~/.local/bin/matemind
+matemind runner stop || true
+matemind runner start
 ```
 
 ## Source structure
@@ -161,18 +166,18 @@ haqi runner start
 当前功能默认关闭。仅在确认使用的是隔离测试账号时开启：
 
 ```bash
-export HAPI_CLAUDE_ACCOUNT_HANDOFF=1
-mkdir -p "$HAPI_HOME/claude-accounts/work" "$HAPI_HOME/claude-accounts/personal"
-CLAUDE_CONFIG_DIR="$HAPI_HOME/claude-accounts/work" claude   # 分别完成登录
-CLAUDE_CONFIG_DIR="$HAPI_HOME/claude-accounts/personal" claude
-cat > "$HAPI_HOME/claude-accounts.json" <<'JSON'
+export MATEMIND_CLAUDE_ACCOUNT_HANDOFF=1
+mkdir -p "$MATEMIND_HOME/claude-accounts/work" "$MATEMIND_HOME/claude-accounts/personal"
+CLAUDE_CONFIG_DIR="$MATEMIND_HOME/claude-accounts/work" claude   # 分别完成登录
+CLAUDE_CONFIG_DIR="$MATEMIND_HOME/claude-accounts/personal" claude
+cat > "$MATEMIND_HOME/claude-accounts.json" <<'JSON'
 {"version":1,"initialAccount":"work","autoSwitch":false,"profiles":[
-  {"id":"work","email":"work@example.com","configDir":"/绝对路径/.hapi/claude-accounts/work","trustGroup":"同一授权组"},
-  {"id":"personal","email":"personal@example.com","configDir":"/绝对路径/.hapi/claude-accounts/personal","trustGroup":"同一授权组"}
+  {"id":"work","email":"work@example.com","configDir":"/绝对路径/.matemind/claude-accounts/work","trustGroup":"同一授权组"},
+  {"id":"personal","email":"personal@example.com","configDir":"/绝对路径/.matemind/claude-accounts/personal","trustGroup":"同一授权组"}
 ]}
 JSON
 ```
 
-实验版仅支持 HAQI remote 会话；会话中可用 `/account list`、`/account use <id>`、`/account auto on|off`。切换只在回合和工具安全完成后发生；通过 `context_handoff` 交接，HAQI session 保持不变。存在未完成工具、后台 Agent、过长历史或无法核验身份时 fail-closed，不自动重放。
+实验版仅支持 Matemind remote 会话；会话中可用 `/account list`、`/account use <id>`、`/account auto on|off`。切换只在回合和工具安全完成后发生；通过 `context_handoff` 交接，Matemind session 保持不变。存在未完成工具、后台 Agent、过长历史或无法核验身份时 fail-closed，不自动重放。
 
 不要把真实邮箱、token 或配置目录提交到仓库；账号 JSON 只存元数据，凭据由 Claude 的隔离配置目录管理。

@@ -1,3 +1,15 @@
+Matemind CLI
+Copyright (c) 2026 Matemind contributors
+
+Matemind is derived from hapi (https://github.com/tiann/hapi) by weishu
+and haqi (https://github.com/jasonczc/haqi) by jasonczc. Both are
+licensed under the GNU Affero General Public License v3.0.
+
+haqi
+Copyright (c) 2026 jasonczc
+
+---
+
 hapi CLI
 Copyright (c) 2024-2025 weishu
 

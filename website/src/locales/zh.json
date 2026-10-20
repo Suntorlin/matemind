@@ -8,126 +8,126 @@
   },
   "hero": {
     "version": "{{version}} 现已发布",
-    "title": "Vibe Coding <br/> <span class=\"text-primary\">随时随地，自由编程</span>",
-    "subtitle": "去徒步，去喝咖啡，或者只是放松一下。你的 AI 代理在后台为你工作。只有在需要你确认时，我们才会通过你喜欢的即时通讯应用通知你。",
-    "startBtn": "开启自由之旅",
+    "title": "你只管说要什么。<br/> <span class=\"text-primary block mt-4 text-3xl md:text-5xl\">Matemind 帮你拆、帮你盯、给你结论。</span>",
+    "subtitle": "你的 AI 编程团队的大副。agent 在你的电脑上干活。Matemind 学你的标准，盯住会话，把结论发到你手机上。",
+    "startBtn": "阅读文档",
     "githubBtn": "查看 GitHub",
     "notification": {
-      "title": "即时通知",
-      "content": "\"任务完成！更新了 3 个文件。<br/>准备好审查了吗？\""
+      "title": "审查通过",
+      "content": "\"改了 3 个文件。审查结果：通过。<br/>报告已可分享。\""
     }
   },
   "showcase": {
     "handoff": "无缝切换",
-    "title": "始于桌面，<br class=\"hidden md:block\" /> <span class=\"text-primary\">续于任何地方，随时切回。</span>",
-    "subtitle": "会话驻留在你的电脑上，手机只是一个窗口。本地就是原生 Claude Code 或 Codex，外出时切换到手机，双空格键瞬间切回本地。",
+    "title": "在终端开始，<br class=\"hidden md:block\" /> <span class=\"text-primary\">在手机上继续，随时切回。</span>",
+    "subtitle": "会话跑在你的电脑上，手机只是一个窗口。在终端里用官方 Claude Code 或 Codex。离开时切到手机。回来连按两次空格切回本地。",
     "localCore": {
-      "title": "本地核心",
-      "desc": "繁重的计算在你的高性能桌面上完成。没有云端限制。"
+      "title": "跑在你的电脑上",
+      "desc": "agent 在你自己的电脑上运行。数据留在那里。"
     },
     "remoteControl": {
-      "title": "远程控制",
-      "desc": "通过 PWA 或即时通讯应用访问一切。零延迟体验。"
+      "title": "用手机控制",
+      "desc": "用网页、PWA 或 Telegram 小程序。"
     },
     "modeSwitch": {
-      "title": "自由切换",
-      "desc": "在终端和手机之间无缝切换。双空格键切回本地。会话状态完美同步。"
+      "title": "随时切换",
+      "desc": "在终端和手机之间切换。会话上下文不丢。"
     },
     "screenshots": {
       "startAnywhere": {
-        "title": "随时开始",
-        "desc": "直接从手机启动 Claude、Codex 或 Gemini 会话。"
+        "title": "在手机上开会话",
+        "desc": "直接在手机上启动 Claude Code、Codex、Cursor、Gemini 或 OpenCode 会话。"
       },
       "seamlessChat": {
-        "title": "无缝对话",
-        "desc": "无缝衔接之前的编程对话，上下文完全保留。"
+        "title": "接着聊",
+        "desc": "从上次停下的地方继续对话。"
       },
       "reviewCode": {
-        "title": "代码审查",
-        "desc": "完整的语法高亮，随时随地审查代码变更。"
+        "title": "看改动",
+        "desc": "带语法高亮的 diff。"
       },
       "fullTerminal": {
-        "title": "全功能终端",
-        "desc": "远程执行命令，完全掌控你的开发环境。"
+        "title": "终端",
+        "desc": "在工作机器上执行命令。"
       },
       "powerfulCommands": {
-        "title": "强大指令",
-        "desc": "使用 /review, /undo 等指令高效控制代理。"
+        "title": "斜杠命令",
+        "desc": "在手机上使用 agent 的斜杠命令和技能。"
       },
       "manageWorkspaces": {
-        "title": "工作区管理",
-        "desc": "在多个活跃会话和工作树之间瞬间切换。"
+        "title": "会话多也不乱",
+        "desc": "打标签、置顶、挂起。一眼看出哪个会话在等你。"
       }
     }
   },
   "lifestyle": {
-    "title": "\"Vibe Coding\" 生活方式",
-    "subtitle": "HAPI 不仅仅是一个工具；它是你从办公桌解放的独立宣言。",
+    "title": "Matemind 补上了什么",
+    "subtitle": "Matemind 不做 agent 编排。它懂你。agent 是你的船员。",
     "cards": {
       "explore": {
-        "title": "去探索",
-        "desc": "代理在你的高性能桌面上运行。你？你在几英里外欣赏风景。"
+        "title": "懂你",
+        "desc": "Matemind 从你的原话里提出记忆，每条都附上原话，由你批准。群聊里用 @名字 把任务发给会话。"
       },
       "sip": {
-        "title": "品味与决策",
-        "desc": "收到手机通知。审查计划。点击“批准”。继续享用你的拿铁。"
+        "title": "帮你盯",
+        "desc": "标签、任务、置顶和挂起，让很多会话保持有序。在手机上审批。查看多个 Claude 账号的剩余额度。"
       },
       "walk": {
-        "title": "潇洒离开",
-        "desc": "字面意思。离开屏幕。HAPI 会保持会话活跃且安全，直到你回来。"
+        "title": "给你结论",
+        "desc": "agent 发布报告并生成分享链接。审查会话先检查结果，再交给你。"
       }
     }
   },
   "features": {
-    "title": "随需而动的力量",
+    "title": "少读一点，少做决定",
     "telegram": {
-      "title": "即时通讯集成",
-      "desc": "距离与控制的完美平衡。通过 Telegram 或其他应用，只在真正需要你输入时才通知你。"
+      "title": "会话之间的群聊",
+      "desc": "把会话放进一个群。@名字 把任务发给一个会话，@all 发给所有在线成员。群笔记记录目标、进展、待办和风险。"
     },
     "yolo": {
-      "title": "YOLO 模式",
-      "desc": "信任你的代理？开启 YOLO 模式，跳过审批，让你在睡梦中也能飞速开发。"
+      "title": "审查循环",
+      "desc": "选一个执行会话和一个审查会话。审查会话通过、打回并附意见，或者找你。到轮数上限就停。"
     },
     "terminal": {
-      "title": "全功能终端访问",
-      "desc": "需要介入？你的口袋里就有一个全功能终端。修复问题，然后忘掉它。"
+      "title": "可分享的报告",
+      "desc": "agent 通过 MCP 工具写报告。用公开链接分享，对方不用登录。"
     }
   },
   "howItWorks": {
     "title": "工作原理",
     "step1": {
-      "title": "1. 桌面启动",
-      "desc": "在你的机器上启动 HAPI。它会保持会话活跃，随时准备远程访问。"
+      "title": "1. 在电脑上启动",
+      "desc": "运行 Matemind hub，启动会话。它让会话保持在线，供远程访问。"
     },
     "step2": {
-      "title": "2. 移动连接",
-      "desc": "打开 PWA 或小程序。你现在完全掌控了本地开发环境。"
+      "title": "2. 在手机上打开",
+      "desc": "打开网页或 Telegram 小程序，用访问令牌登录。"
     },
     "step3": {
-      "title": "3. Vibe Code",
-      "desc": "让代理完成繁重工作。批准变更，运行命令，享受你的自由。"
+      "title": "3. 说你要什么",
+      "desc": "agent 干活。Matemind 帮你盯，给你结论。"
     }
   },
   "installation": {
-    "title": "几秒钟内开始",
-    "e2ee": "🔒 WireGuard + TLS 端对端加密",
+    "title": "开始使用",
+    "e2ee": "🔒 中继使用 WireGuard + TLS 端到端加密",
     "npm": {
-      "step1": "1. 启动服务器",
-      "step2": "2. 启动编码会话",
-      "step3": "3. 打开 URL",
-      "step3Hint": "终端中显示 URL 和二维码"
+      "step1": "1. 启动 hub",
+      "step2": "2. 启动编程会话",
+      "step3": "3. 打开网址",
+      "step3Hint": "终端会显示网址和二维码"
     }
   },
   "cta": {
-    "title": "准备好 Vibe 了吗？",
-    "subtitle": "加入这场革命。停止盯着进度条，开始享受你的生活。",
-    "btn": "立即开始"
+    "title": "你来当船长。",
+    "subtitle": "你说要什么。agent 干活。Matemind 汇报。",
+    "btn": "开始使用"
   },
   "footer": {
-    "desc": "Vibe Coding 随时随地。 <br/> 为热爱自由的开发者打造的本地优先 AI 代理平台。",
+    "desc": "你的 AI 编程团队的大副。<br/> 开源，跑在你自己的电脑上。",
     "product": "产品",
     "community": "社区",
-    "copyright": "© {{year}} HAPI Team. 基于 AGPL 协议开源。",
-    "designedWith": "为 Vibe Coding <span class=\"text-red-500\">♥</span> 精心设计。"
+    "copyright": "© {{year}} Matemind contributors。基于 AGPL-3.0 开源，派生自 hapi 和 haqi。",
+    "designedWith": "agent 是船员，你是船长。"
   }
 }

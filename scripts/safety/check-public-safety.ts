@@ -40,7 +40,8 @@ const ALLOWED_HOME_NAMES = new Set(['me', 'user', 'username', 'YOUR_USERNAME', '
 /** Email domains that are fine to publish. */
 const ALLOWED_EMAIL = [
     /@example\.(com|org|net)$/i,
-    /@matemind\.run$/i,
+    /@hapi\.run$/i, // upstream hapi contact addresses (legacy names kept on purpose)
+    /@matemind\.ai$/i,
     /^noreply@/i,
     /^git@github\.com$/i,
     /@users\.noreply\.github\.com$/i,
@@ -66,7 +67,7 @@ const GENERIC_RULES: ContentRule[] = [
         re: /\/(Users|home)\/([A-Za-z0-9_.-]+)/g,
         allow: (m) => ALLOWED_HOME_NAMES.has(m.split('/')[2]) && m.split('/')[2] !== userInfo().username,
     },
-    { rule: 'agent account dir', kind: 'privacy', re: /\.matemind-matemind\d*\/claude-accounts|\baccount-[0-9a-f]{8}\b/g },
+    { rule: 'agent account dir', kind: 'privacy', re: /\.(?:hapi-haqi|matemind)\d*\/claude-accounts|\baccount-[0-9a-f]{8}\b/g },
     { rule: 'notes path', kind: 'privacy', re: /Mobile Documents\/iCloud~md~obsidian/g },
     { rule: 'tunnel credential', kind: 'secret', re: /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.cfargotunnel\.com|"TunnelSecret"\s*:/g },
     {
@@ -246,7 +247,7 @@ function selfTest(): void {
     const bad = [
         'see https://chat.corp-private.test/share/r/x', // public-safety: allow
         'cd /Users/alice-private/Documents', // public-safety: allow
-        '~/.matemind-matemind3/claude-accounts/account-0123abcd', // public-safety: allow
+        '~/.hapi-haqi3/claude-accounts/account-0123abcd', // public-safety: allow
         'Mobile Documents/iCloud~md~obsidian/Documents/Vault', // public-safety: allow
         '00000000-1111-2222-3333-444444444444.cfargotunnel.com', // public-safety: allow
         'ssh 192.168.3.14', // public-safety: allow

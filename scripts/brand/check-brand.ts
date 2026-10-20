@@ -19,7 +19,8 @@ const ALLOW: RegExp[] = [
     /\bLEGACY_|legacyEnv|legacyBrand|before the Matemind rename|was called HAQI/, // compatibility code (say why on the line)
 ]
 
-const files = (await $`git ls-files -- ${CODE_PATHS}`.text()).split('\n').filter((file) => file && file !== 'scripts/brand/check-brand.ts')
+const files = (await $`git ls-files -- ${CODE_PATHS}`.text()).split('\n')// Files that exist to handle the old names: compatibility code and the privacy guard.
+    .filter((file) => file && file !== 'scripts/brand/check-brand.ts' && !/(^|\/)legacy\w*\.(test\.)?ts$|^scripts\/safety\//.test(file))
 const problems: string[] = []
 for (const file of files) {
     const text = await Bun.file(file).text().catch(() => '')

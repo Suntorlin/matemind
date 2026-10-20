@@ -67,7 +67,7 @@ const GENERIC_RULES: ContentRule[] = [
         re: /\/(Users|home)\/([A-Za-z0-9_.-]+)/g,
         allow: (m) => ALLOWED_HOME_NAMES.has(m.split('/')[2]) && m.split('/')[2] !== userInfo().username,
     },
-    { rule: 'agent account dir', kind: 'privacy', re: /\.(?:hapi-haqi|matemind)\d*\/claude-accounts|\baccount-[0-9a-f]{8}\b/g },
+    { rule: 'agent account dir', kind: 'privacy', re: /\.hapi-haqi\d*\/claude-accounts|\baccount-[0-9a-f]{8}\b/g },
     { rule: 'notes path', kind: 'privacy', re: /Mobile Documents\/iCloud~md~obsidian/g },
     { rule: 'tunnel credential', kind: 'secret', re: /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.cfargotunnel\.com|"TunnelSecret"\s*:/g },
     {

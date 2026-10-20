@@ -13,7 +13,7 @@ export default {
   'session.load.back': 'Back to sessions',
 
   // Login / Auth
-  'login.title': 'HAQI',
+  'login.title': 'Matemind',
   'login.subtitle': 'Vibe Coding Anytime, Anywhere',
   'login.bind.title': 'Bind Telegram',
   'login.submit': 'Sign In',
@@ -30,10 +30,10 @@ export default {
   'login.server.default': '(Default)',
   'login.server.custom': '(Custom)',
   'login.server.title': 'Hub URL',
-  'login.server.description': 'Set haqi hub origin for API and live updates.',
+  'login.server.description': 'Set matemind hub origin for API and live updates.',
   'login.server.current': 'Current:',
   'login.server.origin': 'Hub origin',
-  'login.server.placeholder': 'https://haqi.example.com',
+  'login.server.placeholder': 'https://matemind.example.com',
   'login.server.hint': 'Use http(s) only. Any path is ignored.',
   'login.server.required': 'Hub URL required. Please set it before signing in.',
   'login.server.useSameOrigin': 'Use same origin',
@@ -437,8 +437,8 @@ export default {
   'send.blocked.noConnection': 'Not connected to server',
 
   // Install prompt
-  'install.title': 'Install HAQI',
-  'install.description': 'Add HAQI to your home screen for quick access.',
+  'install.title': 'Install Matemind',
+  'install.description': 'Add Matemind to your home screen for quick access.',
   'install.button': 'Install',
 
   // Language switcher
@@ -482,7 +482,7 @@ export default {
   'settings.claudeAccounts.checkFailed': 'Not logged in yet',
   'settings.claudeAccounts.help': 'Login & notes',
   'settings.claudeAccounts.help.login': 'Run the login command in a desktop terminal on the selected machine (macOS needs an unlocked login keychain; do not run it over SSH):',
-  'settings.claudeAccounts.help.notes': 'HAPI_HOME is the runner\'s data directory (default ~/.hapi). Sign in with the matching email, then click "Check login". Credentials stay on that machine; removing an entry does not log the account out. Quota comes from session observations, and automatic takeover is experimental.',
+  'settings.claudeAccounts.help.notes': 'MATEMIND_HOME is the runner\'s data directory (default ~/.matemind). Sign in with the matching email, then click "Check login". Credentials stay on that machine; removing an entry does not log the account out. Quota comes from session observations, and automatic takeover is experimental.',
   'claudeAccounts.quota.unknown': 'Quota unknown · waiting for session rate-limit info',
   'claudeAccounts.quota.usageUnknown': 'usage unknown',
   'claudeAccounts.quota.used': 'used {percent}%',
@@ -641,7 +641,7 @@ export default {
   'settings.reportDomain.status.reloaded': 'Reloaded',
   'settings.reportDomain.status.saveFailed': 'Save failed',
   'settings.reportDomain.status.loadFailed': 'Failed to load report domain',
-  'settings.reportDomain.status.envLocked': 'Locked by environment variable (HAPI_REPORT_PUBLIC_BASE_URL)',
+  'settings.reportDomain.status.envLocked': 'Locked by environment variable (MATEMIND_REPORT_PUBLIC_BASE_URL)',
   'settings.reportDomain.actions.reload': 'Reload',
   'settings.reportDomain.actions.save': 'Save',
   'settings.reportDomain.actions.saving': 'Saving…',
@@ -651,7 +651,7 @@ export default {
   'settings.memory.title': 'Memory',
   'settings.memory.description': 'Edit global MEMORY.md used by all sessions. Toggle controls whether it is injected into new session prompts. Disabled while Pure Context Mode is on.',
   'settings.memory.pureContextMode.title': 'Pure context mode',
-  'settings.memory.pureContextMode.description': 'When enabled, HAQI skips all automatic context/prompt injections for agents.',
+  'settings.memory.pureContextMode.description': 'When enabled, Matemind skips all automatic context/prompt injections for agents.',
   'settings.memory.injection.title': 'Inject into prompts',
   'settings.memory.injection.description': 'When enabled, MEMORY.md is injected as global context for new sessions.',
   'settings.memory.pathLoading': 'Loading path…',
@@ -674,7 +674,7 @@ export default {
   'settings.experimental.claudeLoginShell.title': 'Claude login shell',
   'settings.experimental.claudeLoginShell.description': 'Launch Claude through /bin/zsh -lc for behavior closer to your interactive shell. Default off.',
   'settings.experimental.codexReportPrompt.title': 'Codex report prompt injection',
-  'settings.experimental.codexReportPrompt.description': 'Inject extra Codex developer instructions for HAQI report MCP usage. Default off.',
+  'settings.experimental.codexReportPrompt.description': 'Inject extra Codex developer instructions for Matemind report MCP usage. Default off.',
   'settings.experimental.status.loadFailed': 'Failed to load experimental settings',
   'settings.experimental.status.saveFailed': 'Failed to save experimental settings',
   'settings.experimental.status.claudeLoginShellEnabled': 'Claude login shell enabled',

@@ -1,3 +1,4 @@
+import './lib/legacyStorage'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -76,7 +77,7 @@ function getInitialPath(): string {
 // to pick up the new build instead of leaving a lazy page blank.
 window.addEventListener('vite:preloadError', (event) => {
     try {
-        const key = 'hapi:preload-reload'
+        const key = 'matemind:preload-reload'
         if (sessionStorage.getItem(key) === '1') {
             return
         }
@@ -108,7 +109,7 @@ async function bootstrap() {
             onNeedRefresh() {
                 // Auto-apply updates to avoid users being stuck on stale hashed bundles.
                 try {
-                    const key = 'hapi:pwa-updating'
+                    const key = 'matemind:pwa-updating'
                     if (sessionStorage.getItem(key) === '1') {
                         return
                     }

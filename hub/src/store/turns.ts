@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
 import { randomUUID } from 'node:crypto'
-import { unwrapRoleWrappedRecordEnvelope } from '@hapi/protocol/messages'
+import { unwrapRoleWrappedRecordEnvelope } from '@matemind/protocol/messages'
 
 import { safeJsonParse } from './json'
 import type { StoredConversationTurn, StoredMessage } from './types'

@@ -83,7 +83,7 @@ describe('SessionList project quick-create action', () => {
     })
 
     it('does not show quick archive action when disabled in settings', () => {
-        localStorage.setItem('hapi:sessionQuickArchive', '0')
+        localStorage.setItem('matemind:sessionQuickArchive', '0')
 
         renderWithProviders(
             <SessionList
@@ -105,7 +105,7 @@ describe('SessionList project quick-create action', () => {
 
     beforeEach(() => {
         localStorage.clear()
-        localStorage.setItem('hapi-lang', 'en')
+        localStorage.setItem('matemind-lang', 'en')
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
             value: vi.fn().mockImplementation((query: string) => ({
@@ -145,7 +145,7 @@ describe('SessionList project quick-create action', () => {
     })
 
     it('uses quick create callback on group-level + when enabled in settings', () => {
-        localStorage.setItem('hapi:projectQuickCreate', '1')
+        localStorage.setItem('matemind:projectQuickCreate', '1')
         const onNewSession = vi.fn()
         const onQuickCreateInProject = vi.fn()
 
@@ -175,7 +175,7 @@ describe('SessionList project quick-create action', () => {
     })
 
     it('opens detailed create on right click of project + when quick create is enabled', () => {
-        localStorage.setItem('hapi:projectQuickCreate', '1')
+        localStorage.setItem('matemind:projectQuickCreate', '1')
         const onNewSession = vi.fn()
         const onQuickCreateInProject = vi.fn()
 
@@ -335,7 +335,7 @@ describe('SessionList project quick-create action', () => {
     })
 
     it('keeps project offline preference across initial empty loading state', () => {
-        localStorage.setItem('hapi:sessionsProjectOffline', JSON.stringify(['/repo/persisted']))
+        localStorage.setItem('matemind:sessionsProjectOffline', JSON.stringify(['/repo/persisted']))
 
         const first = renderWithProviders(
             <SessionList

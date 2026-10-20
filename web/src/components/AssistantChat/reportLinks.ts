@@ -1,4 +1,4 @@
-/** A published HAQI report: https://<host>/share/r/<token> (the link report_create returns). */
+/** A published Matemind report: https://<host>/share/r/<token> (the link report_create returns). */
 const REPORT_LINK = /https?:\/\/[^\s"'<>)\]\\]+\/share\/r\/[A-Za-z0-9_-]+/g
 
 const MAX_REPORT_LINKS = 3

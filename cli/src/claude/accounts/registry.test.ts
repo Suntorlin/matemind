@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { readPool, savePool } from './registry';
 
 let home: string;
-beforeEach(async () => { home = await mkdtemp(join(tmpdir(), 'haqi-pool-test-')); });
+beforeEach(async () => { home = await mkdtemp(join(tmpdir(), 'matemind-pool-test-')); });
 afterEach(async () => { await rm(home, { recursive: true, force: true }); });
 const pool = { initialAccount: 'first', autoSwitch: false, profiles: [
     { id: 'first', email: 'first@example.com', trustGroup: 'personal', enabled: true },

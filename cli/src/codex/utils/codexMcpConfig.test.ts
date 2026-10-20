@@ -5,8 +5,8 @@ describe('codexMcpConfig', () => {
     describe('buildMcpServerConfigArgs', () => {
         it('builds config args for a single MCP server', () => {
             const mcpServers = {
-                hapi: {
-                    command: 'hapi',
+                matemind: {
+                    command: 'matemind',
                     args: ['mcp', '--url', 'http://localhost:3000']
                 }
             };
@@ -14,21 +14,21 @@ describe('codexMcpConfig', () => {
             const args = buildMcpServerConfigArgs(mcpServers);
 
             expect(args).toEqual([
-                '-c', 'mcp_servers.hapi.command="hapi"',
-                '-c', "mcp_servers.hapi.args=['mcp','--url','http://localhost:3000']"
+                '-c', 'mcp_servers.matemind.command="matemind"',
+                '-c', "mcp_servers.matemind.args=['mcp','--url','http://localhost:3000']"
             ]);
         });
 
         it('builds config args for multiple MCP servers', () => {
             const mcpServers = {
-                hapi: { command: 'hapi', args: ['mcp'] },
+                matemind: { command: 'matemind', args: ['mcp'] },
                 other: { command: 'node', args: ['server.js'] }
             };
 
             const args = buildMcpServerConfigArgs(mcpServers);
 
             expect(args).toContain('-c');
-            expect(args).toContain('mcp_servers.hapi.command="hapi"');
+            expect(args).toContain('mcp_servers.matemind.command="matemind"');
             expect(args).toContain('mcp_servers.other.command="node"');
         });
 
@@ -55,13 +55,13 @@ describe('codexMcpConfig', () => {
 
     describe('buildDeveloperInstructionsArg', () => {
         it('builds developer instructions arg', () => {
-            const instructions = 'Call functions.hapi__change_title to set title.';
+            const instructions = 'Call functions.matemind__change_title to set title.';
 
             const args = buildDeveloperInstructionsArg(instructions);
 
             expect(args).toEqual([
                 '-c',
-                'developer_instructions="Call functions.hapi__change_title to set title."'
+                'developer_instructions="Call functions.matemind__change_title to set title."'
             ]);
         });
 

@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 
 // Sessions that finished (ready for input) while the user was looking elsewhere. Shown as a dot on the
 // session avatar; opening the session clears it. Kept in localStorage so a reload does not lose it.
-const STORAGE_KEY = 'hapi:unreadSessions'
+const STORAGE_KEY = 'matemind:unreadSessions'
 const MAX_TRACKED = 200
 
 let unread: ReadonlySet<string> = load()

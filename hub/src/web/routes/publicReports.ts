@@ -250,7 +250,7 @@ function buildSharePageHtml(options: {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(options.title)} · HAQI Report</title>
+  <title>${escapeHtml(options.title)} · Matemind Report</title>
   <style>
     :root { color-scheme: light dark; }
     body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }

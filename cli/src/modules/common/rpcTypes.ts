@@ -1,4 +1,4 @@
-import type { ClaudeAccountSelection } from '@hapi/protocol/schemas'
+import type { ClaudeAccountSelection } from '@matemind/protocol/schemas'
 
 export interface SpawnSessionOptions {
     claudeAccount?: ClaudeAccountSelection

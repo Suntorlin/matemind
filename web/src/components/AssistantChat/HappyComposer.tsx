@@ -1,4 +1,4 @@
-import { getPermissionModeOptionsForFlavor } from '@hapi/protocol'
+import { getPermissionModeOptionsForFlavor } from '@matemind/protocol'
 import { ComposerPrimitive, useAssistantApi, useAssistantState } from '@assistant-ui/react'
 import type { Attachment } from '@assistant-ui/react'
 import {
@@ -21,7 +21,7 @@ import type {
     ModelMode,
     PermissionMode
 } from '@/types/api'
-import type { ClaudeRateLimitSnapshot } from '@hapi/protocol/types'
+import type { ClaudeRateLimitSnapshot } from '@matemind/protocol/types'
 import type { Suggestion } from '@/hooks/useActiveSuggestions'
 import type { ConversationStatus } from '@/realtime/types'
 import type { QueueInlinePanelMode } from '@/hooks/useQueueInlinePanel'
@@ -94,7 +94,7 @@ type ComposerInjectedPrompt = {
 const defaultSuggestionHandler = async (): Promise<Suggestion[]> => []
 const SEND_DEBOUNCE_MS = 600
 const COMPACT_COMMAND = '/compact'
-const COMPOSER_DRAFT_STORAGE_PREFIX = 'hapi:sessionComposerDraft:'
+const COMPOSER_DRAFT_STORAGE_PREFIX = 'matemind:sessionComposerDraft:'
 
 type ComposerDraft = {
     text: string

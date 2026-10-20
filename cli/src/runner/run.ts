@@ -18,7 +18,7 @@ import { maybeAutoStartServer } from '@/utils/autoStartServer';
 import { isBunCompiled, projectPath } from '@/projectPath';
 
 import { cleanupRunnerState, getInstalledCliMtimeMs, isRunnerRunningCurrentlyInstalledHappyVersion, stopRunner } from './controlClient';
-import { normalizeClaudeModelValue } from '@hapi/protocol';
+import { normalizeClaudeModelValue } from '@matemind/protocol';
 import { startRunnerControlServer } from './controlServer';
 import { createWorktree, removeWorktree, type WorktreeInfo } from './worktree';
 import { join } from 'path';
@@ -37,8 +37,8 @@ export async function startRunner(): Promise<void> {
   //
   // In case the setup malfunctions - our signal handlers will not properly
   // shut down. We will force exit the process with code 1.
-  let requestShutdown: (source: 'hapi-app' | 'hapi-cli' | 'os-signal' | 'exception', errorMessage?: string) => void;
-  let resolvesWhenShutdownRequested = new Promise<({ source: 'hapi-app' | 'hapi-cli' | 'os-signal' | 'exception', errorMessage?: string })>((resolve) => {
+  let requestShutdown: (source: 'matemind-app' | 'matemind-cli' | 'os-signal' | 'exception', errorMessage?: string) => void;
+  let resolvesWhenShutdownRequested = new Promise<({ source: 'matemind-app' | 'matemind-cli' | 'os-signal' | 'exception', errorMessage?: string })>((resolve) => {
     requestShutdown = (source, errorMessage) => {
       logger.debug(`[RUNNER RUN] Requesting shutdown (source: ${source}, errorMessage: ${errorMessage})`);
 
@@ -154,7 +154,7 @@ export async function startRunner(): Promise<void> {
     // Helper functions
     const getCurrentChildren = () => Array.from(pidToTrackedSession.values());
 
-    // Handle webhook from HAPI session reporting itself
+    // Handle webhook from Matemind session reporting itself
     const onHappySessionWebhook = (sessionId: string, sessionMetadata: Metadata) => {
       logger.debugLargeJson(`[RUNNER RUN] Session reported`, sessionMetadata);
 
@@ -187,7 +187,7 @@ export async function startRunner(): Promise<void> {
       } else if (!existingSession) {
         // New session started externally
         const trackedSession: TrackedSession = {
-          startedBy: 'hapi directly - likely by user from terminal',
+          startedBy: 'matemind directly - likely by user from terminal',
           happySessionId: sessionId,
           happySessionMetadataFromLocalWebhook: sessionMetadata,
           pid
@@ -317,10 +317,10 @@ export async function startRunner(): Promise<void> {
 
         // Resolve authentication token if provided
         let extraEnv: Record<string, string> = {
-          HAPI_CLAUDE_ACCOUNT_HANDOFF: '0',
-          HAPI_CLAUDE_ACCOUNT: '',
-          HAPI_CLAUDE_ACCOUNT_AUTO: '',
-          HAPI_CLAUDE_ACCOUNT_RESUME_IDLE: '0'
+          MATEMIND_CLAUDE_ACCOUNT_HANDOFF: '0',
+          MATEMIND_CLAUDE_ACCOUNT: '',
+          MATEMIND_CLAUDE_ACCOUNT_AUTO: '',
+          MATEMIND_CLAUDE_ACCOUNT_RESUME_IDLE: '0'
         };
         if (options.claudeAccount) {
           if (agent !== 'claude' || options.token) throw new Error('账号池只支持 Claude 会话，不能与外部 token 混用');
@@ -347,19 +347,19 @@ export async function startRunner(): Promise<void> {
             await fs.mkdir(targetDir, { recursive: true, mode: 0o700 });
             if (sourceFile !== targetFile) await fs.copyFile(sourceFile, targetFile);
           }
-          extraEnv.HAPI_CLAUDE_ACCOUNT_HANDOFF = '1';
-          extraEnv.HAPI_CLAUDE_ACCOUNT = options.claudeAccount.accountId;
-          extraEnv.HAPI_CLAUDE_ACCOUNT_AUTO = options.claudeAccount.automatic ? '1' : '0';
+          extraEnv.MATEMIND_CLAUDE_ACCOUNT_HANDOFF = '1';
+          extraEnv.MATEMIND_CLAUDE_ACCOUNT = options.claudeAccount.accountId;
+          extraEnv.MATEMIND_CLAUDE_ACCOUNT_AUTO = options.claudeAccount.automatic ? '1' : '0';
           // The transcript is copied into the target account directory above;
           // an explicit account switch must wait for the next real user message
           // instead of manufacturing a new turn on startup.
-          if (options.resumeSessionId) extraEnv.HAPI_CLAUDE_ACCOUNT_RESUME_IDLE = '1';
+          if (options.resumeSessionId) extraEnv.MATEMIND_CLAUDE_ACCOUNT_RESUME_IDLE = '1';
         }
         if (options.token) {
           if (options.agent === 'codex') {
 
             // Create a temporary directory for Codex
-            const codexHomeDir = await fs.mkdtemp(join(os.tmpdir(), 'hapi-codex-'));
+            const codexHomeDir = await fs.mkdtemp(join(os.tmpdir(), 'matemind-codex-'));
 
             // Write the token to the temporary directory
             await fs.writeFile(join(codexHomeDir, 'auth.json'), options.token);
@@ -378,11 +378,11 @@ export async function startRunner(): Promise<void> {
         if (worktreeInfo) {
           extraEnv = {
             ...extraEnv,
-            HAPI_WORKTREE_BASE_PATH: worktreeInfo.basePath,
-            HAPI_WORKTREE_BRANCH: worktreeInfo.branch,
-            HAPI_WORKTREE_NAME: worktreeInfo.name,
-            HAPI_WORKTREE_PATH: worktreeInfo.worktreePath,
-            HAPI_WORKTREE_CREATED_AT: String(worktreeInfo.createdAt)
+            MATEMIND_WORKTREE_BASE_PATH: worktreeInfo.basePath,
+            MATEMIND_WORKTREE_BRANCH: worktreeInfo.branch,
+            MATEMIND_WORKTREE_NAME: worktreeInfo.name,
+            MATEMIND_WORKTREE_PATH: worktreeInfo.worktreePath,
+            MATEMIND_WORKTREE_CREATED_AT: String(worktreeInfo.createdAt)
           };
         }
 
@@ -413,7 +413,7 @@ export async function startRunner(): Promise<void> {
                 args.push('--resume', options.resumeSessionId);
             }
         }
-        args.push('--hapi-starting-mode', 'remote', '--started-by', 'runner');
+        args.push('--matemind-starting-mode', 'remote', '--started-by', 'runner');
         if (options.model && agent !== 'opencode') {
           const resolvedModel = (agent === 'claude' ? normalizeClaudeModelValue(options.model) : undefined) ?? options.model;
           args.push('--model', resolvedModel);
@@ -455,7 +455,7 @@ export async function startRunner(): Promise<void> {
         };
 
         // In development mode, Bun path aliases only resolve reliably when cwd is cli project root.
-        // Keep actual target directory in HAPI_WORKING_DIRECTORY to preserve session behavior.
+        // Keep actual target directory in MATEMIND_WORKING_DIRECTORY to preserve session behavior.
         const executionCwd = isBunCompiled() ? spawnDirectory : projectPath();
 
         happyProcess = spawnHappyCLI(args, {
@@ -465,7 +465,7 @@ export async function startRunner(): Promise<void> {
           env: {
             ...process.env,
             ...extraEnv,
-            HAPI_WORKING_DIRECTORY: spawnDirectory
+            MATEMIND_WORKING_DIRECTORY: spawnDirectory
           }
         });
 
@@ -486,7 +486,7 @@ export async function startRunner(): Promise<void> {
           if (spawnErrorBeforePidCheck) {
             details.push(formatSpawnError(spawnErrorBeforePidCheck));
           }
-          const errorMessage = `Failed to spawn HAPI process - no PID returned (${details.join('; ')})`;
+          const errorMessage = `Failed to spawn Matemind process - no PID returned (${details.join('; ')})`;
           logger.debug('[RUNNER RUN] Failed to spawn process - no PID returned', spawnErrorBeforePidCheck ?? null);
           reportSpawnOutcomeToHub?.({
             type: 'error',
@@ -688,7 +688,7 @@ export async function startRunner(): Promise<void> {
       getChildren: getCurrentChildren,
       stopSession,
       spawnSession,
-      requestShutdown: () => requestShutdown('hapi-cli'),
+      requestShutdown: () => requestShutdown('matemind-cli'),
       onHappySessionWebhook
     });
 
@@ -749,7 +749,7 @@ export async function startRunner(): Promise<void> {
     apiMachine.setRPCHandlers({
       spawnSession,
       stopSession,
-      requestShutdown: () => requestShutdown('hapi-app')
+      requestShutdown: () => requestShutdown('matemind-app')
     });
 
     // Connect to server
@@ -798,7 +798,7 @@ export async function startRunner(): Promise<void> {
     // 2. Check if runner needs update
     // 3. If outdated, restart with latest version
     // 4. Write heartbeat
-    const heartbeatIntervalMs = parseInt(process.env.HAPI_RUNNER_HEARTBEAT_INTERVAL || '60000');
+    const heartbeatIntervalMs = parseInt(process.env.MATEMIND_RUNNER_HEARTBEAT_INTERVAL || '60000');
     let heartbeatRunning = false
     const restartOnStaleVersionAndHeartbeat = setInterval(async () => {
       if (heartbeatRunning) {
@@ -880,7 +880,7 @@ export async function startRunner(): Promise<void> {
     }, heartbeatIntervalMs); // Every 60 seconds in production
 
     // Setup signal handlers
-    const cleanupAndShutdown = async (source: 'hapi-app' | 'hapi-cli' | 'os-signal' | 'exception', errorMessage?: string) => {
+    const cleanupAndShutdown = async (source: 'matemind-app' | 'matemind-cli' | 'os-signal' | 'exception', errorMessage?: string) => {
       logger.debug(`[RUNNER RUN] Starting proper cleanup (source: ${source}, errorMessage: ${errorMessage})...`);
 
       // Clear health check interval

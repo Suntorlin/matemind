@@ -142,13 +142,11 @@ export function collectToolIdsFromMessages(messages: NormalizedMessage[]): Set<s
     return ids
 }
 
+// Sessions recorded before the Matemind rename used the "haqi" and "hapi" server names.
+const CHANGE_TITLE_SERVERS = ['matemind', 'haqi', 'hapi'] // haqi, hapi: before the Matemind rename
+
 export function isChangeTitleToolName(name: string): boolean {
-    return [
-        'mcp__haqi__change_title',
-        'haqi__change_title',
-        'mcp__hapi__change_title',
-        'hapi__change_title'
-    ].includes(name)
+    return CHANGE_TITLE_SERVERS.some((server) => name === `mcp__${server}__change_title` || name === `${server}__change_title`)
 }
 
 export function extractTitleFromChangeTitleInput(input: unknown): string | null {

@@ -170,7 +170,7 @@ export function LoginPrompt(props: LoginPromptProps) {
                 {/* Help links */}
                 {!isBindMode && (
                     <div className="flex items-center justify-between text-[13px] text-[var(--social-fg-muted)]">
-                        <a href="https://hapi.run/docs" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline hover:text-[var(--social-fg)]">
+                        <a href="https://matemind.ai/docs" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline hover:text-[var(--social-fg)]">
                             {t('login.help')}
                         </a>
                         <Dialog open={isServerDialogOpen} onOpenChange={handleServerDialogOpenChange}>
@@ -230,7 +230,7 @@ export function LoginPrompt(props: LoginPromptProps) {
             {/* Footer */}
             <div className="absolute bottom-4 left-0 right-0 text-center text-[12px] text-[var(--social-fg-muted)] space-y-1">
                 <div>{t('login.footer')} <span className="text-[var(--social-danger)]">♥</span> {t('login.footer.for')}</div>
-                <div>{t('login.footer.copyright')} {new Date().getFullYear()} HAQI</div>
+                <div>{t('login.footer.copyright')} {new Date().getFullYear()} Matemind</div>
             </div>
         </div>
     )

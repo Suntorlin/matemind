@@ -29,8 +29,8 @@ function closeStore(store: Store): void {
 
 describe('Store schema repair', () => {
     it('auto-repairs missing group tables when user_version is already current', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'haqi-store-repair-'))
-        const dbPath = join(dir, 'hapi.db')
+        const dir = mkdtempSync(join(tmpdir(), 'matemind-store-repair-'))
+        const dbPath = join(dir, 'matemind.db')
 
         const seeded = new Store(dbPath)
         const seededDb = (seeded as unknown as { db: Database }).db
@@ -71,8 +71,8 @@ describe('Store schema repair', () => {
     })
 
     it('runs the migration chain from v8 to the current version and creates report tables', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'haqi-store-repair-'))
-        const dbPath = join(dir, 'hapi.db')
+        const dir = mkdtempSync(join(tmpdir(), 'matemind-store-repair-'))
+        const dbPath = join(dir, 'matemind.db')
 
         const seeded = new Store(dbPath)
         const seededDb = (seeded as unknown as { db: Database }).db

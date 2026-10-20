@@ -1,5 +1,5 @@
 import type { SessionModelMode } from '@/api/types'
-import { inferClaudeModelModeFromModel, normalizeClaudeModelValue } from '@hapi/protocol'
+import { inferClaudeModelModeFromModel, normalizeClaudeModelValue } from '@matemind/protocol'
 
 // Mirrors cc CLI `--effort` (low/medium/high/xhigh/max). `xhigh` is Opus 4.7-only;
 // cc downgrades unsupported levels server-side, so we accept the full set here.

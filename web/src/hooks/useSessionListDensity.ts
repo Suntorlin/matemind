@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 export type SessionListDensity = 'comfortable' | 'compact'
 
-const STORAGE_KEY = 'hapi:sessionListDensity'
+const STORAGE_KEY = 'matemind:sessionListDensity'
 
 function normalizeDensity(value: string | null): SessionListDensity {
     return value === 'compact' ? 'compact' : 'comfortable'

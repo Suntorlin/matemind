@@ -181,28 +181,28 @@ describe('AppServerEventConverter', () => {
 
     it('maps web search item to generic tool call', () => {
         const converter = new AppServerEventConverter();
-        const action = { type: 'search', query: 'hapi', queries: ['hapi'] };
+        const action = { type: 'search', query: 'matemind', queries: ['matemind'] };
 
         const started = converter.handleNotification('item/started', {
-            item: { id: 'ws-1', type: 'webSearch', query: 'hapi', action }
+            item: { id: 'ws-1', type: 'webSearch', query: 'matemind', action }
         });
 
         expect(started).toEqual([{
             type: 'tool_call_begin',
             call_id: 'ws-1',
             name: 'WebSearch',
-            input: { query: 'hapi', action }
+            input: { query: 'matemind', action }
         }]);
 
         const completed = converter.handleNotification('item/completed', {
-            item: { id: 'ws-1', type: 'webSearch', query: 'hapi', action, status: 'completed' }
+            item: { id: 'ws-1', type: 'webSearch', query: 'matemind', action, status: 'completed' }
         });
 
         expect(completed).toEqual([{
             type: 'tool_call_end',
             call_id: 'ws-1',
             name: 'WebSearch',
-            output: { query: 'hapi', action, status: 'completed' }
+            output: { query: 'matemind', action, status: 'completed' }
         }]);
     });
 
@@ -243,7 +243,7 @@ describe('AppServerEventConverter', () => {
                 server: 'web',
                 tool: 'search',
                 status: 'inProgress',
-                arguments: { query: 'hapi' }
+                arguments: { query: 'matemind' }
             }
         });
 
@@ -255,7 +255,7 @@ describe('AppServerEventConverter', () => {
                 server: 'web',
                 tool: 'search',
                 status: 'inProgress',
-                arguments: { query: 'hapi' }
+                arguments: { query: 'matemind' }
             }
         }]);
 

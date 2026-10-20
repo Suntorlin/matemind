@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from '@/lib/use-translation'
-import type { ClaudeRateLimitEntry, ClaudeRateLimitSnapshot, ClaudeRateLimitType } from '@hapi/protocol/types'
+import type { ClaudeRateLimitEntry, ClaudeRateLimitSnapshot, ClaudeRateLimitType } from '@matemind/protocol/types'
 
 type UsagePanelProps = {
     contextSize?: number

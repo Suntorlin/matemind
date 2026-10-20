@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import type { SyncEvent } from '@hapi/protocol/types'
+import type { SyncEvent } from '@matemind/protocol/types'
 import type { Server } from 'socket.io'
 import { Store } from '../store'
 import { RpcRegistry } from '../socket/rpcRegistry'

@@ -257,7 +257,7 @@ export function createReportsRoutes(options: {
         const current = options.getReportPublicBaseUrl()
         if (current.envOverride) {
             return c.json({
-                error: 'Report public domain is controlled by environment variable HAPI_REPORT_PUBLIC_BASE_URL'
+                error: 'Report public domain is controlled by environment variable MATEMIND_REPORT_PUBLIC_BASE_URL'
             }, 409)
         }
 

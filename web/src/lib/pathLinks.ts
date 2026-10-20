@@ -1,6 +1,6 @@
 import type { PermissionMode } from '@/types/api'
 
-const PATH_LINK_PREFIX = 'hapi-file://'
+const PATH_LINK_PREFIX = 'matemind-file://'
 const WINDOWS_ABSOLUTE_PATH_REGEX = /^[A-Za-z]:[\\/]/;
 
 const YOLO_PERMISSION_MODES = new Set<PermissionMode>([

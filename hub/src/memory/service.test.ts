@@ -50,7 +50,7 @@ describe('MemoryService.propose', () => {
     let dir = ''
     const previousKey = process.env.JEV_API_KEY
     beforeAll(() => {
-        dir = mkdtempSync(join(tmpdir(), 'haqi-memory-'))
+        dir = mkdtempSync(join(tmpdir(), 'matemind-memory-'))
         process.env.JEV_API_KEY = 'test-key'
     })
     afterAll(() => {
@@ -69,7 +69,7 @@ describe('MemoryService.propose', () => {
             fetchFn: fakeJev(calls)
         })
         const propose = (text: string, extra: Partial<Parameters<MemoryService['propose']>[0]> = {}) =>
-            service.propose({ namespace: 'default', text, said: false, source: 'propose', sourceLabel: null, sessionId: null, project: 'haqi', ...extra })
+            service.propose({ namespace: 'default', text, said: false, source: 'propose', sourceLabel: null, sessionId: null, project: 'matemind', ...extra })
 
         expect(await propose('发正式站前先备份 dist，出问题直接拷回去', { said: true })).toMatchObject({ action: 'candidate', message: expect.stringContaining('agent 记的') })
         expect(await propose('发布一律先备份再替换入口文件', { source: 'user_message' })).toMatchObject({ action: 'pending', message: expect.stringContaining('等你审批') })
@@ -120,7 +120,7 @@ describe('MemoryService.propose', () => {
             namespace: 'default', text: '部署前先备份 dist', level: 'experience', scope: '', status: 'active', reason: null, source: 'claude_auto', sourceLabel: null,
             sessionId: null, said: true, support: 1, jev: null, overridden: null, replaces: null
         })
-        expect(await service.propose({ namespace: 'default', text: '以后部署前记得备份 dist', said: true, source: 'user_message', sourceLabel: null, sessionId: null, project: 'haqi' })).toMatchObject({ action: 'reinforced', memoryId: agentNote.id })
+        expect(await service.propose({ namespace: 'default', text: '以后部署前记得备份 dist', said: true, source: 'user_message', sourceLabel: null, sessionId: null, project: 'matemind' })).toMatchObject({ action: 'reinforced', memoryId: agentNote.id })
         await service.maintain('default')
         expect(store.memories.get(agentNote.id, 'default')).toMatchObject({ status: 'pending', said: true, reason: '你说过' })
 
@@ -192,7 +192,7 @@ describe('MemoryService.propose', () => {
     it('puts unsure memories on trial, promotes them by mentions and lets old ones go', async () => {
         const store = new Store(':memory:')
         const service = new MemoryService(store, { paths: () => ({ dataDir: dir, settingsFile: join(dir, 'settings.json') }), onChange: () => {}, fetchFn: fakeJev([]) })
-        const propose = (text: string) => service.propose({ namespace: 'default', text, said: false, source: 'propose', sourceLabel: null, sessionId: null, project: 'haqi' })
+        const propose = (text: string) => service.propose({ namespace: 'default', text, said: false, source: 'propose', sourceLabel: null, sessionId: null, project: 'matemind' })
 
         const first = await propose('也许周一构建慢是因为推送前缓存是冷的')
         expect(first).toMatchObject({ action: 'candidate' })
@@ -225,7 +225,7 @@ describe('MemoryService.propose', () => {
             sessionId: null, said: false, support: 1, jev: null, overridden: null, replaces: null
         })
         const kept = insert('禁止自动 push 到远程分支', 'active', '')
-        const twin = insert('修复只本地提交，不要自己推送 push', 'candidate', 'haqi')
+        const twin = insert('修复只本地提交，不要自己推送 push', 'candidate', 'matemind')
         const other = insert('回复一律用中文', 'active', '')
 
         expect(await service.maintain('default')).toMatchObject({ embedded: 3, merged: 1 })
@@ -266,7 +266,7 @@ describe('MemoryService.propose', () => {
         const quietName = quiet.split('/').pop()!
         expect(names.indexOf(busyName)).toBeLessThan(names.indexOf(quietName))
         expect(known.find((p) => p.name === busyName)).toMatchObject({ sessions: 2, path: busy })
-        expect(names).toContain('haqi')
+        expect(names).toContain('matemind')
         rmSync(busy, { recursive: true, force: true })
         rmSync(quiet, { recursive: true, force: true })
         ;(store as unknown as { db: Database }).db.close()
@@ -275,10 +275,10 @@ describe('MemoryService.propose', () => {
     it('turns capture off and limits projects from settings', async () => {
         const store = new Store(':memory:')
         const service = new MemoryService(store, { paths: () => ({ dataDir: dir, settingsFile: join(dir, 'settings.json') }), onChange: () => {}, fetchFn: fakeJev([]) })
-        await service.updateSettings({ projects: ['haqi', 'agent-engine'] })
-        expect((await service.getSettings()).projects).toEqual(['haqi', 'agent-engine'])
+        await service.updateSettings({ projects: ['matemind', 'agent-engine'] })
+        expect((await service.getSettings()).projects).toEqual(['matemind', 'agent-engine'])
         await service.updateSettings({ mode: 'off' })
-        expect(await service.propose({ namespace: 'default', text: '任何内容都不收', said: false, source: 'propose', sourceLabel: null, sessionId: null, project: 'haqi' })).toMatchObject({ action: 'off' })
+        expect(await service.propose({ namespace: 'default', text: '任何内容都不收', said: false, source: 'propose', sourceLabel: null, sessionId: null, project: 'matemind' })).toMatchObject({ action: 'off' })
         await service.updateSettings({ mode: 'record' })
         ;(store as unknown as { db: Database }).db.close()
     })

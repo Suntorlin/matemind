@@ -187,7 +187,7 @@ function DesktopSplitView(props: { list: ReactNode; listVisible: boolean; childr
 function DesktopEmptyState(props: { title: string; subtitle?: string; action?: { label: string; onClick: () => void } }) {
     return (
         <div className="flex h-full flex-col items-center justify-center px-8 text-center">
-            <Orb seed="haqi" size={76} />
+            <Orb seed="matemind" size={76} />
             <div className="mt-5 text-[16px] font-semibold tracking-[-0.01em] text-[var(--social-fg)]">{props.title}</div>
             {props.subtitle ? (
                 <div className="mt-1.5 max-w-sm text-[13px] leading-relaxed text-[var(--social-fg-muted)]">{props.subtitle}</div>
@@ -203,7 +203,7 @@ function DesktopEmptyState(props: { title: string; subtitle?: string; action?: {
 
 type MobileSessionListMode = 'recent' | 'projects'
 
-const MOBILE_SESSION_LIST_MODE_KEY = 'hapi:mobileSessionListMode:v1'
+const MOBILE_SESSION_LIST_MODE_KEY = 'matemind:mobileSessionListMode:v1'
 
 function loadMobileSessionListMode(): MobileSessionListMode {
     try {
@@ -644,7 +644,7 @@ function SessionsPage() {
                 {isSessionsIndex ? (
                     <div className="flex h-full min-h-0 flex-col bg-[var(--social-surface)]">
                         <MobilePageHeader
-                            title="HAQI"
+                            title="Matemind"
                             subtitle={t('mobile.feed.onlineCount', { n: onlineCount, total: sessions.length })}
                             actions={listActions}
                         />

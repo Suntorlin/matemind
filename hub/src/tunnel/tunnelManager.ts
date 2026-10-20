@@ -14,10 +14,10 @@ import { join } from 'node:path'
 import { platform, arch, homedir } from 'node:os'
 import { isBunCompiled } from '../utils/bunCompiled'
 
-function getHapiHome(): string {
-    return process.env.HAPI_HOME
-        ? process.env.HAPI_HOME.replace(/^~/, homedir())
-        : join(homedir(), '.hapi')
+function getMatemindHome(): string {
+    return process.env.MATEMIND_HOME
+        ? process.env.MATEMIND_HOME.replace(/^~/, homedir())
+        : join(homedir(), '.matemind')
 }
 
 function getPlatformDir(): string {
@@ -42,9 +42,9 @@ function getTunwgPath(): string {
     const tunwgBinary = isWin ? 'tunwg.exe' : 'tunwg'
 
     if (isBunCompiled()) {
-        const hapiHome = getHapiHome()
+        const matemindHome = getMatemindHome()
         const packageJson = require('../../../cli/package.json')
-        const runtimePath = join(hapiHome, 'runtime', packageJson.version)
+        const runtimePath = join(matemindHome, 'runtime', packageJson.version)
         return join(runtimePath, 'tools', 'tunwg', tunwgBinary)
     }
 
@@ -58,7 +58,7 @@ export interface TunnelConfig {
     localPort: number
     enabled: boolean
     apiDomain?: string | null  // TUNWG_API - default: relay.hapi.run (official relay)
-    authKey?: string | null    // TUNWG_AUTH - default: hapi
+    authKey?: string | null    // TUNWG_AUTH - default: matemind
     useRelay?: boolean         // TUNWG_RELAY
 }
 
@@ -110,7 +110,7 @@ export class TunnelManager {
         const env: Record<string, string> = { ...process.env as Record<string, string> }
 
         if (!env.TUNWG_PATH) {
-            env.TUNWG_PATH = join(getHapiHome(), 'tunwg')
+            env.TUNWG_PATH = join(getMatemindHome(), 'tunwg')
         }
 
         if (this.config.apiDomain) {

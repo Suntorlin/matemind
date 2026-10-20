@@ -9,7 +9,7 @@ import type { LocalLaunchExitReason } from '@/agent/localLaunchPolicy';
 import type { ClaudeHookEvent as SessionHookData } from './hooks';
 import { readClaudeTeamSnapshotForSession } from './utils/claudeTeamSnapshot';
 import { applyRateLimitEvent, type SdkRateLimitInfo } from './utils/rateLimitSnapshot';
-import type { ClaudeUsageLimit } from '@hapi/protocol/schemas';
+import type { ClaudeUsageLimit } from '@matemind/protocol/schemas';
 
 type LocalLaunchFailure = {
     message: string;

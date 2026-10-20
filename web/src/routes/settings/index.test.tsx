@@ -3,10 +3,10 @@ import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/re
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { I18nContext, I18nProvider } from '@/lib/i18n-context'
 import { en } from '@/lib/locales'
-import { PROTOCOL_VERSION } from '@hapi/protocol'
+import { PROTOCOL_VERSION } from '@matemind/protocol'
 import SettingsPage from './index'
 
-const SETTINGS_GROUP_EXPANDED_STORAGE_KEY = 'hapi-settings-group-expanded-v1'
+const SETTINGS_GROUP_EXPANDED_STORAGE_KEY = 'matemind-settings-group-expanded-v1'
 
 const localStorageState = new Map<string, string>()
 const mockLocalStorage = {
@@ -364,7 +364,7 @@ describe('SettingsPage', () => {
         expect(screen.getByRole('menuitemcheckbox', { name: /Queue/i })).toBeChecked()
         fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /Direct/i }))
 
-        expect(window.localStorage.getItem('hapi:codexSendModeDefault')).toBe('direct')
+        expect(window.localStorage.getItem('matemind:codexSendModeDefault')).toBe('direct')
     })
 
     it('persists session reopen position preference', () => {
@@ -373,7 +373,7 @@ describe('SettingsPage', () => {
         fireEvent.click(screen.getByRole('button', { name: /Session Reopen Position/i }))
         fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /Restore last position/i }))
 
-        expect(window.localStorage.getItem('hapi:sessionReopenPosition:v1')).toBe('restore')
+        expect(window.localStorage.getItem('matemind:sessionReopenPosition:v1')).toBe('restore')
     })
 
     it('persists the empty queue bar preference', () => {
@@ -381,7 +381,7 @@ describe('SettingsPage', () => {
 
         fireEvent.click(screen.getByRole('switch', { name: /Show the queue bar when empty/i }))
 
-        expect(window.localStorage.getItem('hapi:mobileQueueEmptyState')).toBe('show')
+        expect(window.localStorage.getItem('matemind:mobileQueueEmptyState')).toBe('show')
     })
 
     it('displays the App Version with correct value', () => {
@@ -407,10 +407,10 @@ describe('SettingsPage', () => {
         renderWithProviders(<SettingsPage />)
         expandGroup(/About/)
         expect(screen.getAllByText('Website').length).toBeGreaterThanOrEqual(1)
-        const links = screen.getAllByRole('link', { name: 'hapi.run' })
+        const links = screen.getAllByRole('link', { name: 'matemind.ai' })
         expect(links.length).toBeGreaterThanOrEqual(1)
         const link = links[0]
-        expect(link).toHaveAttribute('href', 'https://hapi.run')
+        expect(link).toHaveAttribute('href', 'https://matemind.ai')
         expect(link).toHaveAttribute('target', '_blank')
         expect(link).toHaveAttribute('rel', 'noopener noreferrer')
     })

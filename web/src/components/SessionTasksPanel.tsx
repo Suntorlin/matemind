@@ -171,7 +171,7 @@ function TaskRow(props: {
     )
 }
 
-const LAST_TASK_TAG_KEY = 'hapi:lastTaskTag:v1'
+const LAST_TASK_TAG_KEY = 'matemind:lastTaskTag:v1'
 
 function loadLastTaskTag(): string | null {
     try {

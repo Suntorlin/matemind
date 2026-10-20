@@ -158,7 +158,7 @@ describe('public report markdown rendering', () => {
             size: 11
         })
 
-        const storageRoot = join(tmpdir(), `haqi-report-test-${Date.now()}`)
+        const storageRoot = join(tmpdir(), `matemind-report-test-${Date.now()}`)
         await mkdir(join(storageRoot, report.id), { recursive: true })
         await writeFile(join(storageRoot, report.id, asset.storageKey), 'hello world', 'utf8')
 

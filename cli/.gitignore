@@ -16,9 +16,9 @@ oclif.manifest.json
 
 # Generated npm platform packages (created by prepare-npm-packages.ts)
 /npm/*/package.json
-/npm/*/bin/hapi
-/npm/*/bin/hapi.exe
-/npm/*/bin/hapi.cjs
+/npm/*/bin/matemind
+/npm/*/bin/matemind.exe
+/npm/*/bin/matemind.cjs
 /npm/*/NOTICE
 
 

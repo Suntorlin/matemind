@@ -1,6 +1,6 @@
-# HAQI Agent Runtime Rules
+# Matemind Agent Runtime Rules
 
-本文件用于 HAQI CLI 启动时的运行规则加载。适用于 Claude/Codex。
+本文件用于 Matemind CLI 启动时的运行规则加载。适用于 Claude/Codex。
 
 ## A. 群聊协作（Group）
 

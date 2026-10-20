@@ -7,7 +7,7 @@ import { appendMcpConfigArg } from "./utils/mcpConfig";
 import { buildClaudeSystemPrompt } from "./utils/systemPrompt";
 import { withBunRuntimeEnv } from "@/utils/bunRuntime";
 import { spawnWithAbort } from "@/utils/spawnWithAbort";
-import { getHapiBlobsDir } from "@/constants/uploadPaths";
+import { getMatemindBlobsDir } from "@/constants/uploadPaths";
 import { stripNewlinesForWindowsShellArg } from "@/utils/shellEscape";
 import { getDefaultClaudeCodePath } from "./sdk/utils";
 import { readSettings } from "@/persistence";
@@ -101,8 +101,8 @@ export async function claudeLocal(opts: {
     logger.debug(`[ClaudeLocal] Using hook settings: ${opts.hookSettingsPath}`);
 
     // Add blobs directory for file upload access
-    args.push('--add-dir', getHapiBlobsDir());
-    logger.debug(`[ClaudeLocal] Adding blobs directory: ${getHapiBlobsDir()}`);
+    args.push('--add-dir', getMatemindBlobsDir());
+    logger.debug(`[ClaudeLocal] Adding blobs directory: ${getMatemindBlobsDir()}`);
 
     // Prepare environment variables
     // Note: Local mode uses global Claude installation
@@ -118,7 +118,7 @@ export async function claudeLocal(opts: {
 
     // Get Claude executable path
     const claudeCommand = getDefaultClaudeCodePath();
-    const shellClaudeCommand = process.env.HAPI_CLAUDE_PATH || 'claude';
+    const shellClaudeCommand = process.env.MATEMIND_CLAUDE_PATH || 'claude';
     logger.debug(`[ClaudeLocal] Using claude executable: ${claudeCommand}`);
     logger.debug(`[ClaudeLocal] Experimental login shell enabled: ${useExperimentalLoginShell}`);
 

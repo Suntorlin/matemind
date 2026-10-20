@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, realpath, rename, writeFile } from 'node:fs/promises';
 import { join, relative, isAbsolute } from 'node:path';
 import { z } from 'zod';
-import { ClaudeAccountPoolSchema, type ClaudeAccountPoolView } from '@hapi/protocol/schemas';
+import { ClaudeAccountPoolSchema, type ClaudeAccountPoolView } from '@matemind/protocol/schemas';
 import { accountEnvironment, loadAccounts, verifyAccount } from './profiles';
 import { getDefaultClaudeCodePath } from '../sdk/utils';
 

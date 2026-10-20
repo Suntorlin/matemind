@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import { randomUUID } from 'node:crypto'
 
-import type { SessionTask } from '@hapi/protocol/types'
+import type { SessionTask } from '@matemind/protocol/types'
 
 type SessionTaskRow = {
     id: string

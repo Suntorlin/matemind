@@ -65,14 +65,14 @@ jobs:
 
                   for dir in bun-*/; do
                       target="${dir%/}"
-                      # bun-darwin-arm64 -> hapi-darwin-arm64
-                      name="hapi-${target#bun-}"
+                      # bun-darwin-arm64 -> matemind-darwin-arm64
+                      name="matemind-${target#bun-}"
                       name="${name/windows/win32}"
 
                       if [[ "$target" == *"windows"* ]]; then
-                          zip -j "../release-artifacts/${name}.zip" "$target"/hapi.exe
+                          zip -j "../release-artifacts/${name}.zip" "$target"/matemind.exe
                       else
-                          tar -czvf "../release-artifacts/${name}.tar.gz" -C "$target" hapi
+                          tar -czvf "../release-artifacts/${name}.tar.gz" -C "$target" matemind
                       fi
                   done
 

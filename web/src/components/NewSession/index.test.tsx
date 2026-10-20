@@ -31,9 +31,9 @@ describe('NewSession initial directory preset', () => {
 
     beforeEach(() => {
         localStorage.clear()
-        localStorage.setItem('hapi-lang', 'en')
-        localStorage.setItem('hapi:lastMachineId', 'machine-1')
-        localStorage.setItem('hapi:recentPaths', JSON.stringify({
+        localStorage.setItem('matemind-lang', 'en')
+        localStorage.setItem('matemind:lastMachineId', 'machine-1')
+        localStorage.setItem('matemind:recentPaths', JSON.stringify({
             'machine-1': ['/recent/path']
         }))
         Object.defineProperty(window, 'matchMedia', {
@@ -221,7 +221,7 @@ describe('NewSession initial directory preset', () => {
             expect(spawnSession).toHaveBeenCalledTimes(1)
         })
 
-        const savedRaw = localStorage.getItem('hapi:newSession:lastConfig')
+        const savedRaw = localStorage.getItem('matemind:newSession:lastConfig')
         expect(savedRaw).not.toBeNull()
         const saved = JSON.parse(savedRaw ?? '{}')
         expect(saved.agent).toBe('codex')
@@ -265,11 +265,11 @@ describe('NewSession settings shared through the hub', () => {
 
     beforeEach(() => {
         localStorage.clear()
-        localStorage.setItem('hapi-lang', 'en')
-        localStorage.setItem('hapi:lastMachineId', 'machine-1')
-        localStorage.setItem('hapi:recentPaths', JSON.stringify({ 'machine-1': ['/recent/path'] }))
+        localStorage.setItem('matemind-lang', 'en')
+        localStorage.setItem('matemind:lastMachineId', 'machine-1')
+        localStorage.setItem('matemind:recentPaths', JSON.stringify({ 'machine-1': ['/recent/path'] }))
         // This browser last created a Sonnet / High session.
-        localStorage.setItem('hapi:newSession:lastConfig', JSON.stringify({
+        localStorage.setItem('matemind:newSession:lastConfig', JSON.stringify({
             agent: 'claude', model: 'sonnet', customModel: '', thinkEffort: 'high', yoloMode: true, sessionType: 'simple', savedAt: 1000
         }))
         Object.defineProperty(window, 'matchMedia', {
@@ -352,7 +352,7 @@ describe('NewSession settings shared through the hub', () => {
         })
         expect(onSuccess).toHaveBeenCalledWith('session-3')
         // The local copy takes the hub's time, so the two copies compare on one clock.
-        await waitFor(() => expect(JSON.parse(localStorage.getItem('hapi:newSession:lastConfig') ?? '{}').savedAt).toBe(3000))
+        await waitFor(() => expect(JSON.parse(localStorage.getItem('matemind:newSession:lastConfig') ?? '{}').savedAt).toBe(3000))
     })
 
     it('still creates the session when sharing the settings fails', async () => {

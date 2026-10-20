@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 
-const STORAGE_KEY = 'hapi:sessionsSidebarWidth'
+const STORAGE_KEY = 'matemind:sessionsSidebarWidth'
 const MIN_SIDEBAR_WIDTH = 280
 const DEFAULT_SIDEBAR_WIDTH = 380
 const DEFAULT_XL_SIDEBAR_WIDTH = 400

@@ -4,7 +4,9 @@ import { dirname, join } from 'node:path'
 import { trimIdent } from '@/utils/trimIdent'
 import { logger } from '@/ui/logger'
 
-const WORKSPACE_INSTRUCTIONS_FILE = 'HAQI-Agent.md'
+const WORKSPACE_INSTRUCTIONS_FILE = 'MATEMIND-Agent.md'
+/** The name before the Matemind rename; still read when the new file is missing. */
+const LEGACY_WORKSPACE_INSTRUCTIONS_FILE = 'HAQI-Agent.md'
 const GLOBAL_MEMORY_FILE = 'MEMORY.md'
 const GLOBAL_SETTINGS_FILE = 'settings.json'
 const DEFAULT_MEMORY_INJECTION_ENABLED = false
@@ -35,8 +37,10 @@ function findInstructionFile(startDir: string): string | null {
     let current = startDir
 
     while (true) {
-        const candidate = join(current, WORKSPACE_INSTRUCTIONS_FILE)
-        if (existsSync(candidate)) {
+        const candidate = [WORKSPACE_INSTRUCTIONS_FILE, LEGACY_WORKSPACE_INSTRUCTIONS_FILE]
+            .map((name) => join(current, name))
+            .find((path) => existsSync(path))
+        if (candidate) {
             return candidate
         }
         const parent = dirname(current)
@@ -47,20 +51,20 @@ function findInstructionFile(startDir: string): string | null {
     }
 }
 
-function resolveHapiHomeDir(): string {
-    const raw = process.env.HAPI_HOME?.trim()
+function resolveMatemindHomeDir(): string {
+    const raw = process.env.MATEMIND_HOME?.trim()
     if (raw && raw.length > 0) {
         return raw.replace(/^~(?=\/|$)/, homedir())
     }
-    return join(homedir(), '.hapi')
+    return join(homedir(), '.matemind')
 }
 
 function resolveGlobalMemoryPath(): string {
-    return join(resolveHapiHomeDir(), GLOBAL_MEMORY_FILE)
+    return join(resolveMatemindHomeDir(), GLOBAL_MEMORY_FILE)
 }
 
 function resolveGlobalSettingsPath(): string {
-    return join(resolveHapiHomeDir(), GLOBAL_SETTINGS_FILE)
+    return join(resolveMatemindHomeDir(), GLOBAL_SETTINGS_FILE)
 }
 
 type GlobalPromptSettings = {
@@ -107,7 +111,7 @@ function readGlobalPromptSettings(): GlobalPromptSettings {
             codexReportPromptEnabled
         }
     } catch (error) {
-        logger.debug('[haqi-agent-instructions] failed to load global settings', error)
+        logger.debug('[matemind-agent-instructions] failed to load global settings', error)
         return {
             memoryInjectionEnabled: DEFAULT_MEMORY_INJECTION_ENABLED,
             pureContextMode: DEFAULT_PURE_CONTEXT_MODE,
@@ -146,7 +150,7 @@ function trimToMaxBytes(content: string, maxBytes: number, filename: string): st
     return `${truncated}\n\n[truncated: ${filename} exceeded ${maxBytes} bytes]`
 }
 
-export function loadHaqiAgentInstructions(startDir: string): string | null {
+export function loadMatemindAgentInstructions(startDir: string): string | null {
     try {
         const filepath = findInstructionFile(startDir)
         if (!filepath) {
@@ -158,7 +162,7 @@ export function loadHaqiAgentInstructions(startDir: string): string | null {
         }
         return trimToMaxBytes(raw, MAX_FILE_BYTES, WORKSPACE_INSTRUCTIONS_FILE)
     } catch (error) {
-        logger.debug('[haqi-agent-instructions] failed to load instructions', error)
+        logger.debug('[matemind-agent-instructions] failed to load instructions', error)
         return null
     }
 }
@@ -176,18 +180,18 @@ export function loadGlobalMemory(): { path: string; content: string } | null {
             content: trimToMaxBytes(raw, MAX_FILE_BYTES, GLOBAL_MEMORY_FILE)
         }
     } catch (error) {
-        logger.debug('[haqi-agent-instructions] failed to load global memory', error)
+        logger.debug('[matemind-agent-instructions] failed to load global memory', error)
         return null
     }
 }
 
-export function buildPromptWithHaqiAgentInstructions(basePrompt: string, startDir: string): string {
+export function buildPromptWithMatemindAgentInstructions(basePrompt: string, startDir: string): string {
     const promptSettings = readGlobalPromptSettings()
     if (promptSettings.pureContextMode) {
         return basePrompt
     }
 
-    const instructions = loadHaqiAgentInstructions(startDir)
+    const instructions = loadMatemindAgentInstructions(startDir)
     const globalMemory = promptSettings.memoryInjectionEnabled ? loadGlobalMemory() : null
     if (!instructions && !globalMemory) {
         return basePrompt
@@ -197,10 +201,10 @@ export function buildPromptWithHaqiAgentInstructions(basePrompt: string, startDi
 
     if (instructions) {
         const instructionsPreface = trimIdent(`
-        Follow workspace operating rules in HAQI-Agent.md for group collaboration and memory usage.
+        Follow workspace operating rules in MATEMIND-Agent.md for group collaboration and memory usage.
         Treat them as runtime policy for this repository.
     `)
-        blocks.push(`${instructionsPreface}\n\n<haqi-agent-instructions>\n${instructions}\n</haqi-agent-instructions>`)
+        blocks.push(`${instructionsPreface}\n\n<matemind-agent-instructions>\n${instructions}\n</matemind-agent-instructions>`)
     }
 
     if (globalMemory) {
@@ -211,7 +215,7 @@ export function buildPromptWithHaqiAgentInstructions(basePrompt: string, startDi
         Never write session-specific details (task timelines, temporary TODOs, verbose debugging history).
         Keep entries short, high-signal, and remove outdated details instead of appending logs.
     `)
-        blocks.push(`${memoryPreface}\n\n<haqi-memory path="${globalMemory.path}">\n${globalMemory.content}\n</haqi-memory>`)
+        blocks.push(`${memoryPreface}\n\n<matemind-memory path="${globalMemory.path}">\n${globalMemory.content}\n</matemind-memory>`)
     }
 
     return blocks.join('\n\n')

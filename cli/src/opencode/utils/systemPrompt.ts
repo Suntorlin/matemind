@@ -2,17 +2,17 @@
  * OpenCode-specific system prompt for change_title tool.
  *
  * OpenCode exposes MCP tools with the naming pattern: <server-name>_<tool-name>
- * The haqi MCP server exposes `change_title`, so it's called as `haqi_change_title`.
+ * The matemind MCP server exposes `change_title`, so it's called as `matemind_change_title`.
  */
 
 import { trimIdent } from '@/utils/trimIdent';
-import { buildPromptWithHaqiAgentInstructions, isPureContextModeEnabled } from '@/agent/utils/haqiAgentInstructions';
+import { buildPromptWithMatemindAgentInstructions, isPureContextModeEnabled } from '@/agent/utils/matemindAgentInstructions';
 
 /**
- * Title instruction for OpenCode to call the haqi MCP tool.
+ * Title instruction for OpenCode to call the matemind MCP tool.
  */
 export const TITLE_INSTRUCTION = trimIdent(`
-    ALWAYS when you start a new chat - you must call the tool "haqi_change_title" to set a chat title.
+    ALWAYS when you start a new chat - you must call the tool "matemind_change_title" to set a chat title.
     Keep the title specific and stable across follow-up steps.
     Title must summarize the most important outcome of the session, not a secondary step.
     If you implemented a feature and also ran tests, title the feature work, not test execution.
@@ -20,7 +20,7 @@ export const TITLE_INSTRUCTION = trimIdent(`
     If the main topic changes significantly, call the tool again to update the title.
     This title is needed to easily find the chat in the future. Help human.
 
-    When the user states a lasting preference or rule, or you learn a durable lesson about this project (a pitfall, a build / deploy / test step that matters), call the tool "haqi_memory_propose" with one short sentence; set said_by_user when the user said it. Do not propose task progress, temporary details, secrets, or anything the code or git history already shows. A few per session at most.
+    When the user states a lasting preference or rule, or you learn a durable lesson about this project (a pitfall, a build / deploy / test step that matters), call the tool "matemind_memory_propose" with one short sentence; set said_by_user when the user said it. Do not propose task progress, temporary details, secrets, or anything the code or git history already shows. A few per session at most.
 `);
 
 /**
@@ -32,5 +32,5 @@ export function buildOpencodeSystemPrompt(startDir: string): string {
     if (isPureContextModeEnabled()) {
         return '';
     }
-    return buildPromptWithHaqiAgentInstructions(opencodeSystemPrompt, startDir);
+    return buildPromptWithMatemindAgentInstructions(opencodeSystemPrompt, startDir);
 }

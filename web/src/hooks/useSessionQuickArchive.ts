@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-const SESSION_QUICK_ARCHIVE_KEY = 'hapi:sessionQuickArchive'
+const SESSION_QUICK_ARCHIVE_KEY = 'matemind:sessionQuickArchive'
 
 function normalizeSessionQuickArchive(value: string | null): boolean {
     if (value === '0' || value === 'false') {

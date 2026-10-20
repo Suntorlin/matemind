@@ -13,7 +13,7 @@ export default {
   'session.load.back': '返回会话列表',
 
   // Login / Auth
-  'login.title': 'HAQI',
+  'login.title': 'Matemind',
   'login.subtitle': '随时随地，Vibe Coding',
   'login.bind.title': '绑定 Telegram',
   'login.submit': '登录',
@@ -30,10 +30,10 @@ export default {
   'login.server.default': '(默认)',
   'login.server.custom': '(自定义)',
   'login.server.title': '服务器地址',
-  'login.server.description': '设置 HAQI 服务器地址以使用 API 和实时更新。',
+  'login.server.description': '设置 Matemind 服务器地址以使用 API 和实时更新。',
   'login.server.current': '当前：',
   'login.server.origin': '服务器地址',
-  'login.server.placeholder': 'https://haqi.example.com',
+  'login.server.placeholder': 'https://matemind.example.com',
   'login.server.hint': '仅使用 http(s) 协议。任何路径将被忽略。',
   'login.server.required': '必须先填写服务器地址才能登录。',
   'login.server.useSameOrigin': '使用同源',
@@ -439,8 +439,8 @@ export default {
   'send.blocked.noConnection': '未连接到服务器',
 
   // Install prompt
-  'install.title': '安装 HAQI',
-  'install.description': '将 HAQI 添加到主屏幕以便快速访问。',
+  'install.title': '安装 Matemind',
+  'install.description': '将 Matemind 添加到主屏幕以便快速访问。',
   'install.button': '安装',
 
   // Language switcher
@@ -484,7 +484,7 @@ export default {
   'settings.claudeAccounts.checkFailed': '尚未登录',
   'settings.claudeAccounts.help': '登录说明',
   'settings.claudeAccounts.help.login': '在所选机器的图形界面终端执行登录命令（macOS 需已解锁登录钥匙串，不要通过 SSH）：',
-  'settings.claudeAccounts.help.notes': 'HAPI_HOME 为该 Runner 的数据目录（默认 ~/.hapi）。登录时选择上面填写的邮箱，完成后点「检查登录」。凭据只保存在对应机器，移除配置不会注销账号；额度来自会话观测，自动接管为实验功能。',
+  'settings.claudeAccounts.help.notes': 'MATEMIND_HOME 为该 Runner 的数据目录（默认 ~/.matemind）。登录时选择上面填写的邮箱，完成后点「检查登录」。凭据只保存在对应机器，移除配置不会注销账号；额度来自会话观测，自动接管为实验功能。',
   'claudeAccounts.quota.unknown': '额度未知 · 等待会话返回限额信息',
   'claudeAccounts.quota.usageUnknown': '用量未知',
   'claudeAccounts.quota.used': '已用 {percent}%',
@@ -643,7 +643,7 @@ export default {
   'settings.reportDomain.status.reloaded': '已重新加载',
   'settings.reportDomain.status.saveFailed': '保存失败',
   'settings.reportDomain.status.loadFailed': '加载报告域名失败',
-  'settings.reportDomain.status.envLocked': '被环境变量锁定（HAPI_REPORT_PUBLIC_BASE_URL）',
+  'settings.reportDomain.status.envLocked': '被环境变量锁定（MATEMIND_REPORT_PUBLIC_BASE_URL）',
   'settings.reportDomain.actions.reload': '重新加载',
   'settings.reportDomain.actions.save': '保存',
   'settings.reportDomain.actions.saving': '保存中…',
@@ -653,7 +653,7 @@ export default {
   'settings.memory.title': '记忆',
   'settings.memory.description': '编辑所有会话共享的全局 MEMORY.md。右侧开关控制是否注入到新会话提示词。开启“纯净上下文模式”后此开关会禁用。',
   'settings.memory.pureContextMode.title': '纯净上下文模式',
-  'settings.memory.pureContextMode.description': '开启后，HAQI 不再对各类 agent 自动注入上下文/提示词。',
+  'settings.memory.pureContextMode.description': '开启后，Matemind 不再对各类 agent 自动注入上下文/提示词。',
   'settings.memory.injection.title': '注入到提示词',
   'settings.memory.injection.description': '开启后，会在新会话中把 MEMORY.md 作为全局上下文注入。',
   'settings.memory.pathLoading': '正在加载路径…',
@@ -676,7 +676,7 @@ export default {
   'settings.experimental.claudeLoginShell.title': 'Claude 登录 Shell 启动',
   'settings.experimental.claudeLoginShell.description': '通过 /bin/zsh -lc 启动 Claude，更接近你平时交互式 shell 的行为。默认关闭。',
   'settings.experimental.codexReportPrompt.title': 'Codex report prompt 注入',
-  'settings.experimental.codexReportPrompt.description': '为 Codex 注入额外的 HAQI report MCP 使用说明。默认关闭。',
+  'settings.experimental.codexReportPrompt.description': '为 Codex 注入额外的 Matemind report MCP 使用说明。默认关闭。',
   'settings.experimental.status.loadFailed': '加载实验性设置失败',
   'settings.experimental.status.saveFailed': '保存实验性设置失败',
   'settings.experimental.status.claudeLoginShellEnabled': 'Claude 登录 Shell 启动已开启',

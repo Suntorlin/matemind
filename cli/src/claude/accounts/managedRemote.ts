@@ -7,10 +7,10 @@ import { copyFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getProjectPath } from '../utils/path';
 
-type RemoteOptions = Parameters<typeof claudeRemote>[0] & { onAccountState?: (state: import('@hapi/protocol/schemas').ClaudeAccountRuntime) => void };
+type RemoteOptions = Parameters<typeof claudeRemote>[0] & { onAccountState?: (state: import('@matemind/protocol/schemas').ClaudeAccountRuntime) => void };
 type Prepared = { profile: AccountProfile; prompt: string };
 
-/** Opt-in remote-only adapter. Keeps the outer HAQI client/session/queue untouched. */
+/** Opt-in remote-only adapter. Keeps the outer Matemind client/session/queue untouched. */
 export class ManagedClaudeRemote {
     readonly handoff: AccountHandoff;
     private initialized = false;
@@ -30,7 +30,7 @@ export class ManagedClaudeRemote {
         const base = { ...process.env, ...opts.claudeEnvVars };
         const envFor = (profile: AccountProfile) => accountEnvironment(base, profile);
         const verify = (profile: AccountProfile) => this.verify(getDefaultClaudeCodePath(), opts.path, envFor(profile), profile);
-        const publish = (status: import('@hapi/protocol/schemas').ClaudeAccountRuntime['status']) => opts.onAccountState?.({
+        const publish = (status: import('@matemind/protocol/schemas').ClaudeAccountRuntime['status']) => opts.onAccountState?.({
             id: this.handoff.current.id, email: this.handoff.current.email, automatic: this.handoff.automatic, status, updatedAt: Date.now()
         });
         const report = (message: string) => opts.onCompletionEvent?.(message);
@@ -52,7 +52,7 @@ export class ManagedClaudeRemote {
             // Start the resumed Claude process idle; injecting a synthetic prompt
             // would create an unsolicited duplicate turn after an otherwise idle
             // account switch.
-            const resumeWithoutMessage = resumeRequested && process.env.HAPI_CLAUDE_ACCOUNT_RESUME_IDLE === '1';
+            const resumeWithoutMessage = resumeRequested && process.env.MATEMIND_CLAUDE_ACCOUNT_RESUME_IDLE === '1';
             let resumeSeedConsumed = false;
             let prepared: Prepared | null = null;
             const prepare = async (id: string) => {
@@ -64,7 +64,7 @@ export class ManagedClaudeRemote {
                     await copyFile(source, join(targetDir, `${sessionId}.jsonl`));
                 }
                 publish('switching');
-                report(`正在停止旧进程，准备由 ${prepared.profile.email} 接管当前 HAQI 会话`);
+                report(`正在停止旧进程，准备由 ${prepared.profile.email} 接管当前 Matemind 会话`);
             };
             try {
                 this.hasLaunched = true;
@@ -137,7 +137,7 @@ export class ManagedClaudeRemote {
             sessionId = sessionId ?? null;
             seed = { message: '继续当前会话。不要重复已经完成的工作。', mode: lastMode };
             quotaNoticeSent = false;
-            report(`账号切换为 ${next.profile.email}，正在通过 context_handoff 接管；HAQI 会话保持不变`);
+            report(`账号切换为 ${next.profile.email}，正在通过 context_handoff 接管；Matemind 会话保持不变`);
         }
     }
 }

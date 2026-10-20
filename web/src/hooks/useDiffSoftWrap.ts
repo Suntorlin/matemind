@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-const DIFF_SOFT_WRAP_STORAGE_KEY = 'hapi:diffSoftWrap'
+const DIFF_SOFT_WRAP_STORAGE_KEY = 'matemind:diffSoftWrap'
 
 function readStoredDiffSoftWrap(): boolean {
     if (typeof window === 'undefined') return true

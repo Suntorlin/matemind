@@ -1,6 +1,6 @@
 /**
- * HAPI MCP server
- * Provides HAPI CLI specific tools including chat session title management
+ * Matemind MCP server
+ * Provides Matemind CLI specific tools including chat session title management
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -27,7 +27,7 @@ import {
     reportUpdateInputSchema,
     reviewLoopWorkerSubmitInputSchema,
     reviewLoopReviewerSubmitInputSchema
-} from "@/mcp/hapiMcpTools";
+} from "@/mcp/matemindMcpTools";
 
 type JsonObject = Record<string, unknown>;
 
@@ -138,13 +138,13 @@ export async function startHappyServer(client: ApiSessionClient) {
             && isLowSignalTitle(normalizedTitle)
         );
 
-        logger.debug('[hapiMCP] Changing title to:', normalizedTitle);
+        logger.debug('[matemindMCP] Changing title to:', normalizedTitle);
 
         if (!normalizedTitle) {
             return { success: false, error: 'Title cannot be empty.' };
         }
         if (shouldSkipLowSignalUpdate) {
-            logger.debug('[hapiMCP] Skipping low-signal title update', {
+            logger.debug('[matemindMCP] Skipping low-signal title update', {
                 currentTitle,
                 requestedTitle: normalizedTitle
             });
@@ -170,7 +170,7 @@ export async function startHappyServer(client: ApiSessionClient) {
     //
 
     const mcp = new McpServer({
-        name: "HAPI MCP",
+        name: "Matemind MCP",
         version: "1.0.0",
     });
 
@@ -180,7 +180,7 @@ export async function startHappyServer(client: ApiSessionClient) {
         inputSchema: changeTitleInputSchema,
     }, async (args: { title: string }) => {
         const response = await handler(args.title);
-        logger.debug('[hapiMCP] Response:', response);
+        logger.debug('[matemindMCP] Response:', response);
         
         if (response.success) {
             const message = response.skipped
@@ -528,7 +528,7 @@ export async function startHappyServer(client: ApiSessionClient) {
             'review_loop_reviewer_submit'
         ],
         stop: () => {
-            logger.debug('[hapiMCP] Stopping server');
+            logger.debug('[matemindMCP] Stopping server');
             mcp.close();
             server.close();
         }

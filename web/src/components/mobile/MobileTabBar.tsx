@@ -160,8 +160,8 @@ export function DesktopNavRail() {
                 type="button"
                 onClick={() => navigate({ to: '/sessions' })}
                 className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--social-primary)] text-[15px] font-semibold tracking-[-0.04em] text-[var(--social-primary-fg)] [-webkit-tap-highlight-color:transparent]"
-                aria-label="HAQI"
-                title="HAQI"
+                aria-label="Matemind"
+                title="Matemind"
             >
                 H
             </button>

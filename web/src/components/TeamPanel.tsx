@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react'
-import type { AgentState, TeamControlAction, TeamControlRequest, TeamState } from '@hapi/protocol/types'
+import type { AgentState, TeamControlAction, TeamControlRequest, TeamState } from '@matemind/protocol/types'
 import { Button } from '@/components/ui/button'
 import { SelectInput } from '@/components/ui/FormControls'
 import { DIALOG_INPUT_CLASS } from '@/components/RenameSessionDialog'

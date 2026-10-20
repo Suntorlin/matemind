@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ClaudeAccountPoolSchema, type ClaudeAccountPool, type ClaudeAccountPoolView } from '@hapi/protocol/schemas'
+import { ClaudeAccountPoolSchema, type ClaudeAccountPool, type ClaudeAccountPoolView } from '@matemind/protocol/schemas'
 import { ApiError, parseErrorCode, type ApiClient } from '@/api/client'
 import type { Machine } from '@/types/api'
 import { useTranslation } from '@/lib/use-translation'
@@ -18,7 +18,7 @@ import { TextField } from '@/components/ui/TextField'
 export const accountsKey = (machineId: string) => ['claude-accounts', machineId] as const
 // Claude keys its keychain entry by the literal CLAUDE_CONFIG_DIR string, while the runner passes the symlink-resolved path
 // (claude-accounts may be a symlink). `cd -P` makes the login land on the entry the runner will look up; if cd fails nothing runs.
-const loginCommand = (id: string) => `(cd -P "\${HAPI_HOME:-$HOME/.hapi}/claude-accounts/${id}" && CLAUDE_CONFIG_DIR="$PWD" claude auth login)`
+const loginCommand = (id: string) => `(cd -P "\${MATEMIND_HOME:-$HOME/.matemind}/claude-accounts/${id}" && CLAUDE_CONFIG_DIR="$PWD" claude auth login)`
 // The hub answers failures as {"error": "..."}; show that text rather than "HTTP 400 : {json}" so commands in it stay copyable.
 const failure = (error: unknown, fallback: string) =>
     (error instanceof ApiError && error.body ? parseErrorCode(error.body) : undefined) ?? (error instanceof Error ? error.message : fallback)

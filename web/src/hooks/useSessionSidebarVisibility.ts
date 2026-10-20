@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-const STORAGE_KEY = 'hapi:sessionsSidebarHiddenDesktop'
+const STORAGE_KEY = 'matemind:sessionsSidebarHiddenDesktop'
 
 export function normalizeDesktopSidebarHidden(value: string | null): boolean {
     return value === '1' || value === 'true'

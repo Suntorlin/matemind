@@ -1,4 +1,4 @@
-import type { ClaudeRateLimitEntry, ClaudeRateLimitSnapshot } from '@hapi/protocol/schemas'
+import type { ClaudeRateLimitEntry, ClaudeRateLimitSnapshot } from '@matemind/protocol/schemas'
 import { useTranslation } from '@/lib/use-translation'
 
 const labelKeys: Record<string, string> = {

@@ -2,14 +2,14 @@ import type { NewSessionDefaults } from '@/types/api'
 import type { AgentType, ServiceTier, SessionType, ThinkEffort } from './types'
 import { CODEX_SERVICE_TIER_OPTIONS, MODEL_OPTIONS, getModelOptionsForAgent, getThinkEffortOptions } from './types'
 
-const AGENT_STORAGE_KEY = 'hapi:newSession:agent'
-const YOLO_STORAGE_KEY = 'hapi:newSession:yolo'
-const SESSION_TYPE_STORAGE_KEY = 'hapi:newSession:sessionType'
-const THINK_EFFORT_STORAGE_KEY = 'hapi:newSession:thinkEffortByAgent'
-const SERVICE_TIER_STORAGE_KEY = 'hapi:newSession:serviceTierByAgent'
-const MODEL_STORAGE_KEY = 'hapi:newSession:modelByAgent'
-const CUSTOM_MODEL_STORAGE_KEY = 'hapi:newSession:customModelByAgent'
-const LAST_CONFIG_STORAGE_KEY = 'hapi:newSession:lastConfig'
+const AGENT_STORAGE_KEY = 'matemind:newSession:agent'
+const YOLO_STORAGE_KEY = 'matemind:newSession:yolo'
+const SESSION_TYPE_STORAGE_KEY = 'matemind:newSession:sessionType'
+const THINK_EFFORT_STORAGE_KEY = 'matemind:newSession:thinkEffortByAgent'
+const SERVICE_TIER_STORAGE_KEY = 'matemind:newSession:serviceTierByAgent'
+const MODEL_STORAGE_KEY = 'matemind:newSession:modelByAgent'
+const CUSTOM_MODEL_STORAGE_KEY = 'matemind:newSession:customModelByAgent'
+const LAST_CONFIG_STORAGE_KEY = 'matemind:newSession:lastConfig'
 
 const VALID_AGENTS: AgentType[] = ['claude', 'codex', 'cursor', 'gemini', 'opencode']
 const VALID_THINK_EFFORTS: ThinkEffort[] = ['auto', 'low', 'medium', 'high', 'max', 'xhigh']

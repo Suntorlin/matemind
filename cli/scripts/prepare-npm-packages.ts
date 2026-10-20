@@ -26,35 +26,35 @@ const PLATFORMS = [
         os: 'darwin',
         cpu: 'arm64',
         buildTarget: 'bun-darwin-arm64',
-        binName: 'hapi'
+        binName: 'matemind'
     },
     {
         name: 'darwin-x64',
         os: 'darwin',
         cpu: 'x64',
         buildTarget: 'bun-darwin-x64',
-        binName: 'hapi'
+        binName: 'matemind'
     },
     {
         name: 'linux-arm64',
         os: 'linux',
         cpu: 'arm64',
         buildTarget: 'bun-linux-arm64',
-        binName: 'hapi'
+        binName: 'matemind'
     },
     {
         name: 'linux-x64',
         os: 'linux',
         cpu: 'x64',
         buildTarget: 'bun-linux-x64-baseline',
-        binName: 'hapi'
+        binName: 'matemind'
     },
     {
         name: 'win32-x64',
         os: 'win32',
         cpu: 'x64',
         buildTarget: 'bun-windows-x64',
-        binName: 'hapi.exe'
+        binName: 'matemind.exe'
     }
 ] as const;
 
@@ -116,7 +116,7 @@ function generatePlatformPackageJson(
         os: [platform.os],
         cpu: [platform.cpu],
         bin: {
-            hapi: `bin/${platform.binName}`
+            matemind: `bin/${platform.binName}`
         },
         files: [`bin/${platform.binName}`],
         license: mainPkg.license ?? 'MIT',
@@ -149,10 +149,10 @@ function generateMainPackageJson(
         bugs: mainPkg.bugs,
         repository: mainPkg.repository,
         bin: mainPkg.bin ?? {
-            haqi: 'bin/haqi.cjs',
-            hapi: 'bin/hapi.cjs'
+            matemind: 'bin/matemind.cjs',
+            matemind: 'bin/matemind.cjs'
         },
-        files: ['bin/haqi.cjs', 'bin/hapi.cjs', 'NOTICE'],
+        files: ['bin/matemind.cjs', 'NOTICE'],
         optionalDependencies
     };
 }
@@ -168,7 +168,7 @@ function prepareMainPackage(
 
     mkdirSync(binDir, { recursive: true });
 
-    const wrapperNames = ['haqi.cjs', 'hapi.cjs'] as const;
+    const wrapperNames = ['matemind.cjs'] as const;
     for (const wrapperName of wrapperNames) {
         const srcBin = join(projectRoot, 'bin', wrapperName);
         const destBin = join(binDir, wrapperName);

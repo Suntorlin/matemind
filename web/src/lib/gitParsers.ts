@@ -50,8 +50,9 @@ const UNTRACKED_REGEX = /^\? (.+)$/
 const IGNORED_REGEX = /^! (.+)$/
 
 const NUMSTAT_REGEX = /^(\d+|-)\t(\d+|-)\t(.*)$/
-const HAPI_REPO_SECTION_PREFIX = '@@HAPI_REPO '
-const HAPI_REPO_SECTION_END = '@@HAPI_REPO_END'
+// CLIs from before the Matemind rename write @@HAPI_REPO markers.
+const REPO_SECTION_PREFIXES = ['@@MATEMIND_REPO ', '@@HAPI_REPO ']
+const REPO_SECTION_ENDS = ['@@MATEMIND_REPO_END', '@@HAPI_REPO_END']
 
 type RepoScopedOutput = {
     repo: string | null
@@ -84,15 +85,16 @@ function splitRepoSections(rawOutput: string): RepoScopedOutput[] {
     }
 
     for (const line of lines) {
-        if (line.startsWith(HAPI_REPO_SECTION_PREFIX)) {
+        const sectionPrefix = REPO_SECTION_PREFIXES.find((prefix) => line.startsWith(prefix))
+        if (sectionPrefix) {
             hasMarkers = true
             flushCurrentSection()
-            const encodedRepo = line.slice(HAPI_REPO_SECTION_PREFIX.length).trim()
+            const encodedRepo = line.slice(sectionPrefix.length).trim()
             currentRepo = decodeRepoSectionName(encodedRepo)
             currentLines = []
             continue
         }
-        if (line.trim() === HAPI_REPO_SECTION_END) {
+        if (REPO_SECTION_ENDS.includes(line.trim())) {
             hasMarkers = true
             flushCurrentSection()
             continue

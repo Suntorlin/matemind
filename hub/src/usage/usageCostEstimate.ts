@@ -16,13 +16,13 @@ const DEFAULT_USD_PER_MILLION_TOKENS: Record<'claude' | 'codex', number> = {
 }
 
 const RATE_ENV_NAMES: Record<'claude' | 'codex', string> = {
-    claude: 'HAPI_USAGE_ESTIMATE_CLAUDE_USD_PER_MTOK',
-    codex: 'HAPI_USAGE_ESTIMATE_CODEX_USD_PER_MTOK'
+    claude: 'MATEMIND_USAGE_ESTIMATE_CLAUDE_USD_PER_MTOK',
+    codex: 'MATEMIND_USAGE_ESTIMATE_CODEX_USD_PER_MTOK'
 }
 
 const MODEL_ENV_NAMES: Record<'claude' | 'codex', string> = {
-    claude: 'HAPI_USAGE_ESTIMATE_CLAUDE_MODEL',
-    codex: 'HAPI_USAGE_ESTIMATE_CODEX_MODEL'
+    claude: 'MATEMIND_USAGE_ESTIMATE_CLAUDE_MODEL',
+    codex: 'MATEMIND_USAGE_ESTIMATE_CODEX_MODEL'
 }
 
 const DEFAULT_MODEL_CANDIDATES: Record<'claude' | 'codex', string[]> = {

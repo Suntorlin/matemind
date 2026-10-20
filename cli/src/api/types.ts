@@ -5,8 +5,8 @@ import {
     ModelModeSchema,
     PermissionModeSchema,
     TodosSchema
-} from '@hapi/protocol/schemas'
-import type { ModelMode, PermissionMode } from '@hapi/protocol/types'
+} from '@matemind/protocol/schemas'
+import type { ModelMode, PermissionMode } from '@matemind/protocol/types'
 import { z } from 'zod'
 import { UsageSchema } from '@/claude/types'
 
@@ -23,7 +23,7 @@ export type {
     TeamMember,
     TeamState,
     TeamTask
-} from '@hapi/protocol/types'
+} from '@matemind/protocol/types'
 export type SessionPermissionMode = PermissionMode
 export type SessionModelMode = ModelMode
 

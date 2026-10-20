@@ -83,7 +83,7 @@ export function DesignShowcase() {
     return (
         <div className="mx-auto flex max-w-[1120px] flex-col gap-10 px-5 py-10 text-[var(--social-fg)]">
             <header>
-                <div className="text-[12px] font-semibold uppercase tracking-wide text-[var(--social-fg-muted)]">HAQI Design System · v1 草案</div>
+                <div className="text-[12px] font-semibold uppercase tracking-wide text-[var(--social-fg-muted)]">Matemind Design System · v1 草案</div>
                 <h1 className="mt-1 text-[32px] font-semibold tracking-[-0.02em]">视觉取 Instagram，交互守 Apple HIG</h1>
                 <p className="mt-2 max-w-2xl text-[15px] text-[var(--social-fg-muted)]">
                     黑白灰为底、胶囊与大圆角、克制的层级（Instagram）；44px 触控目标、16px 输入字号、4/8 间距、150–200ms 动效（Apple HIG）。
@@ -124,7 +124,7 @@ export function DesignShowcase() {
                         <div className="flex flex-col gap-2">
                             {TYPE.map(([cls, spec, use]) => (
                                 <div key={spec} className="flex items-baseline justify-between gap-3 border-b border-[var(--social-divider)] pb-2">
-                                    <span className={cls}>HAQI 远程协作 Aa</span>
+                                    <span className={cls}>Matemind 远程协作 Aa</span>
                                     <span className="shrink-0 text-[12px] text-[var(--social-fg-muted)]">{spec} · {use}</span>
                                 </div>
                             ))}
@@ -273,7 +273,7 @@ export function DesignShowcase() {
                     </Spec>
                     <Spec label="菜单 · 下拉（最近路径、历史地址）">
                         <div className={`${CONTEXT_MENU_SURFACE} max-w-xs`}>
-                            <ContextMenuItem label="~/projects/haqi" onSelect={() => undefined} />
+                            <ContextMenuItem label="~/projects/matemind" onSelect={() => undefined} />
                             <ContextMenuItem label="~/dev/fish" onSelect={() => undefined} />
                         </div>
                     </Spec>

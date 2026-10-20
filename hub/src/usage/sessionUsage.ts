@@ -1,4 +1,4 @@
-import type { DecryptedMessage } from '@hapi/protocol/types'
+import type { DecryptedMessage } from '@matemind/protocol/types'
 import type { UsageTotals } from './usageScanner'
 
 export type SessionUsageProvider = 'claude' | 'codex' | 'unknown'

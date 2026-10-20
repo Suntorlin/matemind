@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import type { DecryptedMessage } from '@hapi/protocol/types'
+import type { DecryptedMessage } from '@matemind/protocol/types'
 import { buildSessionUsageOverview } from './sessionUsage'
 
 function createMessage(

@@ -9,13 +9,13 @@
 
         <!-- PWA Meta Tags -->
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)" />
-        <meta name="description" content="AI-powered development assistant" />
+        <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+        <meta name="description" content="The first mate for your AI coding agents." />
 
         <!-- iOS PWA Meta Tags -->
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="HAQI" />
+        <meta name="apple-mobile-web-app-title" content="Matemind" />
         <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
 
         <!-- Favicon -->
@@ -23,19 +23,19 @@
         <link rel="icon" href="/icon.svg" sizes="any" type="image/svg+xml" />
 
         <!-- Safari Pinned Tab -->
-        <link rel="mask-icon" href="/mask-icon.svg" color="#111827" />
+        <link rel="mask-icon" href="/mask-icon.svg" color="#09090b" />
 
         <!-- Prevent flash of white background on dark mode -->
         <style>
             html { background: #fff }
             @media (prefers-color-scheme: dark) {
-                html { background: #1c1c1e; color-scheme: dark }
+                html { background: #09090b; color-scheme: dark }
             }
         </style>
         <script>
             (function () {
                 try {
-                    var raw = localStorage.getItem('hapi-font-scale')
+                    var raw = localStorage.getItem('matemind-font-scale')
                     var scale = Number(raw)
                     if (scale === 0.8 || scale === 0.9 || scale === 1 || scale === 1.1 || scale === 1.2) {
                         document.documentElement.style.setProperty('--app-font-scale', String(scale))
@@ -51,7 +51,7 @@
             }
         </script>
 
-        <title>HAQI</title>
+        <title>Matemind</title>
     </head>
     <body>
         <div id="root"></div>

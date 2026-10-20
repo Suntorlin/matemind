@@ -31,7 +31,7 @@ export async function loadAccounts(home: string): Promise<AccountsConfig> {
         const path = await realpath(profile.configDir);
         const child = relative(root, path);
         if (!child || child.startsWith('..') || isAbsolute(child)) {
-            throw new Error('账号目录必须位于独立 HAPI_HOME/claude-accounts 内，禁止使用全局登录目录或外部符号链接');
+            throw new Error('账号目录必须位于独立 MATEMIND_HOME/claude-accounts 内，禁止使用全局登录目录或外部符号链接');
         }
         const email = profile.email.toLowerCase();
         if (ids.has(profile.id) || paths.has(path) || emails.has(email)) {

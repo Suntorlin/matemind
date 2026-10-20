@@ -7,7 +7,7 @@ export type SessionScrollSnapshot = {
     savedAt: number
 }
 
-const SESSION_SCROLL_STATE_STORAGE_KEY = 'hapi:sessionScrollState:v1'
+const SESSION_SCROLL_STATE_STORAGE_KEY = 'matemind:sessionScrollState:v1'
 
 type SessionScrollStateRecord = Record<string, SessionScrollSnapshot>
 

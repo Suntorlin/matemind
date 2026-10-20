@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'hapi:sessionsGroupOrder'
-const PROJECT_OFFLINE_STORAGE_KEY = 'hapi:sessionsProjectOffline'
+const STORAGE_KEY = 'matemind:sessionsGroupOrder'
+const PROJECT_OFFLINE_STORAGE_KEY = 'matemind:sessionsProjectOffline'
 
 export function normalizeSessionGroupOrder(value: string | null): string[] {
     if (!value) return []

@@ -126,10 +126,10 @@ self.addEventListener('push', (event) => {
         return
     }
 
-    const title = payload.title || 'HAPI'
+    const title = payload.title || 'Matemind'
     const body = payload.body ?? ''
     const icon = payload.icon ?? '/pwa-192x192.png'
-    const badge = payload.badge ?? '/pwa-64x64.png'
+    const badge = payload.badge ?? '/badge-96x96.png'
     const data = payload.data
     const tag = payload.tag
 

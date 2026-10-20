@@ -1,4 +1,4 @@
-import { isObject } from '@hapi/protocol'
+import { isObject } from '@matemind/protocol'
 import type { DecryptedMessage } from '@/types/api'
 
 export type ToolProgressSignal = {

@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { execFileSync } from 'node:child_process'
 import { z } from 'zod'
-import { PROTOCOL_VERSION, normalizeClaudeModelValue } from '@hapi/protocol'
+import { PROTOCOL_VERSION, normalizeClaudeModelValue } from '@matemind/protocol'
 import type { StartOptions } from '@/claude/runClaude'
 import { configuration } from '@/configuration'
 import { isRunnerRunningCurrentlyInstalledHappyVersion } from '@/runner/controlClient'
@@ -34,7 +34,7 @@ export const claudeCommand: CommandDefinition = {
             if (arg === '-h' || arg === '--help') {
                 showHelp = true
                 unknownArgs.push(arg)
-            } else if (arg === '--hapi-starting-mode') {
+            } else if (arg === '--matemind-starting-mode') {
                 options.startingMode = z.enum(['local', 'remote']).parse(args[++i])
             } else if (arg === '--yolo') {
                 options.permissionMode = 'bypassPermissions'
@@ -83,37 +83,37 @@ export const claudeCommand: CommandDefinition = {
 
         if (showHelp) {
             console.log(`
-${chalk.bold('hapi')} - Claude Code On the Go
+${chalk.bold('matemind')} - Claude Code On the Go
 
 ${chalk.bold('Usage:')}
-  hapi [options]         Start Claude with Telegram control (direct-connect)
-  hapi auth              Manage authentication
-  hapi codex             Start Codex mode
-  hapi cursor            Start Cursor Agent mode
-  hapi gemini            Start Gemini ACP mode
-  hapi opencode          Start OpenCode ACP mode
-  hapi mcp               Start MCP stdio bridge
-  hapi connect           (not available in direct-connect mode)
-  hapi notify            (not available in direct-connect mode)
-  hapi hub               Start the API + web hub
-  hapi hub --relay       Start with public relay
-  hapi server            Alias for hapi hub
-  hapi runner            Manage background service that allows
+  matemind [options]         Start Claude with Telegram control (direct-connect)
+  matemind auth              Manage authentication
+  matemind codex             Start Codex mode
+  matemind cursor            Start Cursor Agent mode
+  matemind gemini            Start Gemini ACP mode
+  matemind opencode          Start OpenCode ACP mode
+  matemind mcp               Start MCP stdio bridge
+  matemind connect           (not available in direct-connect mode)
+  matemind notify            (not available in direct-connect mode)
+  matemind hub               Start the API + web hub
+  matemind hub --relay       Start with public relay
+  matemind server            Alias for matemind hub
+  matemind runner            Manage background service that allows
                             to spawn new sessions away from your computer
-  hapi doctor            System diagnostics & troubleshooting
+  matemind doctor            System diagnostics & troubleshooting
 
 ${chalk.bold('Examples:')}
-  hapi                    Start session (will prompt for token if not set)
-  hapi auth login         Configure CLI_API_TOKEN interactively
-  hapi --yolo             Start with bypassing permissions
-                            hapi sugar for --dangerously-skip-permissions
-  hapi auth status        Show direct-connect status
-  hapi doctor             Run diagnostics
+  matemind                    Start session (will prompt for token if not set)
+  matemind auth login         Configure CLI_API_TOKEN interactively
+  matemind --yolo             Start with bypassing permissions
+                            matemind sugar for --dangerously-skip-permissions
+  matemind auth status        Show direct-connect status
+  matemind doctor             Run diagnostics
 
-${chalk.bold('hapi supports ALL Claude options!')}
-  Use any claude flag with hapi as you would with claude. Our favorite:
+${chalk.bold('matemind supports ALL Claude options!')}
+  Use any claude flag with matemind as you would with claude. Our favorite:
 
-  hapi --resume
+  matemind --resume
 
 ${chalk.gray('─'.repeat(60))}
 ${chalk.bold.cyan('Claude Code Options (from `claude --help`):')}
@@ -137,10 +137,10 @@ ${chalk.bold.cyan('Claude Code Options (from `claude --help`):')}
         await maybeAutoStartServer()
         await authAndSetupMachineIfNeeded()
 
-        logger.debug('Ensuring hapi background service is running & matches our version...')
+        logger.debug('Ensuring matemind background service is running & matches our version...')
 
         if (!(await isRunnerRunningCurrentlyInstalledHappyVersion())) {
-            logger.debug('Starting hapi background service...')
+            logger.debug('Starting matemind background service...')
 
             const runnerProcess = spawnHappyCLI(['runner', 'start-sync'], {
                 detached: true,
@@ -167,13 +167,13 @@ ${chalk.bold.cyan('Claude Code Options (from `claude --help`):')}
                 messageLower.includes('enotfound') ||
                 messageLower.includes('network error')
             ) {
-                console.error(chalk.yellow('Unable to connect to HAPI hub'))
+                console.error(chalk.yellow('Unable to connect to Matemind hub'))
                 console.error(chalk.gray(`  Hub URL: ${configuration.apiUrl}`))
                 console.error(chalk.gray('  Please check your network connection or hub status'))
             } else if (httpStatus === 403 && responseErrorText === 'Machine access denied') {
                 console.error(chalk.red('Machine access denied.'))
                 console.error(chalk.gray('  This machineId is already registered under a different namespace.'))
-                console.error(chalk.gray('  Fix: run `hapi auth logout`, or set a separate HAPI_HOME per namespace.'))
+                console.error(chalk.gray('  Fix: run `matemind auth logout`, or set a separate MATEMIND_HOME per namespace.'))
             } else if (httpStatus === 403 && responseErrorText === 'Session access denied') {
                 console.error(chalk.red('Session access denied.'))
                 console.error(chalk.gray('  This session belongs to a different namespace.'))
@@ -185,7 +185,7 @@ ${chalk.bold.cyan('Claude Code Options (from `claude --help`):')}
                 messageLower.includes('forbidden')
             ) {
                 console.error(chalk.red('Authentication error:'), message)
-                console.error(chalk.gray('  Run: hapi auth login'))
+                console.error(chalk.gray('  Run: matemind auth login'))
             } else {
                 console.error(chalk.red('Error:'), message)
             }

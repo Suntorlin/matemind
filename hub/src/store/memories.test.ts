@@ -10,7 +10,7 @@ function closeStore(store: Store): void {
 describe('MemoryStore', () => {
     it('stores memories, links and events per namespace', () => {
         const store = new Store(':memory:')
-        const base = { level: 'experience' as const, scope: 'haqi', status: 'active' as const, reason: null, source: 'propose', sourceLabel: null, sessionId: null, said: false, support: 1, jev: { keep: 0.9 }, overridden: null, replaces: null }
+        const base = { level: 'experience' as const, scope: 'matemind', status: 'active' as const, reason: null, source: 'propose', sourceLabel: null, sessionId: null, said: false, support: 1, jev: { keep: 0.9 }, overridden: null, replaces: null }
         const fact = store.memories.insert({ ...base, namespace: 'default', text: 'sw.js copied first, white page', level: 'fact' })
         const lesson = store.memories.insert({ ...base, namespace: 'default', text: 'copy entry files last' })
         store.memories.insert({ ...base, namespace: 'other', text: 'not visible' })

@@ -1,4 +1,4 @@
-import type { ClaudeAccountSelection, ClaudeAccountPoolView } from '@hapi/protocol/schemas'
+import type { ClaudeAccountSelection, ClaudeAccountPoolView } from '@matemind/protocol/schemas'
 import type {
     AttachmentMetadata,
     MemoriesResponse,

@@ -7,7 +7,7 @@ const BaseHookFields = z.object({
     permission_mode: z.string().optional(),
     agent_id: z.string().optional(),
     agent_type: z.string().optional(),
-    // Legacy HAQI/OMX hook metadata. Claude Code ignores these, but older
+    // Legacy Matemind/OMX hook metadata. Claude Code ignores these, but older
     // tests and custom hooks can still send them.
     agent_name: z.string().optional(),
     task_id: z.string().optional(),

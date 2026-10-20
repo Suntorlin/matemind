@@ -8,8 +8,8 @@ import type { OpencodeSession } from './session';
 import type { OpencodeMode, PermissionMode } from './types';
 import { bootstrapSession } from '@/agent/sessionFactory';
 import { createModeChangeHandler, createRunnerLifecycle, setControlledByUser } from '@/agent/runnerLifecycle';
-import { isPermissionModeAllowedForFlavor } from '@hapi/protocol';
-import { PermissionModeSchema } from '@hapi/protocol/schemas';
+import { isPermissionModeAllowedForFlavor } from '@matemind/protocol';
+import { PermissionModeSchema } from '@matemind/protocol/schemas';
 import { startOpencodeHookServer } from './utils/startOpencodeHookServer';
 import { formatMessageWithAttachments } from '@/utils/attachmentFormatter';
 
@@ -19,7 +19,7 @@ export async function runOpencode(opts: {
     permissionMode?: PermissionMode;
     resumeSessionId?: string;
 } = {}): Promise<void> {
-    const workingDirectory = process.env.HAPI_WORKING_DIRECTORY ?? process.cwd();
+    const workingDirectory = process.env.MATEMIND_WORKING_DIRECTORY ?? process.cwd();
     const startedBy = opts.startedBy ?? 'terminal';
 
     logger.debug(`[opencode] Starting with options: startedBy=${startedBy}, startingMode=${opts.startingMode}`);

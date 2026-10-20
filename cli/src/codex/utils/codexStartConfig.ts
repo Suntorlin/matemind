@@ -2,7 +2,7 @@ import type { CodexSessionConfig } from '../types';
 import type { EnhancedMode } from '../loop';
 import type { CodexCliOverrides } from './codexCliOverrides';
 import { getCodexSystemPrompt } from './systemPrompt';
-import { isPureContextModeEnabled } from '@/agent/utils/haqiAgentInstructions';
+import { isPureContextModeEnabled } from '@/agent/utils/matemindAgentInstructions';
 
 function resolveApprovalPolicy(mode: EnhancedMode): CodexSessionConfig['approval-policy'] {
     switch (mode.permissionMode) {

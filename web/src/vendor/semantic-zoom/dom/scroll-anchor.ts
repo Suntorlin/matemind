@@ -20,7 +20,7 @@ export interface ScrollAnchorOptions {
   /**
    * Chat in normal DOM order (newest last, no column-reverse): items hold
    * their bottom edge and the newest visible item is the leading one, as in
-   * `reverse`, while extra room still goes after the content (HAQI addition).
+   * `reverse`, while extra room still goes after the content (Matemind addition).
    */
   bottomEdge?: boolean
   /** Selector of the items that can be anchored. Default `[data-sz-item]`. */
@@ -177,7 +177,7 @@ export class ScrollAnchor implements AnchorClient {
     return false
   }
 
-  /** Pins `el` where it is now, e.g. to hold it still while the app swaps its content (HAQI addition). */
+  /** Pins `el` where it is now, e.g. to hold it still while the app swaps its content (Matemind addition). */
   pinElement(el: Element): void {
     this.stopBounce()
     this.pin(el)

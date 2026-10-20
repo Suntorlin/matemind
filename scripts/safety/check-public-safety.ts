@@ -40,7 +40,8 @@ const ALLOWED_HOME_NAMES = new Set(['me', 'user', 'username', 'YOUR_USERNAME', '
 /** Email domains that are fine to publish. */
 const ALLOWED_EMAIL = [
     /@example\.(com|org|net)$/i,
-    /@hapi\.run$/i,
+    /@hapi\.run$/i, // upstream hapi contact addresses (legacy names kept on purpose)
+    /@matemind\.ai$/i,
     /^noreply@/i,
     /^git@github\.com$/i,
     /@users\.noreply\.github\.com$/i,
@@ -66,7 +67,7 @@ const GENERIC_RULES: ContentRule[] = [
         re: /\/(Users|home)\/([A-Za-z0-9_.-]+)/g,
         allow: (m) => ALLOWED_HOME_NAMES.has(m.split('/')[2]) && m.split('/')[2] !== userInfo().username,
     },
-    { rule: 'agent account dir', kind: 'privacy', re: /\.hapi-haqi\d*\/claude-accounts|\baccount-[0-9a-f]{8}\b/g },
+    { rule: 'agent account dir', kind: 'privacy', re: /\.(?:hapi-haqi|matemind)\d*\/claude-accounts|\baccount-[0-9a-f]{8}\b/g },
     { rule: 'notes path', kind: 'privacy', re: /Mobile Documents\/iCloud~md~obsidian/g },
     { rule: 'tunnel credential', kind: 'secret', re: /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.cfargotunnel\.com|"TunnelSecret"\s*:/g },
     {
@@ -267,10 +268,10 @@ function selfTest(): void {
         'CLOUDFLARE_API_TOKEN=' + 'Ab3_'.repeat(10),
         'R2_SECRET_ACCESS_KEY=' + 'a1'.repeat(32),
         'endpoint https://' + 'f0'.repeat(16) + '.r2.cloudflarestorage.com',
-        'deployed at https://' + 'haqi-preview-x9' + '.vercel.app',
+        'deployed at https://' + 'matemind-preview-x9' + '.vercel.app',
     ]
     const good = [
-        'https://haqi.example.com/share/r/x',
+        'https://matemind.example.com/share/r/x',
         '/Users/me/projects/app',
         'ufw allow from 192.168.1.0/24',
         'test@example.com noreply@anthropic.com',
@@ -301,7 +302,7 @@ function selfTest(): void {
     }
     const paths: [string, boolean][] = [
         ['.playwright-mcp/page.yml', true],
-        ['haqi-final.png', true],
+        ['matemind-final.png', true],
         ['test-results/x/error-context.md', true],
         ['web/dist.prev-163901/index.html', true],
         ['.env.local', true],
@@ -374,7 +375,7 @@ function main(): void {
         for (const f of unique.slice(0, 50)) console.error(`  ${f.where}  [${f.rule}]  ${f.text.slice(0, 80)}`)
         if (unique.length > 50) console.error(`  … and ${unique.length - 50} more`)
         console.error(
-            `\nUse placeholders (haqi.example.com, /Users/me, test@example.com). ` +
+            `\nUse placeholders (matemind.example.com, /Users/me, test@example.com). ` +
                 `If a line really must stay, end it with the comment "${ALLOW_MARKER}".`,
         )
     }

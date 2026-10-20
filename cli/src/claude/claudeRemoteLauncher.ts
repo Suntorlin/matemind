@@ -17,7 +17,7 @@ import { EnhancedMode } from "./loop";
 import { OutgoingMessageQueue } from "./utils/OutgoingMessageQueue";
 import { parseTodoWritePlanUpdate } from "./utils/todoPlan";
 import { extractRunningAgentFromTaskInput } from "./utils/runningAgentState";
-import type { ClaudePermissionMode } from "@hapi/protocol/types";
+import type { ClaudePermissionMode } from "@matemind/protocol/types";
 import {
     RemoteLauncherBase,
     type RemoteLauncherDisplayContext,
@@ -60,7 +60,7 @@ class ClaudeRemoteLauncher extends RemoteLauncherBase {
     }
 
     private async handleSwitchRequest(): Promise<void> {
-        if (process.env.HAPI_CLAUDE_ACCOUNT_HANDOFF === '1') {
+        if (process.env.MATEMIND_CLAUDE_ACCOUNT_HANDOFF === '1') {
             this.session.client.sendSessionEvent({ type: 'message', message: '账号接管实验版仅支持 remote 模式，禁止切回默认登录的本地模式' });
             return;
         }
@@ -96,12 +96,12 @@ class ClaudeRemoteLauncher extends RemoteLauncherBase {
         const session = this.session;
         const messageBuffer = this.messageBuffer;
         let managed: ManagedClaudeRemote | null = null;
-        if (process.env.HAPI_CLAUDE_ACCOUNT_HANDOFF === '1') {
+        if (process.env.MATEMIND_CLAUDE_ACCOUNT_HANDOFF === '1') {
             const config = await loadAccounts(configuration.happyHomeDir);
-            const selected = process.env.HAPI_CLAUDE_ACCOUNT || config.initialAccount;
+            const selected = process.env.MATEMIND_CLAUDE_ACCOUNT || config.initialAccount;
             if (!config.profiles.some(p => p.id === selected && p.enabled !== false)) throw new Error('所选账号不存在或已停用');
             managed = new ManagedClaudeRemote({ ...config, initialAccount: selected,
-                autoSwitch: process.env.HAPI_CLAUDE_ACCOUNT_AUTO ? process.env.HAPI_CLAUDE_ACCOUNT_AUTO === '1' : config.autoSwitch });
+                autoSwitch: process.env.MATEMIND_CLAUDE_ACCOUNT_AUTO ? process.env.MATEMIND_CLAUDE_ACCOUNT_AUTO === '1' : config.autoSwitch });
         }
         // rate_limit_event only carries one representative window; poll the oauth
         // usage API for the full set (weekly + model-scoped buckets like Fable).

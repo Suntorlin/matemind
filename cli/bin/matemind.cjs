@@ -7,12 +7,12 @@ const platform = process.platform;
 const arch = process.arch;
 
 function getBinaryPath(platformName = platform, archName = arch) {
-    const pkgName = `@jasonczc/haqi-${platformName}-${archName}`;
+    const pkgName = `@matemind/cli-${platformName}-${archName}`;
 
     try {
         // Try to find the platform-specific package
         const pkgPath = require.resolve(`${pkgName}/package.json`);
-        const binName = platformName === 'win32' ? 'hapi.exe' : 'hapi';
+        const binName = platformName === 'win32' ? 'matemind.exe' : 'matemind';
         return path.join(path.dirname(pkgPath), 'bin', binName);
     } catch (e) {
         return null;
@@ -65,7 +65,7 @@ function main() {
         console.error('  - win32-x64');
         console.error('');
         console.error('You can download the binary manually from:');
-        console.error('  https://github.com/jasonczc/haqi/releases');
+        console.error('  https://github.com/matemind/matemind/releases');
         process.exit(1);
     }
 

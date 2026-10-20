@@ -66,7 +66,7 @@ export function MemoryDetail(props: {
         enabled: Boolean(api)
     })
     const byId = new Map(props.all.map((m) => [m.id, m]))
-    const project = memory.scope || memory.jev?.project || props.projects[0] || 'haqi'
+    const project = memory.scope || memory.jev?.project || props.projects[0] || 'matemind'
     const [text, setText] = useState(memory.text)
     const [level, setLevel] = useState<Level>(memory.level)
     const [scope, setScope] = useState(memory.scope)

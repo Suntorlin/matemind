@@ -1,10 +1,10 @@
-import type { ClaudeAccountSelection, ClaudeAccountPoolView } from '@hapi/protocol/schemas'
+import type { ClaudeAccountSelection, ClaudeAccountPoolView } from '@matemind/protocol/schemas'
 import type {
     CodexCredentialExportResponse,
     CodexCredentialStateResponse,
     ModelMode,
     PermissionMode
-} from '@hapi/protocol/types'
+} from '@matemind/protocol/types'
 import type { Server } from 'socket.io'
 import type { RpcRegistry } from '../socket/rpcRegistry'
 

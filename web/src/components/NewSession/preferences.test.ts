@@ -27,7 +27,7 @@ describe('NewSession preferences', () => {
     })
 
     it('keeps YOLO off only when the user saved it off', () => {
-        localStorage.setItem('hapi:newSession:yolo', 'false')
+        localStorage.setItem('matemind:newSession:yolo', 'false')
         expect(loadPreferredYoloMode()).toBe(false)
     })
 
@@ -42,19 +42,19 @@ describe('NewSession preferences', () => {
     })
 
     it('loads saved values from storage', () => {
-        localStorage.setItem('hapi:newSession:agent', 'codex')
-        localStorage.setItem('hapi:newSession:yolo', 'true')
-        localStorage.setItem('hapi:newSession:sessionType', 'worktree')
-        localStorage.setItem('hapi:newSession:thinkEffortByAgent', JSON.stringify({
+        localStorage.setItem('matemind:newSession:agent', 'codex')
+        localStorage.setItem('matemind:newSession:yolo', 'true')
+        localStorage.setItem('matemind:newSession:sessionType', 'worktree')
+        localStorage.setItem('matemind:newSession:thinkEffortByAgent', JSON.stringify({
             codex: 'medium'
         }))
-        localStorage.setItem('hapi:newSession:serviceTierByAgent', JSON.stringify({
+        localStorage.setItem('matemind:newSession:serviceTierByAgent', JSON.stringify({
             codex: 'fast'
         }))
-        localStorage.setItem('hapi:newSession:modelByAgent', JSON.stringify({
+        localStorage.setItem('matemind:newSession:modelByAgent', JSON.stringify({
             codex: 'gpt-5.3-codex'
         }))
-        localStorage.setItem('hapi:newSession:customModelByAgent', JSON.stringify({
+        localStorage.setItem('matemind:newSession:customModelByAgent', JSON.stringify({
             codex: 'my-custom-model'
         }))
 
@@ -68,21 +68,21 @@ describe('NewSession preferences', () => {
     })
 
     it('falls back to default agent on invalid stored value', () => {
-        localStorage.setItem('hapi:newSession:agent', 'unknown-agent')
+        localStorage.setItem('matemind:newSession:agent', 'unknown-agent')
 
         expect(loadPreferredAgent()).toBe('claude')
     })
 
     it('falls back to default session type on invalid stored value', () => {
-        localStorage.setItem('hapi:newSession:sessionType', 'unknown')
+        localStorage.setItem('matemind:newSession:sessionType', 'unknown')
         expect(loadPreferredSessionType()).toBe('simple')
     })
 
     it('returns null on invalid stored model/think values', () => {
-        localStorage.setItem('hapi:newSession:thinkEffortByAgent', JSON.stringify({
+        localStorage.setItem('matemind:newSession:thinkEffortByAgent', JSON.stringify({
             claude: 'ultra-think'
         }))
-        localStorage.setItem('hapi:newSession:modelByAgent', JSON.stringify({
+        localStorage.setItem('matemind:newSession:modelByAgent', JSON.stringify({
             claude: 'unknown-model'
         }))
 
@@ -99,19 +99,19 @@ describe('NewSession preferences', () => {
         savePreferredModel('codex', 'gpt-5.5')
         savePreferredCustomModel('codex', 'my-custom-model')
 
-        expect(localStorage.getItem('hapi:newSession:agent')).toBe('gemini')
-        expect(localStorage.getItem('hapi:newSession:yolo')).toBe('true')
-        expect(localStorage.getItem('hapi:newSession:sessionType')).toBe('worktree')
-        expect(localStorage.getItem('hapi:newSession:thinkEffortByAgent')).toBe(JSON.stringify({
+        expect(localStorage.getItem('matemind:newSession:agent')).toBe('gemini')
+        expect(localStorage.getItem('matemind:newSession:yolo')).toBe('true')
+        expect(localStorage.getItem('matemind:newSession:sessionType')).toBe('worktree')
+        expect(localStorage.getItem('matemind:newSession:thinkEffortByAgent')).toBe(JSON.stringify({
             codex: 'high'
         }))
-        expect(localStorage.getItem('hapi:newSession:serviceTierByAgent')).toBe(JSON.stringify({
+        expect(localStorage.getItem('matemind:newSession:serviceTierByAgent')).toBe(JSON.stringify({
             codex: 'flex'
         }))
-        expect(localStorage.getItem('hapi:newSession:modelByAgent')).toBe(JSON.stringify({
+        expect(localStorage.getItem('matemind:newSession:modelByAgent')).toBe(JSON.stringify({
             codex: 'gpt-5.5'
         }))
-        expect(localStorage.getItem('hapi:newSession:customModelByAgent')).toBe(JSON.stringify({
+        expect(localStorage.getItem('matemind:newSession:customModelByAgent')).toBe(JSON.stringify({
             codex: 'my-custom-model'
         }))
     })
@@ -151,7 +151,7 @@ describe('NewSession preferences', () => {
         saveLastSessionConfig({ agent: 'claude', claudeAccountId: 'acct-2' })
         expect(loadLastSessionConfig()?.claudeAccountId).toBe('acct-2')
 
-        localStorage.setItem('hapi:newSession:lastConfig', JSON.stringify({ agent: 'claude', claudeAccountId: 'Bad Id!' }))
+        localStorage.setItem('matemind:newSession:lastConfig', JSON.stringify({ agent: 'claude', claudeAccountId: 'Bad Id!' }))
         expect(loadLastSessionConfig()?.claudeAccountId).toBeUndefined()
     })
 })

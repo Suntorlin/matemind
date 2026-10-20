@@ -6,7 +6,7 @@ import { buildCodexSystemPrompt } from './utils/systemPrompt';
 import type { ReasoningEffort } from './appServerTypes';
 
 /**
- * Filter out 'resume' subcommand which is managed internally by hapi.
+ * Filter out 'resume' subcommand which is managed internally by matemind.
  * Codex CLI format is `codex resume <session-id>`, so subcommand is always first.
  */
 export function filterResumeSubcommand(args: string[]): string[] {
@@ -16,11 +16,11 @@ export function filterResumeSubcommand(args: string[]): string[] {
 
     // First arg is 'resume', filter it and optional session ID
     if (args.length > 1 && !args[1].startsWith('-')) {
-        logger.debug(`[CodexLocal] Filtered 'resume ${args[1]}' - session managed by hapi`);
+        logger.debug(`[CodexLocal] Filtered 'resume ${args[1]}' - session managed by matemind`);
         return args.slice(2);
     }
 
-    logger.debug(`[CodexLocal] Filtered 'resume' - session managed by hapi`);
+    logger.debug(`[CodexLocal] Filtered 'resume' - session managed by matemind`);
     return args.slice(1);
 }
 

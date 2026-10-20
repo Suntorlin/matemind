@@ -9,8 +9,8 @@ import { Store } from './index'
 describe('SessionTaskStore', () => {
     it('creates, completes, reopens and deletes a task within its namespace', () => {
         const store = new Store(':memory:')
-        const task = store.sessionTasks.create('default', { tag: 'haqi', title: 'Memory rework' })
-        expect(task).toMatchObject({ tag: 'haqi', title: 'Memory rework', status: 'open', completedAt: null })
+        const task = store.sessionTasks.create('default', { tag: 'matemind', title: 'Memory rework' })
+        expect(task).toMatchObject({ tag: 'matemind', title: 'Memory rework', status: 'open', completedAt: null })
         expect(`task:${task.id}`.length).toBeLessThanOrEqual(40)
         expect(store.sessionTasks.list('other')).toEqual([])
 
@@ -28,8 +28,8 @@ describe('SessionTaskStore', () => {
     })
 
     it('adds the table to an existing database without changing its schema version', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'haqi-session-tasks-'))
-        const dbPath = join(dir, 'hapi.db')
+        const dir = mkdtempSync(join(tmpdir(), 'matemind-session-tasks-'))
+        const dbPath = join(dir, 'matemind.db')
         try {
             const seeded = new Store(dbPath)
             const seededDb = (seeded as unknown as { db: Database }).db
@@ -39,7 +39,7 @@ describe('SessionTaskStore', () => {
 
             const reopened = new Store(dbPath)
             const reopenedDb = (reopened as unknown as { db: Database }).db
-            expect(reopened.sessionTasks.create('default', { tag: 'haqi', title: 'x' }).status).toBe('open')
+            expect(reopened.sessionTasks.create('default', { tag: 'matemind', title: 'x' }).status).toBe('open')
             expect((reopenedDb.prepare('PRAGMA user_version').get() as { user_version: number }).user_version).toBe(version)
             reopenedDb.close()
         } finally {

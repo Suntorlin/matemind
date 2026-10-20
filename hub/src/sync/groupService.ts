@@ -187,16 +187,16 @@ function toPathSegment(value: string): string {
     return trimmed.replace(/[^A-Za-z0-9._-]/g, '_')
 }
 
-function resolveHapiHomeDir(): string {
-    const raw = process.env.HAPI_HOME?.trim()
+function resolveMatemindHomeDir(): string {
+    const raw = process.env.MATEMIND_HOME?.trim()
     if (raw && raw.length > 0) {
         return raw.replace(/^~(?=\/|$)/, homedir())
     }
-    return join(homedir(), '.hapi')
+    return join(homedir(), '.matemind')
 }
 
 function resolveSettingsPath(): string {
-    return join(resolveHapiHomeDir(), SETTINGS_FILENAME)
+    return join(resolveMatemindHomeDir(), SETTINGS_FILENAME)
 }
 
 function isPureContextModeEnabled(): boolean {
@@ -760,7 +760,7 @@ export class GroupService {
         const noteFilePath = this.getGroupNoteFilePath(detail.group.namespace, detail.group.id)
 
         return [
-            '你是 HAQI Group 的 note 执行器。',
+            '你是 Matemind Group 的 note 执行器。',
             '请基于给定的 Group Timeline 和 Task 状态，输出最新 Group Note。',
             '要求：',
             '1. 只输出最终 Markdown 正文，不要额外解释。',
@@ -809,8 +809,8 @@ export class GroupService {
         if (dbPath === ':memory:' || dbPath.startsWith('file::memory:')) {
             return null
         }
-        const hapiHome = resolveHapiHomeDir()
-        return join(hapiHome, 'memory', 'groups', toPathSegment(namespace), groupId, GROUP_NOTE_FILENAME)
+        const matemindHome = resolveMatemindHomeDir()
+        return join(matemindHome, 'memory', 'groups', toPathSegment(namespace), groupId, GROUP_NOTE_FILENAME)
     }
 
     private persistGroupNoteMarkdown(note: StoredGroupNote): void {
@@ -1265,7 +1265,7 @@ export class GroupService {
             // Keep slash commands intact so agent-native command parsing remains unchanged.
             return options.command
         }
-        if (options.command.includes('[HAQI_GROUP_TASK_CONTEXT]')) {
+        if (options.command.includes('[MATEMIND_GROUP_TASK_CONTEXT]')) {
             return options.command
         }
         if (!options.includeTaskContext) {
@@ -1274,10 +1274,10 @@ export class GroupService {
         const groupNotePath = this.getGroupNoteFilePath(options.namespace, options.groupId)
         return [
             options.command,
-            '[HAQI_GROUP_TASK_CONTEXT]',
+            '[MATEMIND_GROUP_TASK_CONTEXT]',
             `- Group ID: ${options.groupId}`,
             `- Group Note Markdown Path: ${groupNotePath ?? '(disabled: in-memory store)'}`,
-            `- Your HAQI Session ID (self): ${options.targetSessionId}`,
+            `- Your Matemind Session ID (self): ${options.targetSessionId}`,
             'Instructions:',
             '- This task is assigned to you. Keep replies concise and action-oriented. Better not to contain @all in your reply.',
             '- @all is expensive. Use @all only when every active session must take action now.',
@@ -1286,7 +1286,7 @@ export class GroupService {
             '- If unsure whether @all is needed, do NOT use @all.',
             '- When needed, read or write Group Note Markdown Path first, then continue based on the latest note content.',
             `- Only if you need to ask yourself to do next work, use @${options.targetSessionId}.`,
-            '[/HAQI_GROUP_TASK_CONTEXT]',
+            '[/MATEMIND_GROUP_TASK_CONTEXT]',
             ''
         ].join('\n')
     }

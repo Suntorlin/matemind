@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-const MOBILE_QUEUE_EMPTY_STATE_KEY = 'hapi:mobileQueueEmptyState'
+const MOBILE_QUEUE_EMPTY_STATE_KEY = 'matemind:mobileQueueEmptyState'
 
 export type MobileQueueEmptyStatePreference = 'hide' | 'show'
 

@@ -14,12 +14,12 @@ import { registerKillSessionHandler } from './registerKillSessionHandler';
 import type { Session } from './session';
 import { bootstrapSession } from '@/agent/sessionFactory';
 import { createModeChangeHandler, createRunnerLifecycle, setControlledByUser } from '@/agent/runnerLifecycle';
-import { isModelModeAllowedForFlavor, isPermissionModeAllowedForFlavor } from '@hapi/protocol';
-import { ModelModeSchema, PermissionModeSchema } from '@hapi/protocol/schemas';
+import { isModelModeAllowedForFlavor, isPermissionModeAllowedForFlavor } from '@matemind/protocol';
+import { ModelModeSchema, PermissionModeSchema } from '@matemind/protocol/schemas';
 import { formatMessageWithAttachments } from '@/utils/attachmentFormatter';
 import { findClaudeThinkEffortFromArgs, type ClaudeThinkEffort, resolveClaudeModelSelection } from './modelMode';
-import { normalizeClaudeModelValue } from '@hapi/protocol';
-import { isPureContextModeEnabled } from '@/agent/utils/haqiAgentInstructions';
+import { normalizeClaudeModelValue } from '@matemind/protocol';
+import { isPureContextModeEnabled } from '@/agent/utils/matemindAgentInstructions';
 
 export interface StartOptions {
     model?: string
@@ -54,11 +54,11 @@ type ClaudeQueueStateSnapshot = ClaudeQueueSnapshot & {
 }
 
 export async function runClaude(options: StartOptions = {}): Promise<void> {
-    const workingDirectory = process.env.HAPI_WORKING_DIRECTORY ?? process.cwd();
+    const workingDirectory = process.env.MATEMIND_WORKING_DIRECTORY ?? process.cwd();
     const startedBy = options.startedBy ?? 'terminal';
 
     // Log environment info at startup
-    logger.debugLargeJson('[START] HAPI process started', getEnvironmentInfo());
+    logger.debugLargeJson('[START] Matemind process started', getEnvironmentInfo());
     logger.debug(`[START] Options: startedBy=${startedBy}, startingMode=${options.startingMode}`);
 
     // Validate runner spawn requirements
@@ -160,9 +160,9 @@ export async function runClaude(options: StartOptions = {}): Promise<void> {
         }
     });
 
-    // Start HAPI MCP server
+    // Start Matemind MCP server
     const happyServer = await startHappyServer(session);
-    logger.debug(`[START] HAPI MCP server started at ${happyServer.url}`);
+    logger.debug(`[START] Matemind MCP server started at ${happyServer.url}`);
 
     // Variable to track current session instance (updated via onSessionReady callback)
     const currentSessionRef: { current: Session | null } = { current: null };
@@ -817,10 +817,7 @@ export async function runClaude(options: StartOptions = {}): Promise<void> {
     });
 
     const allowedTools = Array.from(new Set(
-        happyServer.toolNames.flatMap((toolName) => [
-            `mcp__haqi__${toolName}`,
-            `mcp__hapi__${toolName}`
-        ])
+        happyServer.toolNames.map((toolName) => `mcp__matemind__${toolName}`)
     ));
 
     let loopError: unknown = null;
@@ -840,11 +837,7 @@ export async function runClaude(options: StartOptions = {}): Promise<void> {
                 syncSessionModes();
             },
             mcpServers: {
-                'haqi': {
-                    type: 'http' as const,
-                    url: happyServer.url,
-                },
-                'hapi': {
+                'matemind': {
                     type: 'http' as const,
                     url: happyServer.url,
                 }

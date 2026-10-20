@@ -82,18 +82,18 @@ describe('session snooze', () => {
 })
 
 describe('session tasks', () => {
-    const task = { id: 'abc123', tag: 'haqi' }
+    const task = { id: 'abc123', tag: 'matemind' }
 
     it('joining a task adds its tag too, and leaving keeps every other tag', () => {
         const session = tagged('fish', PINNED_TAG)
         const joined = withTaskTag(session, task, true)
-        expect(joined).toEqual(['haqi', 'fish', PINNED_TAG, 'task:abc123'])
-        expect(getUserTags(tagged(...joined))).toEqual(['haqi', 'fish'])
+        expect(joined).toEqual(['matemind', 'fish', PINNED_TAG, 'task:abc123'])
+        expect(getUserTags(tagged(...joined))).toEqual(['matemind', 'fish'])
         expect(getSessionTaskIds(tagged(...joined))).toEqual(['abc123'])
-        expect(withTaskTag(tagged(...joined), task, false)).toEqual(['haqi', 'fish', PINNED_TAG])
+        expect(withTaskTag(tagged(...joined), task, false)).toEqual(['matemind', 'fish', PINNED_TAG])
     })
 
     it('editing user tags keeps the task membership', () => {
-        expect(withUserTags(tagged('haqi', 'task:abc123'), ['fish'])).toEqual(['fish', 'task:abc123'])
+        expect(withUserTags(tagged('matemind', 'task:abc123'), ['fish'])).toEqual(['fish', 'task:abc123'])
     })
 })

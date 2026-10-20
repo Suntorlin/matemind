@@ -254,16 +254,7 @@ function runtimeBridgeServers(flavor: string): McpServerSummary[] {
     if (flavor === 'codex') {
         return [
             {
-                name: 'haqi',
-                status: 'runtime bridge active',
-                available: true,
-                enabled: true,
-                connected: true,
-                transport: 'stdio',
-                source: 'runtime-bridge'
-            },
-            {
-                name: 'hapi',
+                name: 'matemind',
                 status: 'runtime bridge active',
                 available: true,
                 enabled: true,
@@ -277,16 +268,7 @@ function runtimeBridgeServers(flavor: string): McpServerSummary[] {
     if (flavor === 'claude') {
         return [
             {
-                name: 'haqi',
-                status: 'runtime bridge active',
-                available: true,
-                enabled: true,
-                connected: true,
-                transport: 'http',
-                source: 'runtime-bridge'
-            },
-            {
-                name: 'hapi',
+                name: 'matemind',
                 status: 'runtime bridge active',
                 available: true,
                 enabled: true,

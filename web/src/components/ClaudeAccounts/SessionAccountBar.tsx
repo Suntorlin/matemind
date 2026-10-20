@@ -1,4 +1,4 @@
-import type { ClaudeAccountRuntime, ClaudeRateLimitSnapshot } from '@hapi/protocol/schemas'
+import type { ClaudeAccountRuntime, ClaudeRateLimitSnapshot } from '@matemind/protocol/schemas'
 import { useTranslation } from '@/lib/use-translation'
 
 /** Inline account + reset-time summary for the session header meta row. */

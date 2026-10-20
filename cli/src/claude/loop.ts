@@ -7,7 +7,7 @@ import { claudeLocalLauncher } from "./claudeLocalLauncher"
 import { claudeRemoteLauncher } from "./claudeRemoteLauncher"
 import { ApiClient } from "@/lib"
 import type { MessageRouteContext } from "@/api/types"
-import type { ClaudePermissionMode } from "@hapi/protocol/types"
+import type { ClaudePermissionMode } from "@matemind/protocol/types"
 import { resolveClaudeModelSelection } from "./modelMode"
 import type { ClaudeThinkEffort } from "./modelMode"
 
@@ -45,7 +45,7 @@ interface LoopOptions {
 
 export async function loop(opts: LoopOptions) {
 
-    if (process.env.HAPI_CLAUDE_ACCOUNT_HANDOFF === '1' && opts.startingMode !== 'remote') {
+    if (process.env.MATEMIND_CLAUDE_ACCOUNT_HANDOFF === '1' && opts.startingMode !== 'remote') {
         throw new Error('账号接管实验版需要 --happy-starting-mode remote，不允许使用本地默认账号');
     }
     // Get log path for debug display

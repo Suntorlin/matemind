@@ -8,8 +8,8 @@ import type { CodexSession } from './session';
 import { parseCodexCliOverrides } from './utils/codexCliOverrides';
 import { bootstrapSession } from '@/agent/sessionFactory';
 import { createModeChangeHandler, createRunnerLifecycle, setControlledByUser } from '@/agent/runnerLifecycle';
-import { isPermissionModeAllowedForFlavor } from '@hapi/protocol';
-import { PermissionModeSchema } from '@hapi/protocol/schemas';
+import { isPermissionModeAllowedForFlavor } from '@matemind/protocol';
+import { PermissionModeSchema } from '@matemind/protocol/schemas';
 import { formatMessageWithAttachments } from '@/utils/attachmentFormatter';
 import type { ReasoningEffort, ServiceTier } from './appServerTypes';
 import { buildCodexStatusMessage, isCodexStatusCommand, type CodexQueueSnapshot } from './utils/codexStatusCommand';
@@ -41,7 +41,7 @@ export async function runCodex(opts: {
     effort?: ReasoningEffort;
     serviceTier?: ServiceTier;
 }): Promise<void> {
-    const workingDirectory = process.env.HAPI_WORKING_DIRECTORY ?? process.cwd();
+    const workingDirectory = process.env.MATEMIND_WORKING_DIRECTORY ?? process.cwd();
     const startedBy = opts.startedBy ?? 'terminal';
 
     logger.debug(`[codex] Starting with options: startedBy=${startedBy}`);

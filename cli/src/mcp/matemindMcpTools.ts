@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export type HapiMcpToolDefinition = {
+export type MatemindMcpToolDefinition = {
     name: string
     title: string
     description: string
@@ -33,7 +33,7 @@ export const memorySearchInputSchema: z.ZodTypeAny = z.object({
 
 export const MEMORY_SEARCH_DESCRIPTION = "Search the user's long-term memory by meaning (Chinese and English both match). Use it to look up the user's rules, preferences and lessons about this project before you decide how to do something. Each result shows its level (fact, experience, principle), scope and status (active; pending = waiting for the user; candidate = on trial, not yet confirmed)."
 
-export const MEMORY_PROPOSE_DESCRIPTION = "Offer one sentence for the user's long-term memory: a standing preference or rule the user stated, or a durable lesson or fact about this project. HAQI decides whether it is a fact, experience or principle, global or for this project, and may hold it for the user's review. Not for task progress, temporary details, secrets, or anything the code or git history already shows."
+export const MEMORY_PROPOSE_DESCRIPTION = "Offer one sentence for the user's long-term memory: a standing preference or rule the user stated, or a durable lesson or fact about this project. Matemind decides whether it is a fact, experience or principle, global or for this project, and may hold it for the user's review. Not for task progress, temporary details, secrets, or anything the code or git history already shows."
 
 export const reportUpdateInputSchema: z.ZodTypeAny = z.object({
     report_id: z.string().min(1).max(255),
@@ -120,7 +120,7 @@ export const reviewLoopReviewerSubmitInputSchema: z.ZodTypeAny = z.object({
     })).describe('Status of each acceptance criterion')
 })
 
-export const HAPI_MCP_TOOL_DEFINITIONS: HapiMcpToolDefinition[] = [
+export const MATEMIND_MCP_TOOL_DEFINITIONS: MatemindMcpToolDefinition[] = [
     {
         name: 'change_title',
         title: 'Change Chat Title',

@@ -1,5 +1,5 @@
-import { getPermissionModesForFlavor, isModelModeAllowedForFlavor, isPermissionModeAllowedForFlavor, toSessionSummary } from '@hapi/protocol'
-import { ClaudeAccountSelectionSchema, ModelModeSchema, PermissionModeSchema } from '@hapi/protocol/schemas'
+import { getPermissionModesForFlavor, isModelModeAllowedForFlavor, isPermissionModeAllowedForFlavor, toSessionSummary } from '@matemind/protocol'
+import { ClaudeAccountSelectionSchema, ModelModeSchema, PermissionModeSchema } from '@matemind/protocol/schemas'
 import { Hono, type Context } from 'hono'
 import { z } from 'zod'
 import {

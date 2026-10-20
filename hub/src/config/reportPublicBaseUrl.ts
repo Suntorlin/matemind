@@ -9,8 +9,8 @@ export type ReportPublicBaseUrlSettings = {
 }
 
 const REPORT_PUBLIC_BASE_URL_ENV_KEYS = [
-    'HAPI_REPORT_PUBLIC_BASE_URL',
-    'HAPI_REPORT_PUBLIC_URL'
+    'MATEMIND_REPORT_PUBLIC_BASE_URL',
+    'MATEMIND_REPORT_PUBLIC_URL'
 ] as const
 
 function trimTrailingSlash(value: string): string {

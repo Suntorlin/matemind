@@ -45,7 +45,7 @@ describe('validatePath', () => {
 
 describe('resolveValidatedExistingPath', () => {
     it('supports bounded and YOLO-style outside access with symlink protection', async () => {
-        const workspace = await mkdtemp(join(tmpdir(), 'hapi-path-security-'));
+        const workspace = await mkdtemp(join(tmpdir(), 'matemind-path-security-'));
         const workingDir = join(workspace, 'project');
         const outsideDir = join(workspace, 'outside');
         await mkdir(workingDir, { recursive: true });

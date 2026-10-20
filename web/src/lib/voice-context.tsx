@@ -52,7 +52,7 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
             : voiceHooks.onVoiceStarted(sessionId)
 
         // Read voice language preference from localStorage
-        const voiceLang = localStorage.getItem('hapi-voice-lang')
+        const voiceLang = localStorage.getItem('matemind-voice-lang')
         const elevenLabsLang = getElevenLabsCodeFromPreference(voiceLang)
 
         await startRealtimeSession(sessionId, initialContext, elevenLabsLang)

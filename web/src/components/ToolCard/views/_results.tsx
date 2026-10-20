@@ -1,5 +1,5 @@
 import type { ToolViewComponent, ToolViewProps } from '@/components/ToolCard/views/_all'
-import { isObject, safeStringify } from '@hapi/protocol'
+import { isObject, safeStringify } from '@matemind/protocol'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CodeBlock } from '@/components/CodeBlock'
 import { DiffView } from '@/components/DiffView'

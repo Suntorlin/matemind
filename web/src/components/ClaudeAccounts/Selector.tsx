@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ApiClient } from '@/api/client'
-import type { ClaudeAccountSelection } from '@hapi/protocol/schemas'
+import type { ClaudeAccountSelection } from '@matemind/protocol/schemas'
 import { useTranslation } from '@/lib/use-translation'
 import { SettingsSelectRow } from '@/components/settings/SettingsParts'
 import { accountsKey } from './Settings'
 
-type RateLimitSnapshot = import('@hapi/protocol/schemas').ClaudeRateLimitSnapshot
+type RateLimitSnapshot = import('@matemind/protocol/schemas').ClaudeRateLimitSnapshot
 type TranslateFn = (key: string, params?: Record<string, string | number>) => string
 
 // resetsAt is unix seconds; a passed reset means the recorded usage no longer applies.

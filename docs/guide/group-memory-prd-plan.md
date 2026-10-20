@@ -1,7 +1,7 @@
-# HAQI Group 协作 + 记忆池 PRD 与开发计划
+# Matemind Group 协作 + 记忆池 PRD 与开发计划
 
 ## 1. 文档信息
-- 文档名: HAQI Group Collaboration + Memory Pool PRD
+- 文档名: Matemind Group Collaboration + Memory Pool PRD
 - 版本: v1.0
 - 状态: Draft
 - 日期: 2026-02-26
@@ -204,13 +204,13 @@
 - 风险: 记忆文件增长过快。
 - 缓解: daily 分片 + janitor 清理 + 摘要 compounding。
 
-## 13. HAQI-Agent.md 规范（执行规则文件）
+## 13. MATEMIND-Agent.md 规范（执行规则文件）
 文件分两块:
 - `Group Rules`
 - `Memory Rules`
 
 启动注入策略:
-- 启动时加载 `HAQI-Agent.md`。
+- 启动时加载 `MATEMIND-Agent.md`。
 - 若在 group 内，再附加当前 `GROUP-NOTE.md` 摘要段。
 - 通过现有 Claude/Codex system/developer instructions 通道注入。
 

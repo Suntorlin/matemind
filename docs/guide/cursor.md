@@ -1,6 +1,6 @@
 # Cursor Agent
 
-HAQI supports [Cursor Agent CLI](https://cursor.com/docs/cli/using) for running Cursor's AI coding agent with remote control via web and phone.
+Matemind supports [Cursor Agent CLI](https://cursor.com/docs/cli/using) for running Cursor's AI coding agent with remote control via web and phone.
 
 ## Prerequisites
 
@@ -18,13 +18,13 @@ agent --version
 ## Usage
 
 ```bash
-haqi cursor                    # Start Cursor Agent session
-haqi cursor resume <chatId>    # Resume a specific chat
-haqi cursor --continue         # Resume the most recent chat
-haqi cursor --mode plan        # Start in Plan mode
-haqi cursor --mode ask         # Start in Ask mode
-haqi cursor --yolo             # Bypass approval prompts (--force)
-haqi cursor --model <model>    # Specify model
+matemind cursor                    # Start Cursor Agent session
+matemind cursor resume <chatId>    # Resume a specific chat
+matemind cursor --continue         # Resume the most recent chat
+matemind cursor --mode plan        # Start in Plan mode
+matemind cursor --mode ask         # Start in Ask mode
+matemind cursor --yolo             # Bypass approval prompts (--force)
+matemind cursor --model <model>    # Specify model
 ```
 
 ## Permission Modes
@@ -40,7 +40,7 @@ Set mode via `--mode` flag or change from the web UI during a session.
 
 ## Modes
 
-- **Local mode** - Run `haqi cursor` from terminal. Full interactive experience.
+- **Local mode** - Run `matemind cursor` from terminal. Full interactive experience.
 - **Remote mode** - Spawn from web/phone when no terminal. Uses `agent -p` with `--output-format stream-json` and `--trust`. Each user message spawns one agent process; session continues via `--resume`.
 
 ## Limitations
@@ -50,7 +50,7 @@ Set mode via `--mode` flag or change from the web UI during a session.
 
 ## Integration
 
-Once running, your Cursor session appears in the HAQI web app and Telegram Mini App. You can:
+Once running, your Cursor session appears in the Matemind web app and Telegram Mini App. You can:
 
 - Monitor session activity
 - Approve permissions from your phone

@@ -1,6 +1,6 @@
 # Installation
 
-Install the HAQI CLI and set up the hub.
+Install the Matemind CLI and set up the hub.
 
 ## Prerequisites
 
@@ -27,7 +27,7 @@ opencode --version
 
 ## Architecture
 
-HAQI has three components:
+Matemind has three components:
 
 | Component | Role | Required |
 |-----------|------|----------|
@@ -60,29 +60,23 @@ HAQI has three components:
               └───────────┘
 ```
 
-- **CLI**: Start a session with `haqi`. The CLI wraps your AI agent and syncs with the hub.
-- **Hub**: Run `haqi hub`. Stores sessions, handles permissions, enables remote access.
-- **Runner**: Run `haqi runner start`. Lets you spawn sessions from phone/web without keeping a terminal open.
+- **CLI**: Start a session with `matemind`. The CLI wraps your AI agent and syncs with the hub.
+- **Hub**: Run `matemind hub`. Stores sessions, handles permissions, enables remote access.
+- **Runner**: Run `matemind runner start`. Lets you spawn sessions from phone/web without keeping a terminal open.
 
 ### Typical workflows
 
-**Local only**: `haqi hub` → `haqi` → work in terminal
+**Local only**: `matemind hub` → `matemind` → work in terminal
 
-**Remote access**: `haqi hub --relay` → `haqi runner start` → control from phone/web
+**Remote access**: `matemind hub --relay` → `matemind runner start` → control from phone/web
 
 ## Install the CLI
 
 ```bash
-npm install -g @jasonczc/haqi --registry=https://registry.npmjs.org
+npm install -g matemind --registry=https://registry.npmjs.org
 ```
 
 > Recommendation: use the official npm registry for global install. Some mirrors may not sync platform packages in time.
-
-Or with Homebrew:
-
-```bash
-brew install tiann/tap/hapi
-```
 
 ## Other install options
 
@@ -90,19 +84,19 @@ brew install tiann/tap/hapi
 <summary>npx (no install)</summary>
 
 ```bash
-npx @jasonczc/haqi
+npx matemind
 ```
 </details>
 
 <details>
 <summary>Prebuilt binary</summary>
 
-Download the latest release from [GitHub Releases](https://github.com/jasonczc/haqi/releases).
+Download the latest release from [GitHub Releases](https://github.com/matemind/matemind/releases).
 
 ```bash
-xattr -d com.apple.quarantine ./hapi
-chmod +x ./hapi
-sudo mv ./hapi /usr/local/bin/
+xattr -d com.apple.quarantine ./matemind
+chmod +x ./matemind
+sudo mv ./matemind /usr/local/bin/
 ```
 </details>
 
@@ -110,12 +104,13 @@ sudo mv ./hapi /usr/local/bin/
 <summary>Build from source</summary>
 
 ```bash
-git clone https://github.com/jasonczc/haqi.git
-cd haqi
+git clone https://github.com/matemind/matemind.git
+cd matemind
 bun install
 bun build:single-exe
 
-./cli/dist/hapi
+# The binary is written to cli/dist-exe/bun-<os>-<arch>/matemind
+./cli/dist-exe/bun-darwin-arm64/matemind
 ```
 </details>
 
@@ -129,45 +124,47 @@ The hub can be deployed on:
 ### Default: Public Relay (recommended)
 
 ```bash
-haqi hub --relay
+matemind hub --relay
 ```
 
 The terminal displays a URL and QR code. Scan to access from anywhere.
 
-`haqi server` remains supported as an alias.
+`matemind server` remains supported as an alias.
 
 - **End-to-end encrypted** with WireGuard + TLS
 - No configuration needed
 - Works behind NAT, firewalls, and any network
 
-> **Tip:** The relay uses UDP by default. If you experience connectivity issues, set `HAPI_RELAY_FORCE_TCP=true` to force TCP mode.
+> **Tip:** The relay uses UDP by default. If you experience connectivity issues, set `MATEMIND_RELAY_FORCE_TCP=true` to force TCP mode.
 
 ### Local Only
 
 ```bash
-haqi hub
+matemind hub
 # or
-haqi hub --no-relay
+matemind hub --no-relay
 ```
 
 The hub listens on `http://localhost:3006` by default.
 
-On first run, HAQI:
+On first run, Matemind:
 
-1. Creates `~/.hapi/`
+1. Creates `~/.matemind/`
 2. Generates a secure access token
-3. Prints the token and saves it to `~/.hapi/settings.json`
+3. Prints the token and saves it to `~/.matemind/settings.json`
 
 <details>
 <summary>Config files</summary>
 
 ```
-~/.hapi/
+~/.matemind/
 ├── settings.json      # Main configuration
-├── hapi.db           # SQLite database (hub)
+├── matemind.db        # SQLite database (hub)
 ├── runner.state.json  # Runner process state
 └── logs/             # Log files
 ```
+
+Upgrading from HAQI or hapi: if `~/.matemind` does not exist and `~/.hapi` does, Matemind uses `~/.hapi` as is. It keeps using `hapi.db` there.
 </details>
 
 <details>
@@ -176,19 +173,21 @@ On first run, HAQI:
 | Variable | Default | settings.json | Description |
 |----------|---------|---------------|-------------|
 | `CLI_API_TOKEN` | Auto-generated | `cliApiToken` | Shared secret for authentication |
-| `HAPI_API_URL` | `http://localhost:3006` | `apiUrl` | Hub URL for CLI connections |
-| `HAPI_LISTEN_HOST` | `127.0.0.1` | `listenHost` | Hub HTTP bind address |
-| `HAPI_LISTEN_PORT` | `3006` | `listenPort` | Hub HTTP port |
-| `HAPI_PUBLIC_URL` | - | `publicUrl` | Public URL for external access |
+| `MATEMIND_API_URL` | `http://localhost:3006` | `apiUrl` | Hub URL for CLI connections |
+| `MATEMIND_LISTEN_HOST` | `127.0.0.1` | `listenHost` | Hub HTTP bind address |
+| `MATEMIND_LISTEN_PORT` | `3006` | `listenPort` | Hub HTTP port |
+| `MATEMIND_PUBLIC_URL` | - | `publicUrl` | Public URL for external access |
 | `CORS_ORIGINS` | - | `corsOrigins` | Allowed CORS origins (comma-separated) |
 | `TELEGRAM_BOT_TOKEN` | - | `telegramBotToken` | Telegram Bot API token |
 | `TELEGRAM_NOTIFICATION` | `true` | `telegramNotification` | Enable Telegram notifications |
-| `HAPI_RELAY_FORCE_TCP` | `false` | - | Force TCP mode for relay |
+| `MATEMIND_RELAY_FORCE_TCP` | `false` | - | Force TCP mode for relay |
 | `VAPID_SUBJECT` | `mailto:admin@hapi.run` | - | Web Push contact info |
-| `HAPI_HOME` | `~/.hapi` | - | Config directory path |
-| `DB_PATH` | `~/.hapi/hapi.db` | - | Database file path |
+| `MATEMIND_HOME` | `~/.matemind` | - | Config directory path |
+| `DB_PATH` | `~/.matemind/matemind.db` | - | Database file path |
 | `ELEVENLABS_API_KEY` | - | - | ElevenLabs API key for voice |
 | `ELEVENLABS_AGENT_ID` | Auto-created | - | Custom ElevenLabs agent ID |
+
+Legacy `HAPI_*` and `HAQI_*` variables still work. At start-up, a legacy `HAPI_X` or `HAQI_X` fills `MATEMIND_X` when `MATEMIND_X` is unset.
 </details>
 
 <details>
@@ -200,40 +199,40 @@ When ENV values are set and not present in settings.json, they are automatically
 
 ```json
 {
-  "$schema": "https://hapi.run/docs/schemas/settings.schema.json",
+  "$schema": "https://raw.githubusercontent.com/matemind/matemind/main/docs/public/schemas/settings.schema.json",
   "listenHost": "0.0.0.0",
   "listenPort": 3006,
   "publicUrl": "https://your-domain.com"
 }
 ```
 
-JSON Schema: [settings.schema.json](https://hapi.run/schemas/settings.schema.json)
+JSON Schema: [settings.schema.json](https://github.com/matemind/matemind/blob/main/docs/public/schemas/settings.schema.json)
 </details>
 
 ## CLI setup
 
-If the hub is not on localhost, set these before running `haqi`:
+If the hub is not on localhost, set these before running `matemind`:
 
 ```bash
-export HAPI_API_URL="http://your-hub:3006"
+export MATEMIND_API_URL="http://your-hub:3006"
 export CLI_API_TOKEN="your-token-here"
 ```
 
 Or use interactive login:
 
 ```bash
-haqi auth login
+matemind auth login
 ```
 
 Authentication commands:
 
 ```bash
-haqi auth status
-haqi auth login
-haqi auth logout
+matemind auth status
+matemind auth login
+matemind auth logout
 ```
 
-Each machine gets a unique ID stored in `~/.hapi/settings.json`. This allows:
+Each machine gets a unique ID stored in `~/.matemind/settings.json`. This allows:
 
 - Multiple machines to connect to one hub
 - Remote session spawning on specific machines
@@ -250,7 +249,7 @@ If you prefer not to use the public relay (e.g., for lower latency or self-manag
 
 https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
 
-> **Note:** Cloudflare Quick Tunnels (TryCloudflare) are not supported because they [do not support SSE](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/), which HAQI uses for real-time updates. Use a Named Tunnel instead.
+> **Note:** Cloudflare Quick Tunnels (TryCloudflare) are not supported because they [do not support SSE](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/), which Matemind uses for real-time updates. Use a Named Tunnel instead.
 
 **Named tunnel setup:**
 
@@ -258,11 +257,11 @@ https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
 # Install cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
 
 # Create and configure a named tunnel
-cloudflared tunnel create hapi
-cloudflared tunnel route dns hapi hapi.yourdomain.com
+cloudflared tunnel create matemind
+cloudflared tunnel route dns matemind matemind.example.com
 
 # Run the tunnel
-cloudflared tunnel --protocol http2 run hapi
+cloudflared tunnel --protocol http2 run matemind
 ```
 
 > **Tip:** Use `--protocol http2` instead of QUIC (the default) to avoid potential timeout issues with long-lived connections.
@@ -276,7 +275,7 @@ https://tailscale.com/download
 
 ```bash
 sudo tailscale up
-haqi hub
+matemind hub
 ```
 
 Access via your Tailscale IP:
@@ -295,7 +294,7 @@ Use HTTPS (via Nginx, Caddy, etc.) for production.
 
 **Self-signed certificates (HTTPS)**
 
-If `HAPI_API_URL` is set to an `https://...` URL with a self-signed (or otherwise untrusted) certificate, the CLI may fail with:
+If `MATEMIND_API_URL` is set to an `https://...` URL with a self-signed (or otherwise untrusted) certificate, the CLI may fail with:
 
 ```
 Error: self signed certificate
@@ -329,16 +328,16 @@ Enable Telegram notifications and Mini App access:
 
 ```bash
 export TELEGRAM_BOT_TOKEN="your-bot-token"
-export HAPI_PUBLIC_URL="https://your-public-url"
+export MATEMIND_PUBLIC_URL="https://your-public-url"
 
-haqi hub
+matemind hub
 ```
 
 Then message your bot with `/start`, open the app, and enter your `CLI_API_TOKEN`.
 
 **Troubleshooting:**
 
-- If binding fails, verify `HAPI_PUBLIC_URL` is accessible from the internet
+- If binding fails, verify `MATEMIND_PUBLIC_URL` is accessible from the internet
 - Telegram Mini App requires HTTPS (not HTTP)
 
 ### Runner setup
@@ -346,10 +345,10 @@ Then message your bot with `/start`, open the app, and enter your `CLI_API_TOKEN
 Run a background service for remote session spawning:
 
 ```bash
-haqi runner start
-haqi runner status
-haqi runner logs
-haqi runner stop
+matemind runner start
+matemind runner status
+matemind runner logs
+matemind runner stop
 ```
 
 With the runner running:
@@ -364,14 +363,14 @@ With the runner running:
 If you prefer pm2 for process management:
 
 ```bash
-pm2 start "haqi runner start --foreground" --name hapi-runner
+pm2 start "matemind runner start --foreground" --name matemind-runner
 pm2 save
 ```
 </details>
 
 ### Background service deployment
 
-Keep HAQI running persistently so it survives terminal closes, system restarts, and continues running in the background.
+Keep Matemind running persistently so it survives terminal closes, system restarts, and continues running in the background.
 
 <details>
 <summary>Quick: nohup</summary>
@@ -380,24 +379,24 @@ Simple one-liner for quick background runs:
 
 ```bash
 # Hub
-nohup haqi hub --relay > ~/.hapi/logs/hub.log 2>&1 &
+nohup matemind hub --relay > ~/.matemind/logs/hub.log 2>&1 &
 
 # Runner
-nohup haqi runner start --foreground > ~/.hapi/logs/runner.log 2>&1 &
+nohup matemind runner start --foreground > ~/.matemind/logs/runner.log 2>&1 &
 ```
 
 View logs:
 
 ```bash
-tail -f ~/.hapi/logs/hub.log
-tail -f ~/.hapi/logs/runner.log
+tail -f ~/.matemind/logs/hub.log
+tail -f ~/.matemind/logs/runner.log
 ```
 
 Stop processes:
 
 ```bash
-pkill -f "haqi hub"
-pkill -f "haqi runner"
+pkill -f "matemind hub"
+pkill -f "matemind runner"
 ```
 </details>
 
@@ -411,13 +410,13 @@ pm2 provides process management with auto-restart on crashes and system reboot.
 npm install -g pm2
 
 # Start hub and runner
-pm2 start "haqi hub --relay" --name haqi-hub
-pm2 start "haqi runner start --foreground" --name hapi-runner
+pm2 start "matemind hub --relay" --name matemind-hub
+pm2 start "matemind runner start --foreground" --name matemind-runner
 
 # View status and logs
 pm2 status
-pm2 logs haqi-hub
-pm2 logs hapi-runner
+pm2 logs matemind-hub
+pm2 logs matemind-runner
 
 # Auto-restart on system reboot
 pm2 startup    # Follow the printed instructions
@@ -430,7 +429,7 @@ pm2 save       # Save current process list
 
 Create plist files for automatic startup on macOS.
 
-**Hub** (`~/Library/LaunchAgents/com.hapi.hub.plist`):
+**Hub** (`~/Library/LaunchAgents/com.matemind.hub.plist`):
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -438,10 +437,10 @@ Create plist files for automatic startup on macOS.
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.hapi.hub</string>
+    <string>com.matemind.hub</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/hapi</string>
+        <string>/usr/local/bin/matemind</string>
         <string>hub</string>
         <string>--relay</string>
     </array>
@@ -450,14 +449,14 @@ Create plist files for automatic startup on macOS.
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/Users/YOUR_USERNAME/.hapi/logs/hub.log</string>
+    <string>/Users/YOUR_USERNAME/.matemind/logs/hub.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/YOUR_USERNAME/.hapi/logs/hub.log</string>
+    <string>/Users/YOUR_USERNAME/.matemind/logs/hub.log</string>
 </dict>
 </plist>
 ```
 
-**Runner** (`~/Library/LaunchAgents/com.hapi.runner.plist`):
+**Runner** (`~/Library/LaunchAgents/com.matemind.runner.plist`):
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -465,10 +464,10 @@ Create plist files for automatic startup on macOS.
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.hapi.runner</string>
+    <string>com.matemind.runner</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/hapi</string>
+        <string>/usr/local/bin/matemind</string>
         <string>runner</string>
         <string>start</string>
         <string>--foreground</string>
@@ -478,9 +477,9 @@ Create plist files for automatic startup on macOS.
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/Users/YOUR_USERNAME/.hapi/logs/runner.log</string>
+    <string>/Users/YOUR_USERNAME/.matemind/logs/runner.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/YOUR_USERNAME/.hapi/logs/runner.log</string>
+    <string>/Users/YOUR_USERNAME/.matemind/logs/runner.log</string>
 </dict>
 </plist>
 ```
@@ -489,19 +488,19 @@ Load/unload services:
 
 ```bash
 # Load (start)
-launchctl load ~/Library/LaunchAgents/com.hapi.hub.plist
-launchctl load ~/Library/LaunchAgents/com.hapi.runner.plist
+launchctl load ~/Library/LaunchAgents/com.matemind.hub.plist
+launchctl load ~/Library/LaunchAgents/com.matemind.runner.plist
 
 # Unload (stop)
-launchctl unload ~/Library/LaunchAgents/com.hapi.hub.plist
-launchctl unload ~/Library/LaunchAgents/com.hapi.runner.plist
+launchctl unload ~/Library/LaunchAgents/com.matemind.hub.plist
+launchctl unload ~/Library/LaunchAgents/com.matemind.runner.plist
 ```
 
 > **macOS sleep note:** macOS may suspend background processes when the display sleeps. Use `caffeinate` to prevent this:
 > ```bash
-> caffeinate -dimsu haqi hub --relay
+> caffeinate -dimsu matemind hub --relay
 > ```
-> Or run `caffeinate -dimsu` in a separate terminal while HAQI is running.
+> Or run `caffeinate -dimsu` in a separate terminal while Matemind is running.
 </details>
 
 <details>
@@ -509,16 +508,16 @@ launchctl unload ~/Library/LaunchAgents/com.hapi.runner.plist
 
 Create user-level systemd services for automatic startup.
 
-**Hub** (`~/.config/systemd/user/haqi-hub.service`):
+**Hub** (`~/.config/systemd/user/matemind-hub.service`):
 
 ```ini
 [Unit]
-Description=HAQI Hub
+Description=Matemind Hub
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/haqi hub --relay
+ExecStart=/usr/local/bin/matemind hub --relay
 Restart=always
 RestartSec=5
 
@@ -526,16 +525,16 @@ RestartSec=5
 WantedBy=default.target
 ```
 
-**Runner** (`~/.config/systemd/user/hapi-runner.service`):
+**Runner** (`~/.config/systemd/user/matemind-runner.service`):
 
 ```ini
 [Unit]
-Description=HAQI Runner
-After=network.target haqi-hub.service
+Description=Matemind Runner
+After=network.target matemind-hub.service
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/haqi runner start --foreground
+ExecStart=/usr/local/bin/matemind runner start --foreground
 Restart=always
 RestartSec=5
 
@@ -550,16 +549,16 @@ Enable and start:
 systemctl --user daemon-reload
 
 # Enable (auto-start on login)
-systemctl --user enable haqi-hub
-systemctl --user enable hapi-runner
+systemctl --user enable matemind-hub
+systemctl --user enable matemind-runner
 
 # Start now
-systemctl --user start haqi-hub
-systemctl --user start hapi-runner
+systemctl --user start matemind-hub
+systemctl --user start matemind-runner
 
 # View status/logs
-systemctl --user status haqi-hub
-journalctl --user -u haqi-hub -f
+systemctl --user status matemind-hub
+journalctl --user -u matemind-hub -f
 ```
 
 > **Persist after logout:** To keep services running even when not logged in:
@@ -577,7 +576,7 @@ Enable voice control:
 
 ```bash
 export ELEVENLABS_API_KEY="your-api-key"
-haqi hub --relay
+matemind hub --relay
 ```
 
 See [Voice Assistant](./voice-assistant.md) for usage details.

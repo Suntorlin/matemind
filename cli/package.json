@@ -1,7 +1,7 @@
 {
   "name": "matemind",
   "version": "0.16.0",
-  "description": "App for agentic coding - access coding agent anywhere",
+  "description": "The first mate for your AI coding agents: understands what you want, splits it into tasks, and gives you the bottom line.",
   "author": "Kirill Dubovitskiy & weishu",
   "license": "AGPL-3.0-only",
   "type": "module",

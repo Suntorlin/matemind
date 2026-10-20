@@ -107,20 +107,20 @@ export const runnerCommand: CommandDefinition = {
         }
 
         console.log(`
-${chalk.bold('hapi runner')} - Runner management
+${chalk.bold('matemind runner')} - Runner management
 
 ${chalk.bold('Usage:')}
-  hapi runner start              Start the runner (detached)
-  hapi runner stop               Stop the runner (sessions stay alive)
-  hapi runner status             Show runner status
-  hapi runner list               List active sessions
+  matemind runner start              Start the runner (detached)
+  matemind runner stop               Stop the runner (sessions stay alive)
+  matemind runner status             Show runner status
+  matemind runner list               List active sessions
 
-  If you want to kill all hapi related processes run 
-  ${chalk.cyan('hapi doctor clean')}
+  If you want to kill all matemind related processes run 
+  ${chalk.cyan('matemind doctor clean')}
 
 ${chalk.bold('Note:')} The runner runs in the background and manages Claude sessions.
 
-${chalk.bold('To clean up runaway processes:')} Use ${chalk.cyan('hapi doctor clean')}
+${chalk.bold('To clean up runaway processes:')} Use ${chalk.cyan('matemind doctor clean')}
 `)
     }
 }

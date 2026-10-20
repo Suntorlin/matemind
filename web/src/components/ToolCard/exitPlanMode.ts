@@ -1,4 +1,4 @@
-import { isObject } from '@hapi/protocol'
+import { isObject } from '@matemind/protocol'
 import { getInputStringAny } from '@/lib/toolInputUtils'
 
 export function isExitPlanToolName(toolName: string): boolean {

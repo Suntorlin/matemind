@@ -57,7 +57,7 @@ describe('attachmentAdapter queue preservation', () => {
         } as unknown as ApiClient
 
         const sessionId = 'session-queue-preserve'
-        const path = '/tmp/hapi-upload.txt'
+        const path = '/tmp/matemind-upload.txt'
         const adapter = createAttachmentAdapter(api, sessionId)
 
         preserveUploadPathsForQueue(sessionId, [path])
@@ -76,7 +76,7 @@ describe('attachmentAdapter queue preservation', () => {
         } as unknown as ApiClient
 
         const sessionId = 'session-normal-remove'
-        const path = '/tmp/hapi-normal.txt'
+        const path = '/tmp/matemind-normal.txt'
         const adapter = createAttachmentAdapter(api, sessionId)
 
         await adapter.remove({ id: 'att-normal', path } as unknown as Parameters<typeof adapter.remove>[0])
@@ -94,7 +94,7 @@ describe('attachmentAdapter queue preservation', () => {
 
         const sessionA = 'session-A'
         const sessionB = 'session-B'
-        const path = '/tmp/hapi-shared.txt'
+        const path = '/tmp/matemind-shared.txt'
         const adapterA = createAttachmentAdapter(apiA, sessionA)
         const adapterB = createAttachmentAdapter(apiB, sessionB)
 

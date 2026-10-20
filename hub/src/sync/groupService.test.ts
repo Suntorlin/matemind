@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { Database } from 'bun:sqlite'
-import type { SyncEvent } from '@hapi/protocol/types'
+import type { SyncEvent } from '@matemind/protocol/types'
 import { existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -435,9 +435,9 @@ describe('GroupService createGroup', () => {
         expect(result.createdTasks).toHaveLength(1)
         expect(dispatched).toHaveLength(1)
         expect(dispatched[0]?.targetSessionId).toBe(worker.id)
-        expect(dispatched[0]?.command).toContain('[HAQI_GROUP_TASK_CONTEXT]')
+        expect(dispatched[0]?.command).toContain('[MATEMIND_GROUP_TASK_CONTEXT]')
         expect(dispatched[0]?.command).toContain('Group Note Markdown Path: (disabled: in-memory store)')
-        expect(dispatched[0]?.command).toContain(`Your HAQI Session ID (self): ${worker.id}`)
+        expect(dispatched[0]?.command).toContain(`Your Matemind Session ID (self): ${worker.id}`)
         expect(dispatched[0]?.command).toContain(`@${worker.id} 请处理重试逻辑`)
     })
 
@@ -488,8 +488,8 @@ describe('GroupService createGroup', () => {
         expect(dispatched).toHaveLength(2)
         expect(dispatched[0]?.targetSessionId).toBe(worker.id)
         expect(dispatched[1]?.targetSessionId).toBe(worker.id)
-        expect(dispatched[0]?.command).toContain('[HAQI_GROUP_TASK_CONTEXT]')
-        expect(dispatched[1]?.command).not.toContain('[HAQI_GROUP_TASK_CONTEXT]')
+        expect(dispatched[0]?.command).toContain('[MATEMIND_GROUP_TASK_CONTEXT]')
+        expect(dispatched[1]?.command).not.toContain('[MATEMIND_GROUP_TASK_CONTEXT]')
         expect(dispatched[1]?.command).toContain(`@${worker.id} 第二条任务`)
     })
 
@@ -630,10 +630,10 @@ describe('GroupService createGroup', () => {
     })
 
     it('persists group note markdown to disk when store is file-backed', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'haqi-group-note-md-'))
-        const previousHapiHome = process.env.HAPI_HOME
-        process.env.HAPI_HOME = dir
-        const dbPath = join(dir, 'hapi.db')
+        const dir = mkdtempSync(join(tmpdir(), 'matemind-group-note-md-'))
+        const previousMatemindHome = process.env.MATEMIND_HOME
+        process.env.MATEMIND_HOME = dir
+        const dbPath = join(dir, 'matemind.db')
         const store = new Store(dbPath)
         try {
             const service = createService(store)
@@ -655,20 +655,20 @@ describe('GroupService createGroup', () => {
             expect(fileContent).toBe(content)
         } finally {
             closeStore(store)
-            if (previousHapiHome === undefined) {
-                delete process.env.HAPI_HOME
+            if (previousMatemindHome === undefined) {
+                delete process.env.MATEMIND_HOME
             } else {
-                process.env.HAPI_HOME = previousHapiHome
+                process.env.MATEMIND_HOME = previousMatemindHome
             }
             rmSync(dir, { recursive: true, force: true })
         }
     })
 
     it('syncs newer markdown file content back into group note', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'haqi-group-note-sync-pull-'))
-        const previousHapiHome = process.env.HAPI_HOME
-        process.env.HAPI_HOME = dir
-        const dbPath = join(dir, 'hapi.db')
+        const dir = mkdtempSync(join(tmpdir(), 'matemind-group-note-sync-pull-'))
+        const previousMatemindHome = process.env.MATEMIND_HOME
+        process.env.MATEMIND_HOME = dir
+        const dbPath = join(dir, 'matemind.db')
         const store = new Store(dbPath)
         try {
             const service = createService(store)
@@ -702,20 +702,20 @@ describe('GroupService createGroup', () => {
             expect(note?.updatedBy).toBe('system:file-sync')
         } finally {
             closeStore(store)
-            if (previousHapiHome === undefined) {
-                delete process.env.HAPI_HOME
+            if (previousMatemindHome === undefined) {
+                delete process.env.MATEMIND_HOME
             } else {
-                process.env.HAPI_HOME = previousHapiHome
+                process.env.MATEMIND_HOME = previousMatemindHome
             }
             rmSync(dir, { recursive: true, force: true })
         }
     })
 
     it('recreates missing markdown file from stored group note', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'haqi-group-note-sync-push-'))
-        const previousHapiHome = process.env.HAPI_HOME
-        process.env.HAPI_HOME = dir
-        const dbPath = join(dir, 'hapi.db')
+        const dir = mkdtempSync(join(tmpdir(), 'matemind-group-note-sync-push-'))
+        const previousMatemindHome = process.env.MATEMIND_HOME
+        process.env.MATEMIND_HOME = dir
+        const dbPath = join(dir, 'matemind.db')
         const store = new Store(dbPath)
         try {
             const service = createService(store)
@@ -742,10 +742,10 @@ describe('GroupService createGroup', () => {
             expect(readFileSync(notePath, 'utf8')).toBe(content)
         } finally {
             closeStore(store)
-            if (previousHapiHome === undefined) {
-                delete process.env.HAPI_HOME
+            if (previousMatemindHome === undefined) {
+                delete process.env.MATEMIND_HOME
             } else {
-                process.env.HAPI_HOME = previousHapiHome
+                process.env.MATEMIND_HOME = previousMatemindHome
             }
             rmSync(dir, { recursive: true, force: true })
         }

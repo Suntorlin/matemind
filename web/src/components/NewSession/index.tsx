@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent as ReactFormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
-import type { ClaudeAccountSelection } from '@hapi/protocol/schemas'
+import type { ClaudeAccountSelection } from '@matemind/protocol/schemas'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { accountsKey } from '@/components/ClaudeAccounts/Settings'
 import type { ApiClient } from '@/api/client'

@@ -27,7 +27,7 @@ const NOT_WRITTEN_BY_USER = [
 /** The user's text without attachment paths, or null when the message is not something the user wrote. */
 export function userText(raw: string): string | null {
     if (NOT_WRITTEN_BY_USER.some((pattern) => pattern.test(raw))) return null
-    const text = raw.replace(/@\/\S*hapi-blobs\/\S+/g, ' ').replace(/[ \t]+/g, ' ').trim()
+    const text = raw.replace(/@\/\S*matemind-blobs\/\S+/g, ' ').replace(/[ \t]+/g, ' ').trim()
     if (text.length < MIN_CHARS || text.length > MAX_CHARS) return null
     return text
 }

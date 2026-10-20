@@ -49,7 +49,7 @@ export type SearchHit = { memory: StoredMemory; score: number }
 /** How far a memory on trial is: mentions inside the window, and when it last came up. */
 export type TrialState = { recent: number; lastAt: number }
 
-const DEFAULT_PROJECTS = ['haqi']
+const DEFAULT_PROJECTS = ['matemind']
 const MAX_TEXT = 400
 const LEVEL_LABEL: Record<MemoryLevel, string> = { fact: '事实', experience: '经验', principle: '原则' }
 const DAY_MS = 24 * 3600 * 1000

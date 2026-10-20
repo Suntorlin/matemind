@@ -1,4 +1,4 @@
-import { isObject } from '@hapi/protocol';
+import { isObject } from '@matemind/protocol';
 
 type ToolNameSource = 'title' | 'raw_input_name' | 'raw_input_tool' | 'kind' | 'default';
 

@@ -1,6 +1,6 @@
 import type { ToolViewProps } from '@/components/ToolCard/views/_all'
 import { DiffView } from '@/components/DiffView'
-import { isObject } from '@hapi/protocol'
+import { isObject } from '@matemind/protocol'
 import { HIT_AREA_CLASS } from '@/components/AssistantChat/hitArea'
 import { resolveDisplayPath } from '@/utils/path'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'

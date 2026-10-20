@@ -109,15 +109,15 @@ describe('usageCostEstimate', () => {
     const originalFetch = globalThis.fetch
 
     afterEach(() => {
-        delete process.env.HAPI_USAGE_ESTIMATE_CLAUDE_USD_PER_MTOK
-        delete process.env.HAPI_USAGE_ESTIMATE_CODEX_USD_PER_MTOK
-        delete process.env.HAPI_USAGE_ESTIMATE_CLAUDE_MODEL
-        delete process.env.HAPI_USAGE_ESTIMATE_CODEX_MODEL
+        delete process.env.MATEMIND_USAGE_ESTIMATE_CLAUDE_USD_PER_MTOK
+        delete process.env.MATEMIND_USAGE_ESTIMATE_CODEX_USD_PER_MTOK
+        delete process.env.MATEMIND_USAGE_ESTIMATE_CLAUDE_MODEL
+        delete process.env.MATEMIND_USAGE_ESTIMATE_CODEX_MODEL
         globalThis.fetch = originalFetch
     })
 
     it('estimates provider cost from total tokens', async () => {
-        process.env.HAPI_USAGE_ESTIMATE_CLAUDE_USD_PER_MTOK = '5'
+        process.env.MATEMIND_USAGE_ESTIMATE_CLAUDE_USD_PER_MTOK = '5'
         const provider = createProvider('claude', 3_000_000, 500_000)
         const estimate = await estimateProviderCost(provider)
 
@@ -139,8 +139,8 @@ describe('usageCostEstimate', () => {
     })
 
     it('attaches estimate to both providers', async () => {
-        process.env.HAPI_USAGE_ESTIMATE_CLAUDE_USD_PER_MTOK = '5'
-        process.env.HAPI_USAGE_ESTIMATE_CODEX_USD_PER_MTOK = '5'
+        process.env.MATEMIND_USAGE_ESTIMATE_CLAUDE_USD_PER_MTOK = '5'
+        process.env.MATEMIND_USAGE_ESTIMATE_CODEX_USD_PER_MTOK = '5'
         const overview: UsageOverview = {
             generatedAt: Date.parse('2026-02-27T00:00:00.000Z'),
             windowDays: 30,
@@ -177,7 +177,7 @@ describe('usageCostEstimate', () => {
     })
 
     it('does not bill reasoning output tokens twice', async () => {
-        process.env.HAPI_USAGE_ESTIMATE_CODEX_USD_PER_MTOK = '5'
+        process.env.MATEMIND_USAGE_ESTIMATE_CODEX_USD_PER_MTOK = '5'
         const provider = createProviderWithTotals(
             'codex',
             {
@@ -199,7 +199,7 @@ describe('usageCostEstimate', () => {
     })
 
     it('does not double bill when cacheReadTokens and cachedInputTokens coexist', async () => {
-        process.env.HAPI_USAGE_ESTIMATE_CODEX_USD_PER_MTOK = '1'
+        process.env.MATEMIND_USAGE_ESTIMATE_CODEX_USD_PER_MTOK = '1'
         const provider = createProviderWithTotals(
             'codex',
             {

@@ -4,7 +4,7 @@ import { logger } from 'hono/logger'
 import { join, resolve } from 'node:path'
 import { existsSync } from 'node:fs'
 import { configuration } from '../configuration'
-import { PROTOCOL_VERSION } from '@hapi/protocol'
+import { PROTOCOL_VERSION } from '@matemind/protocol'
 import type { SyncEngine } from '../sync/syncEngine'
 import { createAuthMiddleware, type WebAppEnv } from './middleware/auth'
 import { createAuthRoutes } from './routes/auth'
@@ -165,9 +165,9 @@ function createWebApp(options: {
         app.get('/', (c) => {
             return c.html(`<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>HAQI Hub</title></head>
+<head><meta charset="utf-8"><title>Matemind Hub</title></head>
 <body style="font-family: system-ui; padding: 2rem; max-width: 600px;">
-<h1>HAQI Hub</h1>
+<h1>Matemind Hub</h1>
 <p>This hub is running in relay mode. Please use the official web app:</p>
 <p><a href="${officialUrl}">${officialUrl}</a></p>
 <details>

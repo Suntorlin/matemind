@@ -143,7 +143,7 @@ async function readNativeStatus(cwd: string): Promise<{ snapshot: NativeStatusSn
         await client.connect();
         await client.initialize({
             clientInfo: {
-                name: 'hapi-codex-status',
+                name: 'matemind-codex-status',
                 version: '1.0.0'
             }
         });

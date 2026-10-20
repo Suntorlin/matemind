@@ -1,5 +1,5 @@
-import { AgentStateSchema, MetadataSchema, TeamStateSchema } from '@hapi/protocol/schemas'
-import type { ModelMode, PermissionMode, Session } from '@hapi/protocol/types'
+import { AgentStateSchema, MetadataSchema, TeamStateSchema } from '@matemind/protocol/schemas'
+import type { ModelMode, PermissionMode, Session } from '@matemind/protocol/types'
 import type { PreviewUrlHistoryEntry, Store } from '../store'
 import { clampAliveTime } from './aliveTime'
 import { EventPublisher } from './eventPublisher'

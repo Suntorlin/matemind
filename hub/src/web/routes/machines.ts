@@ -5,7 +5,7 @@ import {
     CodexCredentialActivateRequestSchema,
     CodexCredentialImportRequestSchema,
     CodexCredentialSaveCurrentRequestSchema
-} from '@hapi/protocol/schemas'
+} from '@matemind/protocol/schemas'
 import type { SyncEngine } from '../../sync/syncEngine'
 import type { WebAppEnv } from '../middleware/auth'
 import { requireMachine } from './guards'
@@ -58,9 +58,9 @@ export function createMachinesRoutes(getSyncEngine: () => SyncEngine | null): Ho
         const machine = requireMachine(c, engine, id)
         if (machine instanceof Response) return machine
         try {
-            const data = await engine.claudeAccounts(id, 'get') as import('@hapi/protocol/schemas').ClaudeAccountPoolView
+            const data = await engine.claudeAccounts(id, 'get') as import('@matemind/protocol/schemas').ClaudeAccountPoolView
             if (!data?.pool || !ClaudeAccountPoolSchema.safeParse(data.pool).success) throw new Error('Runner 不支持账号管理，请升级隔离版 Runner')
-            const usage: Record<string, import('@hapi/protocol/schemas').ClaudeRateLimitSnapshot> = {}
+            const usage: Record<string, import('@matemind/protocol/schemas').ClaudeRateLimitSnapshot> = {}
             for (const session of engine.getSessionsByNamespace(c.get('namespace'))) {
                 const meta = session.metadata
                 if (meta?.machineId !== id || !meta.claudeAccount || !meta.rateLimitSnapshot) continue

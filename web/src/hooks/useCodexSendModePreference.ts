@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { CodexSendMode } from '@/components/AssistantChat/HappyComposer'
 
-const CODEX_SEND_MODE_DEFAULT_KEY = 'hapi:codexSendModeDefault'
+const CODEX_SEND_MODE_DEFAULT_KEY = 'matemind:codexSendModeDefault'
 
 // Queue is the default for every session: messages sent while the agent runs wait in line instead of interrupting it.
 function normalizeCodexSendMode(value: string | null): CodexSendMode {

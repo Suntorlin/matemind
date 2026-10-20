@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { markSessionUnread } from '@/lib/unread-sessions'
 import { useQueryClient } from '@tanstack/react-query'
-import { isObject, toSessionSummary } from '@hapi/protocol'
+import { isObject, toSessionSummary } from '@matemind/protocol'
 import type {
     Machine,
     MachinesResponse,

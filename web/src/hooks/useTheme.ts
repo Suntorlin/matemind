@@ -5,7 +5,7 @@ type ColorScheme = 'light' | 'dark'
 export type ThemePreference = 'system' | 'light' | 'dark'
 export type AppearancePreference = ThemePreference
 
-const THEME_PREFERENCE_STORAGE_KEY = 'hapi-theme'
+const THEME_PREFERENCE_STORAGE_KEY = 'matemind-theme'
 const APPEARANCE_KEY = THEME_PREFERENCE_STORAGE_KEY
 
 export function normalizeThemePreference(value: string | null): ThemePreference {

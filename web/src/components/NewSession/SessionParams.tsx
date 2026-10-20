@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ClaudeAccountSelection } from '@hapi/protocol/schemas'
+import type { ClaudeAccountSelection } from '@matemind/protocol/schemas'
 import type { ApiClient } from '@/api/client'
 import { ClaudeAccountRow } from '@/components/ClaudeAccounts/Selector'
 import { SettingsSelectRow, SettingsSwitchRow } from '@/components/settings/SettingsParts'

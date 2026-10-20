@@ -10,13 +10,13 @@ const config: AccountsConfig = {
     version: 1,
     initialAccount: 'test',
     autoSwitch: false,
-    profiles: [{ id: 'test', email: 'test@example.com', configDir: '/tmp/haqi-test-account', trustGroup: 'test' }]
+    profiles: [{ id: 'test', email: 'test@example.com', configDir: '/tmp/matemind-test-account', trustGroup: 'test' }]
 };
 
 function options(sessionId: string | null): Parameters<typeof claudeRemote>[0] {
     return {
         sessionId,
-        path: '/tmp/haqi-test-project',
+        path: '/tmp/matemind-test-project',
         allowedTools: [],
         hookSettingsPath: '',
         canCallTool: async (_name, input) => ({ behavior: 'allow', updatedInput: (input ?? {}) as Record<string, unknown> }),
@@ -30,10 +30,10 @@ function options(sessionId: string | null): Parameters<typeof claudeRemote>[0] {
 
 beforeEach(() => vi.clearAllMocks());
 
-const previousResumeIdle = process.env.HAPI_CLAUDE_ACCOUNT_RESUME_IDLE;
+const previousResumeIdle = process.env.MATEMIND_CLAUDE_ACCOUNT_RESUME_IDLE;
 afterEach(() => {
-    if (previousResumeIdle === undefined) delete process.env.HAPI_CLAUDE_ACCOUNT_RESUME_IDLE;
-    else process.env.HAPI_CLAUDE_ACCOUNT_RESUME_IDLE = previousResumeIdle;
+    if (previousResumeIdle === undefined) delete process.env.MATEMIND_CLAUDE_ACCOUNT_RESUME_IDLE;
+    else process.env.MATEMIND_CLAUDE_ACCOUNT_RESUME_IDLE = previousResumeIdle;
 });
 
 describe('受管理 Claude 会话中止后的恢复', () => {
@@ -88,7 +88,7 @@ describe('受管理 Claude 会话中止后的恢复', () => {
     });
 
     it('显式切换账号时从历史会话空闲启动，不注入继续提示词', async () => {
-        process.env.HAPI_CLAUDE_ACCOUNT_RESUME_IDLE = '1';
+        process.env.MATEMIND_CLAUDE_ACCOUNT_RESUME_IDLE = '1';
         const managed = new ManagedClaudeRemote(config, vi.fn(async () => {}));
         const initial = options('existing-session');
         const message = { message: '切换账号后的新任务', mode: { permissionMode: 'default' as const } };

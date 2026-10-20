@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
-const BRIEF_CARD_ADAPTIVE_HEIGHT_KEY = 'hapi:briefCardAdaptiveHeight'
-const BRIEF_CARD_MAX_LINES_KEY = 'hapi:briefCardMaxLines'
-const BRIEF_CARD_SHOW_LAST_BLOCK_FULL_CONTENT_KEY = 'hapi:briefCardShowLastBlockFullContent'
+const BRIEF_CARD_ADAPTIVE_HEIGHT_KEY = 'matemind:briefCardAdaptiveHeight'
+const BRIEF_CARD_MAX_LINES_KEY = 'matemind:briefCardMaxLines'
+const BRIEF_CARD_SHOW_LAST_BLOCK_FULL_CONTENT_KEY = 'matemind:briefCardShowLastBlockFullContent'
 
 export const BRIEF_CARD_MIN_LINES_LIMIT = 2
 export const BRIEF_CARD_MAX_LINES_LIMIT = 50

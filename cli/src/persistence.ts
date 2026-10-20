@@ -1,7 +1,7 @@
 /**
- * Minimal persistence functions for HAPI CLI
+ * Minimal persistence functions for Matemind CLI
  * 
- * Handles settings, encryption key, and runner state storage in ~/.hapi/ (or HAPI_HOME override)
+ * Handles settings, encryption key, and runner state storage in ~/.matemind/ (or MATEMIND_HOME override)
  */
 
 import { FileHandle } from 'node:fs/promises'
@@ -19,7 +19,7 @@ interface Settings {
   cliApiToken?: string
   experimentalClaudeLoginShell?: boolean
   codexReportPromptEnabled?: boolean
-  // API URL for server connections (priority: env HAPI_API_URL > this > default)
+  // API URL for server connections (priority: env MATEMIND_API_URL > this > default)
   apiUrl?: string
   // Legacy field name (for migration, read-only)
   serverUrl?: string

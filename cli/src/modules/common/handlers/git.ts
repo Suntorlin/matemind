@@ -12,8 +12,8 @@ const DISCOVERY_CACHE_TTL_MS = 3_000
 const MAX_DISCOVERY_DEPTH = 4
 const MAX_DISCOVERY_REPOS = 64
 const MAX_DISCOVERY_DIRECTORIES = 2_000
-const HAPI_REPO_SECTION_PREFIX = '@@HAPI_REPO '
-const HAPI_REPO_SECTION_END = '@@HAPI_REPO_END'
+const MATEMIND_REPO_SECTION_PREFIX = '@@MATEMIND_REPO '
+const MATEMIND_REPO_SECTION_END = '@@MATEMIND_REPO_END'
 const SKIPPED_DIRECTORY_NAMES = new Set([
     '.git',
     'node_modules',
@@ -163,9 +163,9 @@ function wrapRepoSectionOutput(repoName: string, output: string): string {
     const encodedRepo = encodeURIComponent(repoName)
     const body = output.trim()
     if (!body) {
-        return `${HAPI_REPO_SECTION_PREFIX}${encodedRepo}\n${HAPI_REPO_SECTION_END}`
+        return `${MATEMIND_REPO_SECTION_PREFIX}${encodedRepo}\n${MATEMIND_REPO_SECTION_END}`
     }
-    return `${HAPI_REPO_SECTION_PREFIX}${encodedRepo}\n${body}\n${HAPI_REPO_SECTION_END}`
+    return `${MATEMIND_REPO_SECTION_PREFIX}${encodedRepo}\n${body}\n${MATEMIND_REPO_SECTION_END}`
 }
 
 function shouldSkipDirectory(name: string): boolean {

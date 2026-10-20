@@ -7,7 +7,7 @@ export const DOCK_PANEL_IDS: readonly DockPanelId[] = ['terminal', 'preview']
 export const DOCK_MIN_WIDTH = 280
 export const DOCK_CHAT_MIN_WIDTH = 320
 
-const STORAGE_KEY = 'hapi:sessionDock'
+const STORAGE_KEY = 'matemind:sessionDock'
 const DEFAULT_WIDTH = 440
 
 type DockWidths = Record<DockPanelId, number>

@@ -30,31 +30,31 @@ describe('buildGitStatusFiles', () => {
 
     it('parses aggregated child-repo output and preserves repo prefixes', () => {
         const statusOutput = [
-            '@@HAPI_REPO repo-a',
+            '@@MATEMIND_REPO repo-a',
             '# branch.oid 1111111',
             '# branch.head main',
             '1 .M N... 100644 100644 100644 1111111 1111111 src/a.ts',
-            '@@HAPI_REPO_END',
-            '@@HAPI_REPO repo-b',
+            '@@MATEMIND_REPO_END',
+            '@@MATEMIND_REPO repo-b',
             '# branch.oid 2222222',
             '# branch.head feature',
             '? new-b.ts',
-            '@@HAPI_REPO_END'
+            '@@MATEMIND_REPO_END'
         ].join('\n')
 
         const unstagedDiffOutput = [
-            '@@HAPI_REPO repo-a',
+            '@@MATEMIND_REPO repo-a',
             '3\t1\tsrc/a.ts',
-            '@@HAPI_REPO_END',
-            '@@HAPI_REPO repo-b',
-            '@@HAPI_REPO_END'
+            '@@MATEMIND_REPO_END',
+            '@@MATEMIND_REPO repo-b',
+            '@@MATEMIND_REPO_END'
         ].join('\n')
 
         const stagedDiffOutput = [
-            '@@HAPI_REPO repo-a',
-            '@@HAPI_REPO_END',
-            '@@HAPI_REPO repo-b',
-            '@@HAPI_REPO_END'
+            '@@MATEMIND_REPO repo-a',
+            '@@MATEMIND_REPO_END',
+            '@@MATEMIND_REPO repo-b',
+            '@@MATEMIND_REPO_END'
         ].join('\n')
 
         const result = buildGitStatusFiles(statusOutput, unstagedDiffOutput, stagedDiffOutput)

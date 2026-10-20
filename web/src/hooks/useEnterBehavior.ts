@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react'
  */
 export type EnterBehavior = 'send' | 'newline'
 
-const STORAGE_KEY = 'hapi:enterBehavior'
+const STORAGE_KEY = 'matemind:enterBehavior'
 
 function normalize(value: string | null): EnterBehavior {
     if (value === 'newline') return 'newline'

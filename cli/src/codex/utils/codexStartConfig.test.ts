@@ -7,20 +7,20 @@ import { getCodexSystemPrompt } from './systemPrompt';
 
 describe('buildCodexStartConfig', () => {
     let tempRoot: string;
-    let previousHapiHome: string | undefined;
-    const mcpServers = { hapi: { command: 'node', args: ['mcp'] } };
+    let previousMatemindHome: string | undefined;
+    const mcpServers = { matemind: { command: 'node', args: ['mcp'] } };
 
     beforeEach(() => {
         tempRoot = mkdtempSync(join(tmpdir(), 'codex-start-config-'));
-        previousHapiHome = process.env.HAPI_HOME;
-        process.env.HAPI_HOME = tempRoot;
+        previousMatemindHome = process.env.MATEMIND_HOME;
+        process.env.MATEMIND_HOME = tempRoot;
     });
 
     afterEach(() => {
-        if (previousHapiHome === undefined) {
-            delete process.env.HAPI_HOME;
+        if (previousMatemindHome === undefined) {
+            delete process.env.MATEMIND_HOME;
         } else {
-            process.env.HAPI_HOME = previousHapiHome;
+            process.env.MATEMIND_HOME = previousMatemindHome;
         }
         rmSync(tempRoot, { recursive: true, force: true });
     });

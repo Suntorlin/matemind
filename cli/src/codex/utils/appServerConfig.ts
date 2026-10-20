@@ -1,8 +1,8 @@
 import type { EnhancedMode } from '../loop';
 import type { CodexCliOverrides } from './codexCliOverrides';
-import type { McpServersConfig } from './buildHapiMcpBridge';
+import type { McpServersConfig } from './buildMatemindMcpBridge';
 import { getCodexSystemPrompt } from './systemPrompt';
-import { isPureContextModeEnabled } from '@/agent/utils/haqiAgentInstructions';
+import { isPureContextModeEnabled } from '@/agent/utils/matemindAgentInstructions';
 import type {
     ApprovalPolicy,
     SandboxMode,

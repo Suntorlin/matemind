@@ -7,9 +7,9 @@ export type ImageUploadCompressionSettings = {
     targetSize: ImageUploadCompressionTargetSize
 }
 
-export const IMAGE_UPLOAD_COMPRESSION_ENABLED_KEY = 'hapi:imageUploadCompressionEnabled'
-export const IMAGE_UPLOAD_COMPRESSION_LEVEL_KEY = 'hapi:imageUploadCompressionLevel'
-export const IMAGE_UPLOAD_COMPRESSION_TARGET_SIZE_KEY = 'hapi:imageUploadCompressionTargetSize'
+export const IMAGE_UPLOAD_COMPRESSION_ENABLED_KEY = 'matemind:imageUploadCompressionEnabled'
+export const IMAGE_UPLOAD_COMPRESSION_LEVEL_KEY = 'matemind:imageUploadCompressionLevel'
+export const IMAGE_UPLOAD_COMPRESSION_TARGET_SIZE_KEY = 'matemind:imageUploadCompressionTargetSize'
 
 const DEFAULT_IMAGE_UPLOAD_COMPRESSION_SETTINGS: ImageUploadCompressionSettings = {
     enabled: true,

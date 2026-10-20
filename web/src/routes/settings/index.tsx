@@ -27,7 +27,7 @@ import { useAppContext } from '@/lib/app-context'
 import { useMemory } from '@/hooks/queries/useMemory'
 import { useMachines } from '@/hooks/queries/useMachines'
 import { queryKeys } from '@/lib/query-keys'
-import { PROTOCOL_VERSION } from '@hapi/protocol'
+import { PROTOCOL_VERSION } from '@matemind/protocol'
 import { MobilePageHeader, MobileTabBar } from '@/components/mobile/MobileTabBar'
 import { useIsMobileLayout } from '@/hooks/useIsMobileLayout'
 import type { CodexCredentialProfile, CodexCredentialStateResponse } from '@/types/api'
@@ -61,7 +61,7 @@ const codexSendModes = ['direct', 'queue'] as const
 const sessionReopenPositionModes: SessionReopenPositionPreference[] = ['bottom', 'restore', 'bottom-if-unread']
 const imageUploadCompressionLevels: ImageUploadCompressionLevel[] = ['light', 'balanced', 'aggressive']
 const imageUploadCompressionTargetSizes: ImageUploadCompressionTargetSize[] = ['auto', '500kb', '1mb', '2mb', '5mb']
-const SETTINGS_GROUP_EXPANDED_STORAGE_KEY = 'hapi-settings-group-expanded-v1'
+const SETTINGS_GROUP_EXPANDED_STORAGE_KEY = 'matemind-settings-group-expanded-v1'
 
 type SettingsGroupExpandedState = {
     claudeAccounts: boolean
@@ -191,7 +191,7 @@ export default function SettingsPage() {
         if (typeof window === 'undefined') {
             return null
         }
-        return window.localStorage.getItem('hapi-voice-lang')
+        return window.localStorage.getItem('matemind-voice-lang')
     })
     const [usageLoading, setUsageLoading] = useState(false)
     const [usageError, setUsageError] = useState<string | null>(null)
@@ -545,9 +545,9 @@ export default function SettingsPage() {
             return
         }
         if (language.code === null) {
-            window.localStorage.removeItem('hapi-voice-lang')
+            window.localStorage.removeItem('matemind-voice-lang')
         } else {
-            window.localStorage.setItem('hapi-voice-lang', language.code)
+            window.localStorage.setItem('matemind-voice-lang', language.code)
         }
     }
 
@@ -1400,12 +1400,12 @@ export default function SettingsPage() {
                                 title={t('settings.about.website')}
                                 value={(
                                     <a
-                                        href="https://hapi.run"
+                                        href="https://matemind.ai"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="-my-3 inline-flex min-h-11 items-center text-[var(--social-fg)] underline-offset-2 hover:underline"
                                     >
-                                        hapi.run
+                                        matemind.ai
                                     </a>
                                 )}
                             />

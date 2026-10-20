@@ -10,7 +10,7 @@ const sendHookRequest = async (port: number, body: string, token?: string): Prom
             'Content-Length': Buffer.byteLength(body)
         }
         if (token) {
-            headers['x-hapi-hook-token'] = token
+            headers['x-matemind-hook-token'] = token
         }
 
         const req = request({
@@ -64,7 +64,7 @@ describe('startHookServer', () => {
             onClaudeHook: () => ({
                 exit_code: 2,
                 stdout: JSON.stringify({ continue: false }),
-                stderr: 'blocked by HAQI'
+                stderr: 'blocked by Matemind'
             })
         })
 
@@ -75,7 +75,7 @@ describe('startHookServer', () => {
             expect(JSON.parse(response.body)).toEqual({
                 exit_code: 2,
                 stdout: JSON.stringify({ continue: false }),
-                stderr: 'blocked by HAQI'
+                stderr: 'blocked by Matemind'
             })
         } finally {
             server.stop()
@@ -84,7 +84,7 @@ describe('startHookServer', () => {
 
 
 
-    it('accepts every Claude Code hook event shape HAQI registers', async () => {
+    it('accepts every Claude Code hook event shape Matemind registers', async () => {
         const receivedEvents: string[] = []
         const server = await startHookServer({
             onClaudeHook: (_sessionId, data) => {

@@ -13,7 +13,7 @@ import { DiffProcessor } from './utils/diffProcessor';
 import { logger } from '@/ui/logger';
 import { CodexDisplay } from '@/ui/ink/CodexDisplay';
 import type { CodexSessionConfig } from './types';
-import { buildHapiMcpBridge } from './utils/buildHapiMcpBridge';
+import { buildMatemindMcpBridge } from './utils/buildMatemindMcpBridge';
 import { emitReadyIfIdle } from './utils/emitReadyIfIdle';
 import type { CodexSession } from './session';
 import type { EnhancedMode } from './loop';
@@ -37,7 +37,7 @@ import {
     type RemoteLauncherExitReason
 } from '@/modules/common/remote/RemoteLauncherBase';
 
-type HappyServer = Awaited<ReturnType<typeof buildHapiMcpBridge>>['server'];
+type HappyServer = Awaited<ReturnType<typeof buildMatemindMcpBridge>>['server'];
 
 function shouldUseAppServer(): boolean {
     const useMcpServer = process.env.CODEX_USE_MCP_SERVER === '1';
@@ -1036,7 +1036,7 @@ class CodexRemoteLauncher extends RemoteLauncherBase {
             });
         }
 
-        const { server: happyServer, mcpServers } = await buildHapiMcpBridge(session.client);
+        const { server: happyServer, mcpServers } = await buildMatemindMcpBridge(session.client);
         this.happyServer = happyServer;
         session.setStopCurrentTurnHandler(() => this.handleStopCurrentTurn());
 
@@ -1090,7 +1090,7 @@ class CodexRemoteLauncher extends RemoteLauncherBase {
             await appServerClient.connect();
             await appServerClient.initialize({
                 clientInfo: {
-                    name: 'hapi-codex-client',
+                    name: 'matemind-codex-client',
                     version: '1.0.0'
                 },
                 capabilities: {

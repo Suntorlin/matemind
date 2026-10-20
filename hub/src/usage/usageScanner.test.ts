@@ -12,7 +12,7 @@ async function writeJsonl(filePath: string, lines: unknown[]): Promise<void> {
 describe('scanUsageOverview', () => {
     it('aggregates Claude + Codex usage and deduplicates repeated Codex token_count events', async () => {
         const nowMs = Date.parse('2026-02-23T00:00:00.000Z')
-        const root = await mkdtemp(join(tmpdir(), 'hapi-usage-'))
+        const root = await mkdtemp(join(tmpdir(), 'matemind-usage-'))
 
         const claudeProjectsDir = join(root, 'claude', 'projects')
         const codexSessionsDir = join(root, 'codex', 'sessions', '2026', '02', '23')

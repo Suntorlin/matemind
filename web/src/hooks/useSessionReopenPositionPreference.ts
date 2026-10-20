@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 export type SessionReopenPositionPreference = 'bottom' | 'restore' | 'bottom-if-unread'
 
-export const SESSION_REOPEN_POSITION_STORAGE_KEY = 'hapi:sessionReopenPosition:v1'
+export const SESSION_REOPEN_POSITION_STORAGE_KEY = 'matemind:sessionReopenPosition:v1'
 
 function normalizeSessionReopenPosition(value: unknown): SessionReopenPositionPreference {
     if (value === 'restore') return 'restore'

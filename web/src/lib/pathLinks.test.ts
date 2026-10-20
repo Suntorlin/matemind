@@ -5,7 +5,7 @@ describe('pathLinks', () => {
     it('encodes and decodes path links', () => {
         const path = '../foo/bar baz.png'
         const href = encodePathLink(path)
-        expect(href.startsWith('hapi-file://')).toBe(true)
+        expect(href.startsWith('matemind-file://')).toBe(true)
         expect(decodePathLink(href)).toBe(path)
     })
 

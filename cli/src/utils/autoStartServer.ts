@@ -1,9 +1,9 @@
 /**
  * Auto-start hub module
  *
- * Automatically starts the HAQI hub when CLI is launched
+ * Automatically starts the Matemind hub when CLI is launched
  * if specific conditions are met:
- * 1. HAPI_API_URL is not set (using default localhost:3006)
+ * 1. MATEMIND_API_URL is not set (using default localhost:3006)
  * 2. cliApiToken exists in settings.json (hub was previously started)
  * 3. Port 3006 is not currently listening
  */
@@ -90,9 +90,9 @@ async function waitForServerReady(
  * Determine if hub should be auto-started
  */
 async function shouldAutoStartServer(): Promise<boolean> {
-    // Condition 1: HAPI_API_URL not set (using default localhost:3006)
-    if (process.env.HAPI_API_URL) {
-        logger.debug('[AUTO-START] HAPI_API_URL is set, skipping auto-start')
+    // Condition 1: MATEMIND_API_URL not set (using default localhost:3006)
+    if (process.env.MATEMIND_API_URL) {
+        logger.debug('[AUTO-START] MATEMIND_API_URL is set, skipping auto-start')
         return false
     }
 
@@ -150,7 +150,7 @@ export async function maybeAutoStartServer(): Promise<void> {
         }
 
         logger.debug('[AUTO-START] Starting hub automatically...')
-        console.log(chalk.gray('Starting HAQI hub in background...'))
+        console.log(chalk.gray('Starting Matemind hub in background...'))
 
         startServerAsChild()
 
@@ -158,11 +158,11 @@ export async function maybeAutoStartServer(): Promise<void> {
 
         if (!isReady) {
             console.log(chalk.yellow('Warning: Hub did not start within expected time'))
-            console.log(chalk.gray('  Try running `haqi hub` manually to see errors'))
+            console.log(chalk.gray('  Try running `matemind hub` manually to see errors'))
             return
         }
 
-        console.log(chalk.green('HAQI hub started'))
+        console.log(chalk.green('Matemind hub started'))
     } catch (error) {
         logger.debug('[AUTO-START] Error during hub auto-start', error)
         console.log(chalk.yellow('Warning: Failed to auto-start hub'))

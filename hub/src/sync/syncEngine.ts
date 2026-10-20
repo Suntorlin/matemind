@@ -1,15 +1,15 @@
-import type { ClaudeAccountSelection, ClaudeAccountPoolView } from '@hapi/protocol/schemas'
+import type { ClaudeAccountSelection, ClaudeAccountPoolView } from '@matemind/protocol/schemas'
 /**
- * Sync Engine for HAPI Telegram Bot (Direct Connect)
+ * Sync Engine for Matemind Telegram Bot (Direct Connect)
  *
  * In the direct-connect architecture:
- * - hapi-hub is the hub (Socket.IO + REST)
- * - hapi CLI connects directly to the hub (no relay)
+ * - matemind-hub is the hub (Socket.IO + REST)
+ * - matemind CLI connects directly to the hub (no relay)
  * - No E2E encryption; data is stored as JSON in SQLite
  */
 
-import { inferClaudeModelModeFromModel, isPermissionModeAllowedForFlavor } from '@hapi/protocol'
-import type { DecryptedMessage, ModelMode, PermissionMode, Session, SyncEvent } from '@hapi/protocol/types'
+import { inferClaudeModelModeFromModel, isPermissionModeAllowedForFlavor } from '@matemind/protocol'
+import type { DecryptedMessage, ModelMode, PermissionMode, Session, SyncEvent } from '@matemind/protocol/types'
 import type { Server } from 'socket.io'
 import type { PreviewUrlHistoryEntry, Store } from '../store'
 import type { RpcRegistry } from '../socket/rpcRegistry'
@@ -38,7 +38,7 @@ import { SessionCache } from './sessionCache'
 import { MemoryService, type MemoryNotice } from '../memory/service'
 import { configuration } from '../configuration'
 
-export type { Session, SyncEvent } from '@hapi/protocol/types'
+export type { Session, SyncEvent } from '@matemind/protocol/types'
 export type { Machine } from './machineCache'
 export type { SyncEventListener } from './eventPublisher'
 export type {

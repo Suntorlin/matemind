@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { PROTOCOL_VERSION } from '@hapi/protocol'
+import { PROTOCOL_VERSION } from '@matemind/protocol'
 import { configuration } from '../../configuration'
 import { constantTimeEquals } from '../../utils/crypto'
 import { parseAccessToken } from '../../utils/accessToken'
@@ -66,6 +66,8 @@ export function createCliRoutes(getSyncEngine: () => SyncEngine | null): Hono<Cl
     const app = new Hono<CliEnv>()
 
     app.use('*', async (c, next) => {
+        c.header('X-Matemind-Protocol-Version', String(PROTOCOL_VERSION))
+        // CLIs from before the Matemind rename read this name.
         c.header('X-Hapi-Protocol-Version', String(PROTOCOL_VERSION))
 
         const raw = c.req.header('authorization')

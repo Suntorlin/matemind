@@ -11,8 +11,8 @@ import { createModeChangeHandler, createRunnerLifecycle, setControlledByUser } f
 import { startHookServer } from '@/claude/utils/startHookServer';
 import { cleanupHookSettingsFile, generateHookSettingsFile } from '@/modules/common/hooks/generateHookSettings';
 import { resolveGeminiRuntimeConfig } from './utils/config';
-import { isPermissionModeAllowedForFlavor } from '@hapi/protocol';
-import { PermissionModeSchema } from '@hapi/protocol/schemas';
+import { isPermissionModeAllowedForFlavor } from '@matemind/protocol';
+import { PermissionModeSchema } from '@matemind/protocol/schemas';
 import { formatMessageWithAttachments } from '@/utils/attachmentFormatter';
 
 export async function runGemini(opts: {
@@ -21,7 +21,7 @@ export async function runGemini(opts: {
     permissionMode?: PermissionMode;
     model?: string;
 } = {}): Promise<void> {
-    const workingDirectory = process.env.HAPI_WORKING_DIRECTORY ?? process.cwd();
+    const workingDirectory = process.env.MATEMIND_WORKING_DIRECTORY ?? process.cwd();
     const startedBy = opts.startedBy ?? 'terminal';
 
     logger.debug(`[gemini] Starting with options: startedBy=${startedBy}, startingMode=${opts.startingMode}`);

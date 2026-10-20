@@ -4,7 +4,7 @@ import type { SpawnResponse } from '@/types/api'
 import { queryKeys } from '@/lib/query-keys'
 
 type SpawnInput = {
-    claudeAccount?: import('@hapi/protocol/schemas').ClaudeAccountSelection
+    claudeAccount?: import('@matemind/protocol/schemas').ClaudeAccountSelection
     machineId: string
     directory: string
     agent?: 'claude' | 'codex' | 'cursor' | 'gemini' | 'opencode'

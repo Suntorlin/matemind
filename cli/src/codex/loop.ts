@@ -6,7 +6,7 @@ import { codexLocalLauncher } from './codexLocalLauncher';
 import { codexRemoteLauncher } from './codexRemoteLauncher';
 import { ApiClient, ApiSessionClient } from '@/lib';
 import type { CodexCliOverrides } from './utils/codexCliOverrides';
-import type { CodexPermissionMode } from '@hapi/protocol/types';
+import type { CodexPermissionMode } from '@matemind/protocol/types';
 import type { CollaborationMode, ReasoningEffort, ServiceTier } from './appServerTypes';
 import type { MessageRouteContext } from '@/api/types';
 

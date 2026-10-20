@@ -1,10 +1,10 @@
-import { SessionSchema } from '@hapi/protocol/schemas'
+import { SessionSchema } from '@matemind/protocol/schemas'
 import type { Session } from '@/types/api'
 
 // Last-known session details, so reopening a session renders immediately while
 // the query revalidates in the background instead of blocking on the network.
-const ENTRY_KEY_PREFIX = 'hapi:sessionDetail:v1:'
-const INDEX_KEY = 'hapi:sessionDetail:v1:index'
+const ENTRY_KEY_PREFIX = 'matemind:sessionDetail:v1:'
+const INDEX_KEY = 'matemind:sessionDetail:v1:index'
 const MAX_ENTRIES = 20
 
 export type CachedSessionDetail = {

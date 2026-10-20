@@ -1,5 +1,5 @@
 /**
- * HAQI Hub - Main Entry Point
+ * Matemind Hub - Main Entry Point
  *
  * Provides:
  * - Web app + HTTP API
@@ -8,6 +8,7 @@
  * - Optional Telegram bot for notifications and Mini App entrypoint
  */
 
+import './legacyEnv'
 import { createConfiguration, type ConfigSource } from './configuration'
 import { Store } from './store'
 import { SyncEngine, type SyncEvent } from './sync/syncEngine'
@@ -108,12 +109,12 @@ let notificationHub: NotificationHub | null = null
 let tunnelManager: TunnelManager | null = null
 
 async function main() {
-    console.log('HAQI Hub starting...')
+    console.log('Matemind Hub starting...')
 
     // Load configuration (async - loads from env/file with persistence)
-    const relayApiDomain = process.env.HAPI_RELAY_API || 'relay.hapi.run'
+    const relayApiDomain = process.env.MATEMIND_RELAY_API || 'relay.hapi.run'
     const relayFlag = resolveRelayFlag(process.argv)
-    const officialWebUrl = process.env.HAPI_OFFICIAL_WEB_URL || 'https://app.hapi.run'
+    const officialWebUrl = process.env.MATEMIND_OFFICIAL_WEB_URL || 'https://app.hapi.run'
     const config = await createConfiguration()
     const baseCorsOrigins = normalizeOrigins(config.corsOrigins)
     const relayCorsOrigin = normalizeOrigin(officialWebUrl)
@@ -139,9 +140,9 @@ async function main() {
     }
 
     // Display other configuration sources
-    console.log(`[Hub] HAPI_LISTEN_HOST: ${config.listenHost} (${formatSource(config.sources.listenHost)})`)
-    console.log(`[Hub] HAPI_LISTEN_PORT: ${config.listenPort} (${formatSource(config.sources.listenPort)})`)
-    console.log(`[Hub] HAPI_PUBLIC_URL: ${config.publicUrl} (${formatSource(config.sources.publicUrl)})`)
+    console.log(`[Hub] MATEMIND_LISTEN_HOST: ${config.listenHost} (${formatSource(config.sources.listenHost)})`)
+    console.log(`[Hub] MATEMIND_LISTEN_PORT: ${config.listenPort} (${formatSource(config.sources.listenPort)})`)
+    console.log(`[Hub] MATEMIND_PUBLIC_URL: ${config.publicUrl} (${formatSource(config.sources.publicUrl)})`)
 
     if (!config.telegramEnabled) {
         console.log('[Hub] Telegram: disabled (no TELEGRAM_BOT_TOKEN)')
@@ -253,8 +254,8 @@ async function main() {
             localPort: config.listenPort,
             enabled: true,
             apiDomain: relayApiDomain,
-            authKey: process.env.HAPI_RELAY_AUTH || null,
-            useRelay: process.env.HAPI_RELAY_FORCE_TCP === 'true' || process.env.HAPI_RELAY_FORCE_TCP === '1'
+            authKey: process.env.MATEMIND_RELAY_AUTH || null,
+            useRelay: process.env.MATEMIND_RELAY_FORCE_TCP === 'true' || process.env.MATEMIND_RELAY_FORCE_TCP === '1'
         })
 
         try {
@@ -307,7 +308,7 @@ async function main() {
         void announceTunnelAccess()
     }
     console.log('')
-    console.log('HAQI Hub is ready!')
+    console.log('Matemind Hub is ready!')
 
     // Handle shutdown
     const shutdown = async () => {

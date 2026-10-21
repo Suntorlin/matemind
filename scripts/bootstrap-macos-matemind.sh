@@ -433,10 +433,6 @@ find_matemind_bin() {
         command -v matemind
         return 0
     fi
-    if have_cmd matemind; then
-        command -v matemind
-        return 0
-    fi
     return 1
 }
 
@@ -449,22 +445,14 @@ install_matemind_systemwide() {
         return 0
     fi
 
-    load_brew_env_for_current_shell
-    if ! brew tap | grep -q '^tiann/tap$'; then
-        brew tap tiann/tap
-    fi
-
-    if brew list --formula matemind >/dev/null 2>&1; then
-        log "matemind formula already installed."
-    else
-        brew install tiann/tap/hapi
-    fi
+    # Matemind ships on npm; the Homebrew tap used here before installs the upstream project.
+    npm install -g matemind
 
     local matemind_bin
     if matemind_bin="$(find_matemind_bin 2>/dev/null)"; then
         log "Matemind installed: ${matemind_bin}"
     else
-        warn "Cannot find matemind/matemind command after brew install."
+        warn "Cannot find the matemind command after npm install."
     fi
 }
 

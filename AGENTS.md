@@ -121,7 +121,7 @@ matemind runner stop || true
 matemind runner start
 
 # Verify
-./scripts/hapi-local.sh status
+./scripts/matemind-local.sh status
 ```
 
 Expected: `/health` OK; process command shows `~/.local/bin/matemind hub`.

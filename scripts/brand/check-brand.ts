@@ -10,8 +10,6 @@ const LEGACY = /hapi|haqi/i
 // A line may keep an old name when it matches one of these.
 const ALLOW: RegExp[] = [
     /\b(relay|app)\.hapi\.run\b/, // upstream relay and web app (external services)
-    /admin@hapi\.run/, // upstream Web Push contact
-    /tiann\/(tap|hapi)/, // upstream repo and Homebrew tap
     /\/data\/github\/happy\/hapi/, // test fixture path
     /'hapi'\s*$|\?\? 'hapi'/, // tunwg relay auth value of the upstream relay
     /x-hapi-protocol-version|X-Hapi-Protocol-Version/, // header read/sent for pre-rename CLIs and hubs

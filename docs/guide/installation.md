@@ -181,7 +181,7 @@ Upgrading from HAQI or hapi: if `~/.matemind` does not exist and `~/.hapi` does,
 | `TELEGRAM_BOT_TOKEN` | - | `telegramBotToken` | Telegram Bot API token |
 | `TELEGRAM_NOTIFICATION` | `true` | `telegramNotification` | Enable Telegram notifications |
 | `MATEMIND_RELAY_FORCE_TCP` | `false` | - | Force TCP mode for relay |
-| `VAPID_SUBJECT` | `mailto:admin@hapi.run` | - | Web Push contact info |
+| `VAPID_SUBJECT` | `https://github.com/matemind/matemind` | - | Web Push contact info |
 | `MATEMIND_HOME` | `~/.matemind` | - | Config directory path |
 | `DB_PATH` | `~/.matemind/matemind.db` | - | Database file path |
 | `ELEVENLABS_API_KEY` | - | - | ElevenLabs API key for voice |

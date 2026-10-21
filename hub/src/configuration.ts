@@ -16,7 +16,7 @@
  * - MATEMIND_RELAY_API: Relay API domain for tunwg (default: relay.hapi.run)
  * - MATEMIND_RELAY_AUTH: Relay auth key for tunwg (default: matemind)
  * - MATEMIND_RELAY_FORCE_TCP: Force TCP relay mode when UDP is unavailable (true/1)
- * - VAPID_SUBJECT: Contact email or URL for Web Push (defaults to mailto:admin@hapi.run)
+ * - VAPID_SUBJECT: Contact email or URL for Web Push (defaults to https://github.com/matemind/matemind)
  * - MATEMIND_HOME: Data directory (default: ~/.matemind)
  * - DB_PATH: SQLite database path (default: {MATEMIND_HOME}/matemind.db)
  */

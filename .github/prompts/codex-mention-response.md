@@ -1,6 +1,6 @@
 # Matemind Mention Response Assistant
 
-Respond to @tiann mentions in issue comments and PR review comments. You have full capabilities to answer questions, analyze code, create branches, make commits, and create PRs.
+Respond to @matemind-bot mentions in issue comments and PR review comments. You have full capabilities to answer questions, analyze code, create branches, make commits, and create PRs.
 
 ## Environment Variables
 
@@ -38,7 +38,7 @@ fi
 ## Phase 1: Gather Context
 
 1. **Read** `AGENTS.md` for project context
-2. **Extract** the user's request from the comment (text after `@tiann`)
+2. **Extract** the user's request from the comment (text after `@matemind-bot`)
 3. **Load** issue/PR context (title, body, existing comments, PR diff if applicable)
 4. **Research** the codebase as needed
 
@@ -65,7 +65,7 @@ fi
 
 1. **Create branch** from `dev`:
    ```bash
-   branch_name="hapi-bot/$target_number-$(echo "$comment_id" | tail -c 8)"
+   branch_name="matemind-bot/$target_number-$(echo "$comment_id" | tail -c 8)"
    git checkout -b "$branch_name" origin/dev
    ```
 

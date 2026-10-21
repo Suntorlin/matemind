@@ -96,8 +96,8 @@
     --social-fg-muted: #71717a;
     --social-fg-subtle: #a1a1aa;
     --social-surface: #ffffff;
-    /* Logo only: the split-sail gradient, the same colours as the live story ring. */
-    --brand-sail-0: #feda75; --brand-sail-1: #fa7e1e; --brand-sail-2: #d62976; --brand-sail-3: #962fbf; --brand-sail-4: #4f5bd5;
+    /* Logo only: the sunset gradient on the mark's bottom-line bar (avatar orbs' warm families). */
+    --brand-bar-0: #f0a95c; --brand-bar-1: #e2735a; --brand-bar-2: #d96aa8;
     --social-muted: #f4f4f5;
     --social-hover: #f8f8f9;
     --social-border: #e4e4e7;

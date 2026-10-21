@@ -92,21 +92,20 @@ In the lockup, the mark is 1.5 x the cap height. The bottom of the bar sits on t
 
 ### Colours
 
-The colours come from inside the app, so the logo and the session list look like one product (decided 2026-10-21).
+Decided 2026-10-21 ("3a, sunset bar"), after the competitive survey: the earlier story-ring gradient matched Instagram's published colours, and soft purple-blue orbs are the most common AI-brand look. Only the bottom-line bar has colour, so the conclusion is what stands out.
 
-| Role | Value | Source in the app |
-|---|---|---|
-| Mark: sail and bar | Linear gradient, bottom-left to top-right: `#feda75` → `#fa7e1e` → `#d62976` → `#962fbf` → `#4f5bd5` | The "live" story ring (`--ring-live`); tokens `--brand-sail-0..4` |
-| App icon tile | A session orb: base `#b86ad8` → `#5b8def`, with soft glows `#e870a6` (top-left), `#7f7be0` (right), `#f0a95c` (bottom) | Avatar orb families 0, 2 and 3 (`--orb-*`) |
-| Mark on the app icon | White `#ffffff` | — |
-| Wordmark | `#09090b` on light, `#fafafa` on dark | `--social-fg` |
+| Role | Light background | Dark background | Source in the app |
+|---|---|---|---|
+| Sail, wordmark | `#09090b` | `#fafafa` | `--social-fg` |
+| Bottom-line bar | Sunset gradient, left to right: `#f0a95c` → `#e2735a` → `#d96aa8` | same | Warm avatar-orb families (`--orb-2`, `--orb-11`); tokens `--brand-bar-0..2` |
+| App icon | Tile `#18181b`, white sail, sunset bar | same | — |
 
-The gradient works on light and dark backgrounds, so there is one mark file for both. The gradient belongs to the logo only. In the UI, the same colours still mean "live" on a session ring, and brand red (`#ff3040`) still means unread.
+The sunset gradient belongs to the logo only. In the UI, brand red (`#ff3040`) still means unread, and the story ring still means live.
 
 ### Clear space and minimum size
 
 1. Clear space: keep empty space of at least 25% of the mark height on every side. This applies to the mark and to the lockup.
-2. Minimum size: 16 px. Below 32 px, prefer the app icon (white mark on the orb tile); the white bands stay readable there.
+2. Minimum size: 16 px. The bar stays visible at 16 px because it is the only colour.
 3. Lockup minimum: 20 px mark height (the wordmark is then about 85 px wide). Below that, use the mark alone.
 4. Single colour (Safari pinned tab, notification badge, print): use `matemind-mark-mono.svg`. The bar takes the same colour as the sail.
 
@@ -114,21 +113,21 @@ The gradient works on light and dark backgrounds, so there is one mark file for 
 
 | Do | Don't |
 |---|---|
-| Use the gradient mark, or the mono mark when colour is not available | Fill the bands with different colours, or use colours outside the gradient |
+| Keep the colour on the bar only; use the mono mark when colour is not available | Colour the sail, or use other colours in the bar |
 | Keep the bar under the sail and full width | Remove the bar, or show the sail without its gaps |
-| Use the orb tile with the white mark for app icons | Rotate, outline, add shadows, or add text inside the mark |
+| Use the dark tile with the white sail for app icons | Put the mark on an orange or warm tile (it reads as a traffic cone, like VLC), rotate it, or add text inside |
 
-The first version (black sail, blue bar, dark tile) is in git history; the three colour options compared on 2026-10-21 are in `concepts/colour-options.png`.
+Earlier versions are in git history. Options compared on 2026-10-21: `concepts/colour-options.png` (first round), `colour-options-v2.png` (after the survey), `colour-options-v3.png` (variants of the chosen direction).
 
 ### Assets (`docs/brand/assets/`)
 
 | File | Use |
 |---|---|
-| `matemind-mark.svg` | Gradient mark, for light and dark backgrounds |
+| `matemind-mark.svg`, `matemind-mark-dark.svg` | Mark for light / dark backgrounds |
 | `matemind-mark-mono.svg` | Single colour (mask icons) |
 | `matemind-wordmark.svg`, `matemind-wordmark-dark.svg` | Wordmark, outlined |
 | `matemind-lockup.svg`, `matemind-lockup-dark.svg` | Mark + wordmark |
-| `matemind-app-icon.svg` | App icon master: orb tile, white mark |
+| `matemind-app-icon.svg` | App icon master: dark tile, white sail, sunset bar |
 | `matemind-badge-96.png` | White mark on transparent, for Android notification badges |
 | `matemind-social.png` | 1280 x 640 social preview |
 | `*.png` | Renders of the files above |

@@ -164,7 +164,7 @@ export function DesktopNavRail() {
                 aria-label="Matemind"
                 title="Matemind"
             >
-                <MatemindMark className="h-8 w-8" />
+                <MatemindMark className="h-8 w-8" small />
             </button>
             <div className="flex flex-col items-center gap-2">
                 {tabs.filter((tab) => tab.key !== 'settings').map(renderTab)}

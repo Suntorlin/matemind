@@ -72,11 +72,16 @@ Keep every existing copyright line and licence text. Add, never remove.
 
 ## 6. Visual identity
 
-### The mark: split sail
+### The mark: ink-brush sail
 
-The mark is a sail cut into three bands, set on one bar. The sail is what you want. The bands are the work Matemind splits it into. The bar is the bottom line it brings back. We picked it over "Common ground" (two overlapping rings) and "Lookout" (a porthole): it tells the tagline in one shape, reads as a sail at 16 px, and needs no colour to work.
+Three curved brush strokes form a sail full of wind; one sunset-coloured swash under it is the bottom line. The sail is what you want, the three strokes are the work Matemind splits it into, the swash is the conclusion it brings back.
 
-Concepts and the contact sheet: `docs/brand/concepts/`.
+- **Curve:** the three strokes share one leading edge that bulges outward, and each stroke arches a little.
+- **Brush:** slightly uneven edges; near the tail of each stroke a few thin "flying white" streaks (dry brush) let the paper show through. The swash presses down on the left and lifts off on the right.
+- **No mast:** the right ends of the strokes line up and imply it. Empty space reads better than a drawn line, and at small sizes a mast is only a hairline.
+- **Two drawings:** the full one (with dry-brush streaks) from 40 px up; the small one (same curves, no streaks) for 16–40 px.
+
+Decided 2026-10-21, after the flat "split sail" read as generic SaaS. Directions compared: `concepts/artistic-directions.png`; with or without mast: `concepts/ink-mast-or-not.png`. Earlier marks are in git history.
 
 ### Wordmark
 
@@ -90,46 +95,46 @@ Concepts and the contact sheet: `docs/brand/concepts/`.
 
 In the lockup, the mark is 1.5 x the cap height. The bottom of the bar sits on the text baseline. The gap between mark and text is 0.45 x the cap height.
 
+In the lockup, the mark is 1.5 x the cap height. The bottom of the swash sits near the text baseline.
+
 ### Colours
 
-Decided 2026-10-21 ("3a, sunset bar"), after the competitive survey: the earlier story-ring gradient matched Instagram's published colours, and soft purple-blue orbs are the most common AI-brand look. Only the bottom-line bar has colour, so the conclusion is what stands out.
-
-| Role | Light background | Dark background | Source in the app |
+| Role | Light background | Dark background | Note |
 |---|---|---|---|
-| Sail, wordmark | `#09090b` | `#fafafa` | `--social-fg` |
-| Bottom-line bar | Sunset gradient, left to right: `#f0a95c` → `#e2735a` → `#d96aa8` | same | Warm avatar-orb families (`--orb-2`, `--orb-11`); tokens `--brand-bar-0..2` |
-| App icon | Tile `#18181b`, white sail, sunset bar | same | — |
+| Sail (ink) | `#141414` | `#f3efe8` (warm off-white) | In the app the sail follows the text colour |
+| Bottom-line swash | Sunset gradient, left to right: `#f0a95c` → `#e2735a` → `#d96aa8` | same | From the warm avatar-orb families; tokens `--brand-bar-0..2` |
+| App icon | Rice-paper tile `#f4efe6`, ink sail, sunset swash | same | One icon for light and dark home screens |
+| Wordmark | `#09090b` | `#fafafa` | `--social-fg` |
 
-The sunset gradient belongs to the logo only. In the UI, brand red (`#ff3040`) still means unread, and the story ring still means live.
+The sunset belongs to the logo only. In the UI, brand red (`#ff3040`) still means unread, and the story ring still means live.
 
 ### Clear space and minimum size
 
-1. Clear space: keep empty space of at least 25% of the mark height on every side. This applies to the mark and to the lockup.
-2. Minimum size: 16 px. The bar stays visible at 16 px because it is the only colour.
-3. Lockup minimum: 20 px mark height (the wordmark is then about 85 px wide). Below that, use the mark alone.
-4. Single colour (Safari pinned tab, notification badge, print): use `matemind-mark-mono.svg`. The bar takes the same colour as the sail.
+1. Clear space: at least 25% of the mark height on every side, for the mark and the lockup.
+2. Below 40 px use the small drawing (`matemind-mark-small.svg`); the generator picks it for favicons and the 64 px PWA icon.
+3. Lockup minimum: 20 px mark height. Below that, use the mark alone.
+4. Single colour (Safari pinned tab, notification badge, print): `matemind-mark-mono.svg`.
 
 ### Do and don't
 
 | Do | Don't |
 |---|---|
-| Keep the colour on the bar only; use the mono mark when colour is not available | Colour the sail, or use other colours in the bar |
-| Keep the bar under the sail and full width | Remove the bar, or show the sail without its gaps |
-| Use the dark tile with the white sail for app icons | Put the mark on an orange or warm tile (it reads as a traffic cone, like VLC), rotate it, or add text inside |
-
-Earlier versions are in git history. Options compared on 2026-10-21: `concepts/colour-options.png` (first round), `colour-options-v2.png` (after the survey), `colour-options-v3.png` (variants of the chosen direction).
+| Keep colour on the swash only; use the mono mark when colour is not available | Colour the sail, or add colours to the swash |
+| Use the generated files; regenerate after any change | Redraw by hand, add a mast, straighten the curves, or remove the swash |
+| Use the rice-paper tile for app icons | Put the mark on an orange or warm tile, rotate it, or add text inside |
 
 ### Assets (`docs/brand/assets/`)
 
 | File | Use |
 |---|---|
-| `matemind-mark.svg`, `matemind-mark-dark.svg` | Mark for light / dark backgrounds |
-| `matemind-mark-mono.svg` | Single colour (mask icons) |
+| `matemind-mark.svg`, `matemind-mark-dark.svg` | Full mark for light / dark backgrounds |
+| `matemind-mark-small.svg` | Small drawing for 16–40 px |
+| `matemind-mark-mono.svg` | Single colour (mask icons, badges) |
 | `matemind-wordmark.svg`, `matemind-wordmark-dark.svg` | Wordmark, outlined |
 | `matemind-lockup.svg`, `matemind-lockup-dark.svg` | Mark + wordmark |
-| `matemind-app-icon.svg` | App icon master: dark tile, white sail, sunset bar |
+| `matemind-app-icon.svg` | App icon master: rice-paper tile, ink mark |
 | `matemind-badge-96.png` | White mark on transparent, for Android notification badges |
 | `matemind-social.png` | 1280 x 640 social preview |
 | `*.png` | Renders of the files above |
 
-All icons are generated by `docs/brand/tools/render-assets.mjs`.
+All files, and the path data of the in-app `<MatemindMark>` (`web/src/components/brand/matemindMarkPaths.ts`), are generated by `docs/brand/tools/render-assets.mjs` from `docs/brand/tools/ink-mark.mjs`.

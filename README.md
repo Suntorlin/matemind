@@ -9,6 +9,8 @@ English | [简体中文](README.zh-CN.md)
 
 The first mate for your AI coding agents.
 
+**[Try the live demo →](https://suntorlin.github.io/matemind/)** It runs in your browser with demo data; no install, no AI calls. <!-- public-safety: allow -->
+
 ![Matemind on the phone: session list, a chat that leads with the conclusion, and group chat between sessions](docs/assets/screenshots/phones.png)
 
 ![Matemind on the desktop](docs/assets/screenshots/desktop.png)

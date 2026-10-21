@@ -1,10 +1,19 @@
-![Matemind](docs/brand/assets/matemind-lockup.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/assets/matemind-lockup-dark.svg">
+  <img alt="Matemind" src="docs/brand/assets/matemind-lockup.svg" width="360">
+</picture>
 
 English | [简体中文](README.zh-CN.md)
 
 **Say what you want. Matemind splits it up, keeps watch, and gives you the bottom line.**
 
 The first mate for your AI coding agents.
+
+![Matemind on the phone: session list, a chat that leads with the conclusion, and group chat between sessions](docs/assets/screenshots/phones.png)
+
+![Matemind on the desktop](docs/assets/screenshots/desktop.png)
+
+<sub>Screenshots use demo data.</sub>
 
 ## What is Matemind
 

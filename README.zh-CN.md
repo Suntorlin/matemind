@@ -1,10 +1,19 @@
-![Matemind](docs/brand/assets/matemind-lockup.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/assets/matemind-lockup-dark.svg">
+  <img alt="Matemind" src="docs/brand/assets/matemind-lockup.svg" width="360">
+</picture>
 
 [English](README.md) | 简体中文
 
 **你只管说要什么。Matemind 帮你拆、帮你盯、给你结论。**
 
 你的 AI 编程团队的大副。
+
+![手机上的 Matemind：会话列表、结论先行的聊天、会话之间的群聊](docs/assets/screenshots/phones.png)
+
+![桌面上的 Matemind](docs/assets/screenshots/desktop.png)
+
+<sub>截图使用演示数据。</sub>
 
 ## Matemind 是什么
 

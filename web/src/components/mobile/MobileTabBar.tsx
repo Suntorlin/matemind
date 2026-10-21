@@ -7,6 +7,7 @@ import { IconButton } from '@/components/ui/IconButton'
 import { useAppContext } from '@/lib/app-context'
 import { useTranslation } from '@/lib/use-translation'
 import { cn } from '@/lib/utils'
+import { MatemindMark } from '@/components/brand/MatemindMark'
 
 export type MobileTab = 'sessions' | 'groups' | 'memory' | 'settings'
 
@@ -159,11 +160,11 @@ export function DesktopNavRail() {
             <button
                 type="button"
                 onClick={() => navigate({ to: '/sessions' })}
-                className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--social-primary)] text-[15px] font-semibold tracking-[-0.04em] text-[var(--social-primary-fg)] [-webkit-tap-highlight-color:transparent]"
+                className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl text-[var(--social-fg)] [-webkit-tap-highlight-color:transparent]"
                 aria-label="Matemind"
                 title="Matemind"
             >
-                H
+                <MatemindMark className="h-8 w-8" />
             </button>
             <div className="flex flex-col items-center gap-2">
                 {tabs.filter((tab) => tab.key !== 'settings').map(renderTab)}

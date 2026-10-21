@@ -96,6 +96,7 @@
     --social-fg-muted: #71717a;
     --social-fg-subtle: #a1a1aa;
     --social-surface: #ffffff;
+    --brand-accent: #2f6bff; /* logo only: the bottom-line bar */
     --social-muted: #f4f4f5;
     --social-hover: #f8f8f9;
     --social-border: #e4e4e7;
@@ -160,6 +161,7 @@
     --social-fg-muted: #a1a1aa;
     --social-fg-subtle: #71717a;
     --social-surface: #09090b;
+    --brand-accent: #6b95ff;
     --social-muted: #1c1c1f;
     --social-hover: #141416;
     --social-border: #27272a;

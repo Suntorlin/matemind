@@ -14,7 +14,7 @@ export default {
 
   // Login / Auth
   'login.title': 'Matemind',
-  'login.subtitle': '随时随地，Vibe Coding',
+  'login.subtitle': '你只管说要什么。Matemind 帮你拆、帮你盯、给你结论。',
   'login.bind.title': '绑定 Telegram',
   'login.submit': '登录',
   'login.bind.submit': '绑定',
@@ -38,8 +38,7 @@ export default {
   'login.server.required': '必须先填写服务器地址才能登录。',
   'login.server.useSameOrigin': '使用同源',
   'login.server.save': '保存',
-  'login.footer': '用',
-  'login.footer.for': '设计，Vibe Coding',
+  'login.footer': '你的 AI 编程团队的大副。',
   'login.footer.copyright': '©',
 
   // Sessions page

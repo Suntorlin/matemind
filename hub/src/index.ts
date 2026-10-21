@@ -168,7 +168,7 @@ async function main() {
     console.log(`[Hub] Report public base URL: ${reportPublicBaseUrlSettings.value} (${reportPublicBaseUrlSettings.source})`)
     const jwtSecret = await getOrCreateJwtSecret()
     const vapidKeys = await getOrCreateVapidKeys(config.dataDir)
-    const vapidSubject = process.env.VAPID_SUBJECT ?? 'mailto:admin@hapi.run'
+    const vapidSubject = process.env.VAPID_SUBJECT ?? 'https://github.com/matemind/matemind'
     const pushService = new PushService(vapidKeys, vapidSubject, store)
 
     visibilityTracker = new VisibilityTracker()

@@ -38,7 +38,6 @@ export default defineConfig({
     },
     server: {
         host: true,
-        allowedHosts: ['hapidev.weishu.me'],
         proxy: {
             '/api': {
                 target: hubTarget,

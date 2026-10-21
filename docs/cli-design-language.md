@@ -915,7 +915,7 @@ CLI 模式下 Markdown 继承线程的等宽字体和字号：
 | `brief`  | `brief`   | `BriefTurnList`| 压缩的回合列表              |
 | `cli`    | `cli`     | `CliThread`    | 终端风格，等宽字体，高密度   |
 
-- 持久化到 `localStorage`（key: `hapi-chat-view-mode-v1`）
+- 持久化到 `localStorage`（key: `matemind-chat-view-mode-v1`）
 - 切换时容器自动添加/移除 `.cli-session` class
 - CLI 模式下 Composer 自动切换为终端风格
 

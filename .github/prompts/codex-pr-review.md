@@ -140,5 +140,5 @@ Example shape:
 ```bash
 gh api "repos/$repo/pulls/$pr_number/reviews" \
   --method POST \
-  --input /tmp/hapi-pr-review.json
+  --input /tmp/matemind-pr-review.json
 ```

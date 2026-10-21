@@ -218,7 +218,7 @@ async function main(): Promise<void> {
         }
 
         console.log('\nUsers can now install via:');
-        console.log('  brew install tiann/tap/hapi');
+        console.log('  brew install matemind/tap/matemind');
     } finally {
         // Cleanup
         rmSync(tempDir, { recursive: true, force: true });

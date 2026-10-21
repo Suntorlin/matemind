@@ -1,7 +1,7 @@
 # Group Note 同步到 Session 记录设计
 
 ## 需求分析
-让每个 group member session 的 agent 都能读取到最新的 group note 内容，实现 `HAQI-Agent.md` 中的："session state 必须包含最新 group note 摘要"
+让每个 group member session 的 agent 都能读取到最新的 group note 内容，实现 `MATEMIND-Agent.md` 中的："session state 必须包含最新 group note 摘要"
 
 ## 数据结构设计
 
@@ -93,13 +93,13 @@ async syncNoteToSession(sessionId: string, groupDetail: GroupWithDetails) {
 当agent启动时，metadata中的groupContext会被注入到系统prompt中：
 
 ```typescript
-// 在 buildPromptWithHaqiAgentInstructions 中增强
-export function buildPromptWithHaqiAgentInstructions(
+// 在 buildPromptWithMatemindAgentInstructions 中增强
+export function buildPromptWithMatemindAgentInstructions(
   basePrompt: string,
   startDir: string,
   sessionMetadata?: any  // 新增参数
 ): string {
-  const instructions = loadHaqiAgentInstructions(startDir)
+  const instructions = loadMatemindAgentInstructions(startDir)
   let prompt = basePrompt
 
   // 注入group context
@@ -124,10 +124,10 @@ When working on group tasks, refer to the group note for context and coordinatio
 
   if (instructions) {
     const preface = trimIdent(`
-      Follow workspace operating rules in HAQI-Agent.md for group collaboration and memory usage.
+      Follow workspace operating rules in MATEMIND-Agent.md for group collaboration and memory usage.
       Treat them as runtime policy for this repository.
     `)
-    prompt = `${prompt}\n\n${preface}\n\n<haqi-agent-instructions>\n${instructions}\n</haqi-agent-instructions>`
+    prompt = `${prompt}\n\n${preface}\n\n<matemind-agent-instructions>\n${instructions}\n</matemind-agent-instructions>`
   }
 
   return prompt

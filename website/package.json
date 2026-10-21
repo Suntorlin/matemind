@@ -1,5 +1,5 @@
 {
-  "name": "hapi-website",
+  "name": "matemind-website",
   "version": "1.0.0",
   "type": "module",
   "license": "AGPL-3.0-only",
@@ -92,7 +92,7 @@
     "vite-plugin-manus-runtime": "^0.0.57",
     "vitest": "^4.0.16"
   },
-    "overrides": {
+  "overrides": {
     "tailwindcss>nanoid": "3.3.7"
   }
 }

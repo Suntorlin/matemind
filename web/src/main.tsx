@@ -90,6 +90,9 @@ window.addEventListener('vite:preloadError', (event) => {
 })
 
 async function bootstrap() {
+    if (import.meta.env.VITE_DEMO === '1') {
+        await import('./demo/install')
+    }
     initializeFontScale()
     if (!isTelegramEnvironment()) {
         installIOSViewportFit()

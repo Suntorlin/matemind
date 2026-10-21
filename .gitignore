@@ -3,6 +3,7 @@
 
 # Build output
 **/dist/
+**/dist-demo/
 **/.vitepress/cache/
 **/dist-exe/
 **/*.tsbuildinfo

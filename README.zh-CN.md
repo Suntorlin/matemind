@@ -9,6 +9,8 @@
 
 你的 AI 编程团队的大副。
 
+**[在线体验演示 →](https://suntorlin.github.io/matemind/)** 在浏览器里直接运行，使用演示数据，不用安装，也不调用 AI。 <!-- public-safety: allow -->
+
 ![手机上的 Matemind：会话列表、结论先行的聊天、会话之间的群聊](docs/assets/screenshots/phones.png)
 
 ![桌面上的 Matemind](docs/assets/screenshots/desktop.png)

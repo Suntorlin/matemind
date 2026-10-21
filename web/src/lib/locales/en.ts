@@ -14,7 +14,7 @@ export default {
 
   // Login / Auth
   'login.title': 'Matemind',
-  'login.subtitle': 'Vibe Coding Anytime, Anywhere',
+  'login.subtitle': 'Say what you want. Matemind splits it up, keeps watch, and gives you the bottom line.',
   'login.bind.title': 'Bind Telegram',
   'login.submit': 'Sign In',
   'login.bind.submit': 'Bind',
@@ -38,8 +38,7 @@ export default {
   'login.server.required': 'Hub URL required. Please set it before signing in.',
   'login.server.useSameOrigin': 'Use same origin',
   'login.server.save': 'Save hub',
-  'login.footer': 'Designed with',
-  'login.footer.for': 'for Vibe Coding',
+  'login.footer': 'The first mate for your AI coding agents.',
   'login.footer.copyright': '©',
 
   // Sessions page

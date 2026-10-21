@@ -8,6 +8,7 @@ import { FormField } from '@/components/ui/FormControls'
 import { TextField } from '@/components/ui/TextField'
 import { useTranslation } from '@/lib/use-translation'
 import type { ServerUrlResult } from '@/hooks/useServerUrl'
+import { MatemindMark } from '@/components/brand/MatemindMark'
 
 type LoginPromptProps = {
     mode?: 'login' | 'bind'
@@ -125,6 +126,7 @@ export function LoginPrompt(props: LoginPromptProps) {
             <div className="w-full max-w-sm space-y-6">
                 {/* Header */}
                 <div className="text-center space-y-2">
+                    <MatemindMark className="mx-auto mb-4 h-14 w-14 text-[var(--social-fg)]" />
                     <div className="text-[20px] font-semibold text-[var(--social-fg)]">{title}</div>
                     <div className="text-[15px] text-[var(--social-fg-muted)]">
                         {subtitle}
@@ -229,7 +231,7 @@ export function LoginPrompt(props: LoginPromptProps) {
 
             {/* Footer */}
             <div className="absolute bottom-4 left-0 right-0 text-center text-[12px] text-[var(--social-fg-muted)] space-y-1">
-                <div>{t('login.footer')} <span className="text-[var(--social-danger)]">♥</span> {t('login.footer.for')}</div>
+                <div>{t('login.footer')}</div>
                 <div>{t('login.footer.copyright')} {new Date().getFullYear()} Matemind</div>
             </div>
         </div>

@@ -1854,6 +1854,8 @@ export function createAppRouter(history?: RouterHistory) {
     return createRouter({
         routeTree,
         history,
+        // The app can live under a sub-path (VITE_BASE_URL), e.g. the demo on GitHub Pages at /matemind/.
+        basepath: import.meta.env.BASE_URL.replace(/\/$/, '') || '/',
         scrollRestoration: true,
     })
 }

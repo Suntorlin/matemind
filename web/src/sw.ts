@@ -39,7 +39,8 @@ precacheAndRoute(self.__WB_MANIFEST)
 
 // Deep links (/sessions/<id>...) open the app shell even with no network; server-rendered and API
 // paths are left alone.
-registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), {
+// Resolved against the scope so a build under a sub-path (VITE_BASE_URL) finds its own shell.
+registerRoute(new NavigationRoute(createHandlerBoundToURL(new URL('index.html', self.registration.scope).pathname), {
     denylist: [/^\/api\//, /^\/share\//, /^\/socket\.io\//, /^\/health/, /^\/sw\.js$/, /^\/manifest\.webmanifest$/]
 }))
 

@@ -23,9 +23,51 @@ Matemind does not orchestrate agents. It learns what you want, your standards an
 Your AI agents (Claude Code, Codex, Cursor, Gemini, OpenCode) are the crew, and they do the work.
 Matemind adds what they lack: it watches the sessions, collects reports and runs reviews, so you read less and decide less.
 
-Matemind runs on your own machine. You control it from a phone or a browser.
+Matemind runs on your own machines. You control it from a phone or a browser.
 
 ## Features
+
+### Highlights
+
+These three features are new. They work end to end.
+
+#### Tasks
+
+Write what you want in one message. Matemind runs the work and asks you only when it needs you.
+
+1. A planner session reads your repository and your memory. It writes a goal, 3 to 6 acceptance criteria, and up to 3 questions.
+2. You tick, edit, or add criteria. You answer the questions.
+3. A lead session splits the work into up to 5 subtasks. Up to 3 subtasks run at the same time. Each subtask runs in its own git worktree.
+4. When an agent needs a decision, you get 2 to 4 options. Each option shows its gain and its cost.
+5. A merge session joins the branches into one local branch. Matemind does not push.
+6. A reviewer session checks each acceptance criterion and gives evidence. A failed criterion starts a fix round. The limit is 2 review rounds.
+7. You get one report with a share link. You accept the report, or you write what to change.
+
+Tasks use Claude Code. All the sessions of one task run on one machine.
+
+#### Scheduled tasks
+
+Scheduled tasks are like the scheduled tasks of Claude Desktop. The difference: the hub keeps the clock, so no app must stay open.
+
+- Write a prompt, or give a file of instructions. Each run reads the file again.
+- Select the machine, the folder, the agent, the model, and the Claude account.
+- Select the schedule: manual, hourly, daily, weekdays, weekly, cron, or one time. The times use your time zone.
+- Each run starts a new session. The session reports its result with the `scheduled_run_done` MCP tool.
+- If the hub or the machine was off at the planned time, the run starts late. It starts one time, and only if the planned time is less than 7 days old.
+- A run fails when no session can start. A run also fails when its session stops without a result, or when the run passes its time limit.
+- Each failure goes to push, Telegram, and a Feishu or Lark webhook.
+- If a Claude account cannot start (for example, its login expired), the next account in its group starts the run.
+- Agents can create and change scheduled tasks with the `schedule_create`, `schedule_list`, and `schedule_update` MCP tools.
+
+#### Multiple machines
+
+One hub controls many machines. Each machine runs its own runner, and all runners connect to the same hub.
+
+- Select the machine when you start a session or create a scheduled task. Matemind keeps a list of recent folders for each machine.
+- Each machine has its own Claude accounts. Settings shows the accounts and the quota of each machine.
+- The terminal and the file browser of a session open on the machine of that session.
+- Give each machine its own home folder (`MATEMIND_HOME`). If two machines use a copy of one home folder, they share one machine ID, and the hub cannot tell them apart.
+
 
 ### Understand you
 

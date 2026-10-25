@@ -33,7 +33,8 @@ const RECONNECT_MAX_DELAY_MS = 30_000
 const RECONNECT_JITTER_MS = 500
 const INVALIDATION_BATCH_MS = 16
 // Brief mode refetches /turns per session; a streaming reply used to trigger one request per message.
-const TURNS_REFETCH_THROTTLE_MS = 1000
+// A running task sends task-updated in bursts, and each one refetched the whole task list (250 KB).
+const REFETCH_THROTTLE_MS = 1000
 
 type SessionPatch = Partial<Pick<Session, 'active' | 'thinking' | 'activeAt' | 'updatedAt' | 'permissionMode' | 'modelMode'>>
 
@@ -182,7 +183,7 @@ export function useSSE(options: {
     const onToastRef = useRef(options.onToast)
     const eventSourceRef = useRef<EventSource | null>(null)
     const invalidationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-    const turnsTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+    const throttleTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
     const pendingInvalidationsRef = useRef<{
         sessions: boolean
         machines: boolean
@@ -231,10 +232,10 @@ export function useSSE(options: {
             pendingInvalidationsRef.current.sessions = false
             pendingInvalidationsRef.current.machines = false
             pendingInvalidationsRef.current.sessionIds.clear()
-            for (const timer of turnsTimersRef.current.values()) {
+            for (const timer of throttleTimersRef.current.values()) {
                 clearTimeout(timer)
             }
-            turnsTimersRef.current.clear()
+            throttleTimersRef.current.clear()
             if (reconnectTimerRef.current) {
                 clearTimeout(reconnectTimerRef.current)
                 reconnectTimerRef.current = null
@@ -330,6 +331,18 @@ export function useSSE(options: {
                 invalidationTimerRef.current = null
                 flushInvalidations()
             }, INVALIDATION_BATCH_MS)
+        }
+
+        // One refetch per key per second, sent at the end of the second so it sees the last change.
+        const invalidateThrottled = (queryKey: readonly unknown[]) => {
+            const timerKey = JSON.stringify(queryKey)
+            if (throttleTimersRef.current.has(timerKey)) {
+                return
+            }
+            throttleTimersRef.current.set(timerKey, setTimeout(() => {
+                throttleTimersRef.current.delete(timerKey)
+                void queryClient.invalidateQueries({ queryKey })
+            }, REFETCH_THROTTLE_MS))
         }
 
         const queueSessionListInvalidation = () => {
@@ -500,13 +513,7 @@ export function useSSE(options: {
 
             if (event.type === 'message-received') {
                 ingestIncomingMessages(event.sessionId, [event.message])
-                if (!turnsTimersRef.current.has(event.sessionId)) {
-                    const turnsSessionId = event.sessionId
-                    turnsTimersRef.current.set(turnsSessionId, setTimeout(() => {
-                        turnsTimersRef.current.delete(turnsSessionId)
-                        void queryClient.invalidateQueries({ queryKey: queryKeys.turns(turnsSessionId) })
-                    }, TURNS_REFETCH_THROTTLE_MS))
-                }
+                invalidateThrottled(queryKeys.turns(event.sessionId))
             }
 
             if (event.type === 'session-added' || event.type === 'session-updated' || event.type === 'session-removed') {
@@ -582,6 +589,16 @@ export function useSSE(options: {
                 void queryClient.invalidateQueries({ queryKey: queryKeys.memories })
             }
 
+            // A task is a group: its row in the group list and its page change with it.
+            if (event.type === 'task-updated') {
+                invalidateThrottled(queryKeys.tasks)
+                invalidateThrottled(queryKeys.groups)
+                if (event.groupId) {
+                    invalidateThrottled(queryKeys.group(event.groupId))
+                    invalidateThrottled(queryKeys.groupNote(event.groupId))
+                }
+            }
+
             if (event.type === 'review-loop-updated') {
                 void queryClient.invalidateQueries({ queryKey: queryKeys.reviewLoops })
                 void queryClient.invalidateQueries({ queryKey: queryKeys.reviewLoop(event.loopId) })
@@ -590,6 +607,11 @@ export function useSSE(options: {
             if (event.type === 'review-loop-removed') {
                 void queryClient.invalidateQueries({ queryKey: queryKeys.reviewLoops })
                 void queryClient.removeQueries({ queryKey: queryKeys.reviewLoop(event.loopId) })
+            }
+
+            // The detail key sits under the list key, so one call refreshes both.
+            if (event.type === 'schedule-updated') {
+                void queryClient.invalidateQueries({ queryKey: queryKeys.schedules })
             }
 
             if (event.type === 'review-loop-round-updated') {
@@ -663,10 +685,10 @@ export function useSSE(options: {
             pendingInvalidationsRef.current.sessions = false
             pendingInvalidationsRef.current.machines = false
             pendingInvalidationsRef.current.sessionIds.clear()
-            for (const timer of turnsTimersRef.current.values()) {
+            for (const timer of throttleTimersRef.current.values()) {
                 clearTimeout(timer)
             }
-            turnsTimersRef.current.clear()
+            throttleTimersRef.current.clear()
             if (reconnectTimerRef.current) {
                 clearTimeout(reconnectTimerRef.current)
                 reconnectTimerRef.current = null

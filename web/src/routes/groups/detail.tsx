@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ChangeEvent, type ClipboardEvent, type ComponentProps, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { forwardRef, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ChangeEvent, type ClipboardEvent, type ComponentProps, type DragEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Attachment, PendingAttachment } from '@assistant-ui/react'
@@ -12,6 +12,9 @@ import { useGroupConversationTurns } from '@/hooks/queries/useGroupConversationT
 import { useGroupNote } from '@/hooks/queries/useGroupNote'
 import { useSession } from '@/hooks/queries/useSession'
 import { useGroupActions } from '@/hooks/mutations/useGroupActions'
+import { useSessionActions } from '@/hooks/mutations/useSessionActions'
+import { appendDictatedText, useDictation } from '@/hooks/useDictation'
+import { useTask } from '@/hooks/queries/useTasks'
 import { useSessions } from '@/hooks/queries/useSessions'
 import { useMachines } from '@/hooks/queries/useMachines'
 import type {
@@ -20,17 +23,22 @@ import type {
     GroupMember,
     GroupTimelineMessage,
     GroupTaskStatus,
-    SessionSummary
+    SessionSummary,
+    TaskView
 } from '@/types/api'
 import { LoadingState } from '@/components/LoadingState'
 import { MARKDOWN_PLUGINS, defaultComponents } from '@/components/assistant-ui/markdown-text'
 import { BriefCardMarkdownPreview } from '@/components/AssistantChat/BriefCardMarkdownPreview'
 import { BriefFullMarkdownContent } from '@/components/AssistantChat/BriefFullMarkdownContent'
+import { TaskReportCard } from '@/components/tasks/ReportSheet'
 import { MessageAttachments } from '@/components/AssistantChat/messages/MessageAttachments'
 import { ChatTimeSeparator } from '@/components/AssistantChat/messages/SocialMessages'
 import { FileIcon } from '@/components/FileIcon'
 import { Spinner } from '@/components/Spinner'
 import { HIT_AREA_CLASS } from '@/components/AssistantChat/hitArea'
+import { DictationBar, MobileComposerAction, MobileComposerToggle } from '@/components/AssistantChat/MobileComposerParts'
+import { getThinkEffortOptionsForFlavor, SessionSettingChips, type SessionThinkEffort } from '@/components/AssistantChat/SessionSettingChips'
+import { ActionTile } from '@/components/mobile/ActionTile'
 import { cn } from '@/lib/utils'
 import { createAttachmentAdapter } from '@/lib/attachmentAdapter'
 import { isImageMimeType } from '@/lib/fileAttachments'
@@ -46,7 +54,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button, buttonVariants } from '@/components/ui/button'
 import { IconButton } from '@/components/ui/IconButton'
 import { FormField, SegmentedControl, SelectInput } from '@/components/ui/FormControls'
-import { DIALOG_INPUT_CLASS } from '@/components/RenameSessionDialog'
+import { DIALOG_INPUT_CLASS, RenameSessionDialog } from '@/components/RenameSessionDialog'
+import { useToast } from '@/lib/toast-context'
 import { queryKeys } from '@/lib/query-keys'
 import { FloatingOverlay } from '@/components/ChatInput/FloatingOverlay'
 import { Autocomplete } from '@/components/ChatInput/Autocomplete'
@@ -59,22 +68,31 @@ import { SubPageHeader } from '@/components/mobile/SubPageHeader'
 import { TIME_SEPARATOR_GAP_MS } from '@/components/mobile/chatTimeline'
 import { GroupAvatar, SessionAvatar, getProjectName, getSessionProjectPath, type AvatarRing } from '@/components/mobile/SessionAvatar'
 import {
+    AlertCircleIcon,
     ChatBubbleIcon,
+    ChevronLeftIcon,
     ChevronRightIcon,
+    CloseIcon,
     DuplicateIcon,
     MegaphoneIcon,
     MoreHorizontalIcon,
     NewSessionIcon,
     PaperclipIcon,
     PencilIcon,
+    ArchiveBoxIcon,
+    ClipboardIcon,
     PlusIcon,
     ReplyIcon,
-    SendArrowIcon,
     ShieldCheckIcon,
     SparklesIcon,
     TrashIcon
 } from '@/components/mobile/icons'
 import { useGroupInfoPanel } from './group-info'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Card } from '@/components/ui/card'
+import { TaskReport, type TaskComposerOptions } from '@/components/tasks/TaskReport'
+import type { LatestMessage } from '@/components/report'
+import { formatRelativeTime } from '@/components/SessionList'
 
 // ─── Custom Hooks ──────────────────────────────────────────────────────────────
 
@@ -93,27 +111,6 @@ function useDebounce<T>(value: T, delay: number): T {
     }, [value, delay])
 
     return debouncedValue
-}
-
-// ─── Icons ───────────────────────────────────────────────────────────────────
-
-function CloseIcon(props: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={props.className}>
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-    )
-}
-
-function AttachmentErrorIcon(props: { className?: string }) {
-    return (
-        <svg className={props.className} viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M8 5v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <circle cx="8" cy="11" r="0.75" fill="currentColor" />
-        </svg>
-    )
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -215,11 +212,12 @@ function formatTime(ms: number): string {
     return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-type MemberWorkStatus = 'offline' | 'pending' | 'working' | 'online'
+type MemberWorkStatus = 'offline' | 'finished' | 'pending' | 'working' | 'online'
 
-function getMemberWorkStatus(session: SessionSummary | undefined): MemberWorkStatus {
+/** `finished`: a task stopped this session after it delivered its part, so it is not offline by accident. */
+function getMemberWorkStatus(session: SessionSummary | undefined, finished = false): MemberWorkStatus {
     if (!session?.active) {
-        return 'offline'
+        return finished ? 'finished' : 'offline'
     }
     if ((session.pendingRequestsCount ?? 0) > 0) {
         return 'pending'
@@ -247,7 +245,7 @@ function MemberStatusLine(props: { session: SessionSummary | undefined; status: 
     ].filter(Boolean).join(' · ')
 
     return (
-        <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[13px] leading-snug text-[var(--social-fg-muted)]">
+        <span className="mt-0.5 flex min-w-0 items-center gap-1 text-footnote leading-snug text-[var(--social-fg-muted)]">
             {status === 'pending' ? (
                 <span className="shrink-0 font-semibold text-[var(--social-badge)]">
                     {t('mobile.feed.pending', { n: session?.pendingRequestsCount ?? 0 })}
@@ -260,7 +258,7 @@ function MemberStatusLine(props: { session: SessionSummary | undefined; status: 
                     </span>
                 </span>
             ) : (
-                <span className="shrink-0">{status === 'online' ? t('misc.online') : t('misc.offline')}</span>
+                <span className="shrink-0">{status === 'online' ? t('misc.online') : status === 'finished' ? t('groups.member.finished') : t('misc.offline')}</span>
             )}
             {meta ? <span className="min-w-0 truncate">{`· ${meta}`}</span> : null}
         </span>
@@ -328,6 +326,14 @@ function getActorSessionId(message: GroupTimelineMessage): string | null {
         return value || null
     }
     return null
+}
+
+/** A task's report line carries the full report; the conversation shows it as a card. */
+function taskReportOf(message: GroupTimelineMessage): string | null {
+    const p = message.payload
+    if (message.source !== 'system:task' || !p || typeof p !== 'object') return null
+    const report = (p as { report?: { markdown?: unknown } }).report
+    return typeof report?.markdown === 'string' && report.markdown ? report.markdown : null
 }
 
 function isSystemMessage(message: GroupTimelineMessage): boolean {
@@ -561,10 +567,10 @@ function SessionPickRow(props: { session: SessionSummary; disabled: boolean; onP
         >
             <SessionAvatar session={session} size={36} muted={!session.active} />
             <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] text-[var(--social-fg)]">
+                <span className="block truncate text-body text-[var(--social-fg)]">
                     {getSessionTitle(session, { fallbackIdLength: 12 })}
                 </span>
-                <span className="block truncate text-[13px] text-[var(--social-fg-muted)]">
+                <span className="block truncate text-footnote text-[var(--social-fg-muted)]">
                     {[session.metadata?.flavor, getProjectName(getSessionProjectPath(session))].filter(Boolean).join(' · ')}
                 </span>
             </span>
@@ -694,12 +700,13 @@ function AddMemberSheet(props: {
 function MemberRow(props: {
     member: GroupMember
     session?: SessionSummary
+    finished: boolean
     onOpen: () => void
     onMore: () => void
 }) {
     const { t } = useTranslation()
     const { member, session } = props
-    const status = getMemberWorkStatus(session)
+    const status = getMemberWorkStatus(session, props.finished)
     const title = getSessionTitle(session, { fallbackSessionId: member.sessionId, fallbackIdLength: 12 })
     const hasSession = Boolean(member.sessionId)
     const longPressHandlers = useLongPress({
@@ -722,11 +729,11 @@ function MemberRow(props: {
                     session={{ id: member.sessionId ?? `member:${member.id}` }}
                     size={40}
                     ring={getMemberRing(status)}
-                    muted={status === 'offline'}
+                    muted={status === 'offline' || status === 'finished'}
                     badgeCount={status === 'pending' ? session?.pendingRequestsCount : 0}
                 />
                 <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[15px] text-[var(--social-fg)]">{title}</span>
+                    <span className="block truncate text-body text-[var(--social-fg)]">{title}</span>
                     <MemberStatusLine session={session} status={status} />
                 </span>
             </button>
@@ -741,6 +748,23 @@ function MemberRow(props: {
 
 type GroupNoteSummary = { content: string; version: number } | null
 
+/**
+ * The task sessions that delivered their part: done subtasks, the lead once it split the task, a reviewer once the
+ * review is in. The task stops each of them, so offline here means finished, not lost.
+ */
+function taskFinishedSessionIds(task: TaskView | null, members: GroupMember[]): Set<string> {
+    const run = task?.run
+    if (!run) return new Set()
+    const ids = new Set(run.subtasks.filter((s) => s.state === 'done' && s.sessionId).map((s) => s.sessionId!))
+    for (const member of members) {
+        if (!member.sessionId) continue
+        if (member.role === 'lead' && run.phase !== 'planning' && run.phase !== 'delivering') ids.add(member.sessionId)
+        if (member.role === 'reviewer' && run.review && run.phase !== 'reviewing') ids.add(member.sessionId)
+    }
+    if (task.leadSessionId && run.phase !== 'planning' && run.phase !== 'delivering') ids.add(task.leadSessionId)
+    return ids
+}
+
 /** WeChat "聊天信息": who is in the group, the shared note and how the chat is shown. */
 function GroupInfoSheet(props: {
     open: boolean
@@ -750,6 +774,8 @@ function GroupInfoSheet(props: {
     description: string | null
     members: GroupMember[]
     sessionMap: Map<string, SessionSummary>
+    /** Task sessions stopped after they delivered their part. */
+    finished: Set<string>
     note: GroupNoteSummary
     viewMode: ChatViewMode
     onViewModeChange: (mode: ChatViewMode) => void
@@ -760,6 +786,10 @@ function GroupInfoSheet(props: {
     onEditNote: () => void
     onGenerateNote: () => void
     onBroadcastNote: () => void
+    archived: boolean
+    onRename: () => void
+    onCopyTitle: () => void
+    onArchive: (archived: boolean) => void
 }) {
     const { t } = useTranslation()
     const memberSessions = props.members
@@ -779,12 +809,12 @@ function GroupInfoSheet(props: {
             <div className="flex items-center gap-3.5 px-5 pb-5 pt-2">
                 <GroupAvatar seed={props.groupId} members={memberSessions} size={48} />
                 <div className="min-w-0 flex-1">
-                    <div className="line-clamp-2 text-[16px] font-semibold leading-snug tracking-[-0.01em] text-[var(--social-fg)]">{props.name}</div>
-                    <div className="mt-1 truncate text-[13px] text-[var(--social-fg-muted)]">
+                    <div className="line-clamp-2 text-headline font-semibold leading-snug tracking-[-0.01em] text-[var(--social-fg)]">{props.name}</div>
+                    <div className="mt-1 truncate text-footnote text-[var(--social-fg-muted)]">
                         {t('groups.info.summary', { n: props.members.length, m: onlineCount })}
                     </div>
                     {props.description ? (
-                        <div className="mt-0.5 line-clamp-2 text-[13px] text-[var(--social-fg-muted)]">{props.description}</div>
+                        <div className="mt-0.5 line-clamp-2 text-footnote text-[var(--social-fg-muted)]">{props.description}</div>
                     ) : null}
                 </div>
             </div>
@@ -812,6 +842,7 @@ function GroupInfoSheet(props: {
                         key={member.id}
                         member={member}
                         session={member.sessionId ? props.sessionMap.get(member.sessionId) : undefined}
+                        finished={Boolean(member.sessionId && props.finished.has(member.sessionId))}
                         onOpen={() => {
                             if (member.sessionId) closeThen(() => props.onOpenMember(member.sessionId as string))()
                         }}
@@ -832,7 +863,7 @@ function GroupInfoSheet(props: {
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--social-muted)] text-[var(--social-fg)]">
                         <PlusIcon className="h-5 w-5" />
                     </span>
-                    <span className="text-[15px] text-[var(--social-fg)]">{t('groups.detail.addMember')}</span>
+                    <span className="text-body text-[var(--social-fg)]">{t('groups.detail.addMember')}</span>
                 </button>
             </SheetSection>
 
@@ -845,12 +876,24 @@ function GroupInfoSheet(props: {
                     {noteContent ? (
                         <BriefCardMarkdownPreview content={noteContent} className="max-h-[132px] text-[var(--social-fg-muted)]" />
                     ) : (
-                        <span className="text-[15px] text-[var(--social-fg-muted)]">{t('groups.note.empty')}</span>
+                        <span className="text-body text-[var(--social-fg-muted)]">{t('groups.note.empty')}</span>
                     )}
                 </button>
                 <SheetRow icon={<PencilIcon />} label={t('groups.note.edit')} chevron onClick={closeThen(props.onEditNote)} />
                 <SheetRow icon={<SparklesIcon />} label={t('groups.note.generate')} disabled={props.isPending} onClick={closeThen(props.onGenerateNote)} />
                 <SheetRow icon={<MegaphoneIcon />} label={t('groups.note.broadcast')} disabled={props.isPending || !noteContent} onClick={closeThen(props.onBroadcastNote)} />
+            </SheetSection>
+
+            <SheetSection title={t('mobile.chat.manage')}>
+                <SheetRow icon={<PencilIcon />} label={t('session.action.rename')} chevron onClick={closeThen(props.onRename)} />
+                <SheetRow icon={<ClipboardIcon />} label={t('groups.action.copyTitle')} onClick={closeThen(props.onCopyTitle)} />
+                <SheetRow
+                    icon={<ArchiveBoxIcon />}
+                    label={props.archived ? t('groups.action.unarchive') : t('session.action.archive')}
+                    destructive={!props.archived}
+                    disabled={props.isPending}
+                    onClick={closeThen(() => props.onArchive(!props.archived))}
+                />
             </SheetSection>
             <div className="h-2" />
         </BottomSheet>
@@ -861,6 +904,7 @@ function GroupInfoSheet(props: {
 function MemberActionsSheet(props: {
     member: GroupMember | null
     session?: SessionSummary
+    finished: boolean
     onOpenChange: (open: boolean) => void
     onOpenSession: () => void
     onHandlePending: () => void
@@ -868,7 +912,7 @@ function MemberActionsSheet(props: {
 }) {
     const { t } = useTranslation()
     const { member, session } = props
-    const status = getMemberWorkStatus(session)
+    const status = getMemberWorkStatus(session, props.finished)
     const title = member ? getSessionTitle(session, { fallbackSessionId: member.sessionId, fallbackIdLength: 12 }) : ''
 
     return (
@@ -876,9 +920,9 @@ function MemberActionsSheet(props: {
             {member ? (
                 <>
                     <div className="flex items-center gap-3.5 px-5 pb-4 pt-2">
-                        <SessionAvatar session={{ id: member.sessionId ?? `member:${member.id}` }} size={44} ring={getMemberRing(status)} muted={status === 'offline'} />
+                        <SessionAvatar session={{ id: member.sessionId ?? `member:${member.id}` }} size={44} ring={getMemberRing(status)} muted={status === 'offline' || status === 'finished'} />
                         <div className="min-w-0 flex-1">
-                            <div className="line-clamp-2 text-[16px] font-semibold leading-snug text-[var(--social-fg)]">{title}</div>
+                            <div className="line-clamp-2 text-headline font-semibold leading-snug text-[var(--social-fg)]">{title}</div>
                             <MemberStatusLine session={session} status={status} />
                         </div>
                     </div>
@@ -971,7 +1015,7 @@ function NoteEditorSheet(props: {
                             className={cn(DIALOG_INPUT_CLASS, 'resize-y')}
                         />
                     </FormField>
-                    {error ? <div className="px-1 text-[13px] text-[var(--social-danger)]">{error}</div> : null}
+                    {error ? <div className="px-1 text-footnote text-[var(--social-danger)]">{error}</div> : null}
                     <div className="flex justify-end gap-2 pt-1">
                         <Button type="button" variant="secondary" onClick={() => props.onOpenChange(false)}>
                             {t('button.cancel')}
@@ -1010,8 +1054,8 @@ function PendingRequestsSheet(props: {
                 <div className="flex items-center gap-3 px-5 pb-4 pt-1">
                     <SessionAvatar session={{ id: props.sessionId }} size={40} ring={props.requests.length > 0 ? 'pending' : null} />
                     <div className="min-w-0 flex-1">
-                        <div className="truncate text-[15px] font-semibold text-[var(--social-fg)]">{props.sessionTitle}</div>
-                        <div className="text-[13px] text-[var(--social-fg-muted)]">
+                        <div className="truncate text-body font-semibold text-[var(--social-fg)]">{props.sessionTitle}</div>
+                        <div className="text-footnote text-[var(--social-fg-muted)]">
                             {props.requests.length > 0 ? t('mobile.feed.pending', { n: props.requests.length }) : t('groups.pending.none')}
                         </div>
                     </div>
@@ -1023,14 +1067,14 @@ function PendingRequestsSheet(props: {
                 <SheetNote>{t('groups.pending.loading')}</SheetNote>
             ) : props.requests.map((request) => (
                 <section key={request.id} className="px-4 pb-3">
-                    <div className="overflow-hidden rounded-2xl border border-[var(--social-border)]">
+                    <Card className="overflow-hidden">
                         <div className="flex items-baseline gap-2 px-4 pt-3">
-                            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[var(--social-fg)]">{request.tool}</span>
+                            <span className="min-w-0 flex-1 truncate text-body font-semibold text-[var(--social-fg)]">{request.tool}</span>
                             {request.createdAt ? (
-                                <span className="shrink-0 text-[12px] text-[var(--social-fg-subtle)]">{formatTime(request.createdAt)}</span>
+                                <span className="shrink-0 text-caption text-[var(--social-fg-subtle)]">{formatTime(request.createdAt)}</span>
                             ) : null}
                         </div>
-                        <pre className="mx-4 mb-3 mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-[var(--social-muted)] px-3 py-2 font-mono text-[12px] leading-relaxed text-[var(--social-fg)]">
+                        <pre className="mx-4 mb-3 mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-[var(--social-muted)] px-3 py-2 font-mono text-caption leading-relaxed text-[var(--social-fg)]">
                             {formatPermissionArguments(request.arguments)}
                         </pre>
                         <div className="flex justify-end gap-2 border-t border-[var(--social-border)] px-3 py-2.5">
@@ -1051,7 +1095,7 @@ function PendingRequestsSheet(props: {
                                 {props.activeRequestId === request.id ? t('groups.detail.processing') : t('groups.detail.approve')}
                             </Button>
                         </div>
-                    </div>
+                    </Card>
                 </section>
             ))}
             <SheetSection>
@@ -1080,8 +1124,8 @@ function PendingBanner(props: {
                 >
                     <SessionAvatar session={{ id: item.sessionId }} size={32} ring="pending" />
                     <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[15px] font-semibold text-[var(--social-fg)]">{item.title}</span>
-                        <span className="block text-[13px] text-[var(--social-badge)]">{t('mobile.feed.pending', { n: item.count })}</span>
+                        <span className="block truncate text-body font-semibold text-[var(--social-fg)]">{item.title}</span>
+                        <span className="block text-footnote text-[var(--social-badge)]">{t('mobile.feed.pending', { n: item.count })}</span>
                     </span>
                     <span aria-hidden className={buttonVariants({ size: 'sm' })}>
                         {t('groups.pending.handle')}
@@ -1114,7 +1158,7 @@ function TaskStateList(props: { taskStates: LatestTaskStates; sessionMap: Map<st
                 type="button"
                 onClick={() => setOpen((v) => !v)}
                 aria-expanded={open}
-                className="relative flex items-center gap-1 text-[12px] text-[var(--social-fg-subtle)] transition-colors before:absolute before:-inset-x-2 before:-inset-y-3 before:content-[''] hover:text-[var(--social-fg-muted)]"
+                className="relative flex items-center gap-1 text-caption text-[var(--social-fg-subtle)] transition-colors before:absolute before:-inset-x-2 before:-inset-y-3 before:content-[''] hover:text-[var(--social-fg-muted)]"
             >
                 <ChevronRightIcon className={cn('h-3 w-3 transition-transform', open ? 'rotate-90' : '')} />
                 {allDone ? t('groups.task.summaryDone', { n: tasks.length }) : t('groups.task.summary', { n: tasks.length })}
@@ -1130,7 +1174,7 @@ function TaskStateList(props: { taskStates: LatestTaskStates; sessionMap: Map<st
                             : ''
                         const error = typeof p?.error === 'string' ? p.error : null
                         return (
-                            <div key={task.taskId ?? task.id} className="flex min-w-0 items-center gap-2 text-[12px]">
+                            <div key={task.taskId ?? task.id} className="flex min-w-0 items-center gap-2 text-caption">
                                 <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', taskStatusDotClass(status))} />
                                 <span className="shrink-0 text-[var(--social-fg)]">{t(`groups.task.status.${status}`)}</span>
                                 {target ? <span className="min-w-0 truncate text-[var(--social-fg-muted)]">{target}</span> : null}
@@ -1182,12 +1226,22 @@ function TimelineBubble(props: {
         && getMessageActorKey(previous) === getMessageActorKey(message)
     const separator = showSeparator ? <ChatTimeSeparator at={message.createdAt} /> : null
 
+    const report = isSystem ? taskReportOf(message) : null
+    if (report) {
+        return (
+            <div className="mx-auto w-full max-w-content px-4 pt-3">
+                {separator}
+                <TaskReportCard text={text} markdown={report} title={t('taskRun.reportCard')} />
+            </div>
+        )
+    }
+
     if (isSystem) {
         return (
             <div className="mx-auto w-full max-w-content px-4 pt-3">
                 {separator}
                 <div className="flex justify-center">
-                    <span className="max-w-[88%] rounded-full bg-[var(--social-muted)] px-3 py-1 text-center text-[12px] leading-[18px] text-[var(--social-fg-muted)]">
+                    <span className="max-w-[88%] rounded-full bg-[var(--social-muted)] px-3 py-1 text-center text-caption leading-[1.125rem] text-[var(--social-fg-muted)]">
                         {text}
                     </span>
                 </div>
@@ -1224,10 +1278,10 @@ function TimelineBubble(props: {
                             title={t('groups.message.openSession', { name: actorTitle })}
                         >
                             <SessionAvatar session={{ id: actorSessionId }} size={18} muted={!actorSession?.active} />
-                            <span className="truncate text-[13px] font-semibold text-[var(--social-fg-muted)]">{actorTitle}</span>
+                            <span className="truncate text-footnote font-semibold text-[var(--social-fg-muted)]">{actorTitle}</span>
                         </button>
                     ) : (
-                        <div className="mb-1 max-w-[88%] truncate px-1 text-[13px] font-semibold text-[var(--social-fg-muted)]">{actorTitle}</div>
+                        <div className="mb-1 max-w-[88%] truncate px-1 text-footnote font-semibold text-[var(--social-fg-muted)]">{actorTitle}</div>
                     )
                 ) : null}
                 <div className={cn('flex min-w-0 max-w-[88%] items-end gap-1 lg:max-w-[75%]', isUser ? 'flex-row-reverse' : 'flex-row')}>
@@ -1235,16 +1289,16 @@ function TimelineBubble(props: {
                         {...(isMobileLayout ? longPressHandlers : {})}
                         style={isMobileLayout ? { WebkitTouchCallout: 'none' } : undefined}
                         className={cn(
-                            'min-w-0 max-w-full rounded-2xl px-4 py-2.5 text-[15px] leading-[1.55] break-words [overflow-wrap:anywhere]',
-                            isUser ? 'social-bubble-self rounded-br-md' : 'social-card rounded-tl-md',
+                            'min-w-0 max-w-full rounded-2xl px-4 py-2.5 text-body leading-[1.55] break-words [overflow-wrap:anywhere]',
+                            isUser ? 'social-bubble-self rounded-br-md' : 'social-bubble-other rounded-tl-md',
                             isMobileLayout ? 'select-none' : '',
-                            isCommand ? 'whitespace-pre-wrap font-mono text-[13px]' : ''
+                            isCommand ? 'whitespace-pre-wrap font-mono text-footnote' : ''
                         )}
                     >
                         {quoteInfo ? (
                             <div
                                 className={cn(
-                                    'mb-2 border-l-2 pl-2.5 font-sans text-[13px] leading-snug',
+                                    'mb-2 border-l-2 pl-2.5 font-sans text-footnote leading-snug',
                                     isUser ? 'border-[var(--social-primary-fg)]/40 opacity-80' : 'border-[var(--social-border)] text-[var(--social-fg-muted)]'
                                 )}
                             >
@@ -1368,7 +1422,7 @@ function ComposerAttachmentList(props: {
                         ) : null}
                         {attachment.status === 'error' ? (
                             <span className="text-[var(--social-danger)]">
-                                <AttachmentErrorIcon className="h-4 w-4" />
+                                <AlertCircleIcon className="h-4 w-4" />
                             </span>
                         ) : null}
                         {isImage ? (
@@ -1383,10 +1437,10 @@ function ComposerAttachmentList(props: {
                             </span>
                         )}
                         <div className="min-w-0 flex-1">
-                            <div className="truncate text-[13px] text-[var(--social-fg)]">
+                            <div className="truncate text-footnote text-[var(--social-fg)]">
                                 {attachment.filename}
                             </div>
-                            <div className={cn('truncate text-[12px]', attachment.status === 'error' ? 'text-[var(--social-danger)]' : 'text-[var(--social-fg-subtle)]')}>
+                            <div className={cn('truncate text-caption', attachment.status === 'error' ? 'text-[var(--social-danger)]' : 'text-[var(--social-fg-subtle)]')}>
                                 {statusText}
                             </div>
                         </div>
@@ -1414,7 +1468,7 @@ const TimelineScroller = forwardRef<HTMLDivElement, ComponentProps<'div'>>(
             <div
                 {...props}
                 ref={ref}
-                className={`app-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${props.className ?? ''}`.trim()}
+                className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${props.className ?? ''}`.trim()}
             />
         )
     }
@@ -1433,8 +1487,8 @@ function TimelineHistoryControl(props: {
     return (
         <div className="flex justify-center pb-1 pt-3">
             {props.isLoading ? (
-                <span className="inline-flex items-center gap-2 text-[12px] text-[var(--social-fg-subtle)]">
-                    <span className="social-spinner" aria-hidden="true" />
+                <span className="inline-flex items-center gap-2 text-caption text-[var(--social-fg-subtle)]">
+                    <Spinner size="sm" label={null} />
                     {t('groups.timeline.loadingOlder')}
                 </span>
             ) : (
@@ -1829,7 +1883,7 @@ function GroupBriefTurnList(props: {
         <>
             {activeTurn && activeDetail?.error ? (
                 <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-                    <div className="text-[15px] text-[var(--social-danger)]">{activeDetail.error}</div>
+                    <div className="text-body text-[var(--social-danger)]">{activeDetail.error}</div>
                     <Button
                         type="button"
                         variant="secondary"
@@ -1853,7 +1907,7 @@ function GroupBriefTurnList(props: {
                     />
                 </div>
             ) : (
-                <div className="flex h-full items-center justify-center text-[15px] text-[var(--social-fg-muted)]">
+                <div className="flex h-full items-center justify-center text-body text-[var(--social-fg-muted)]">
                     {activeTurn && activeDetail?.isLoading ? t('groups.brief.loadingTurn') : t('groups.brief.noDetail')}
                 </div>
             )}
@@ -1864,19 +1918,17 @@ function GroupBriefTurnList(props: {
         <>
             <div className="relative flex h-full min-h-0 flex-col">
                 {props.warning ? (
-                    <div className="mx-4 mt-2 rounded-xl bg-[var(--app-badge-warning-bg)] px-3 py-2 text-[12px] text-[var(--app-badge-warning-text)]">
+                    <div className="mx-4 mt-2 rounded-xl bg-[var(--app-badge-warning-bg)] px-3 py-2 text-caption text-[var(--app-badge-warning-text)]">
                         {props.warning}
                     </div>
                 ) : null}
 
                 {props.isLoading && props.turns.length === 0 ? (
                     <div className="flex flex-1 items-center justify-center py-8">
-                        <LoadingState label={t('groups.brief.loading')} className="text-[15px]" />
+                        <LoadingState label={t('groups.brief.loading')} className="text-body" />
                     </div>
                 ) : props.turns.length === 0 ? (
-                    <div className="flex flex-1 items-center justify-center py-8 text-[15px] text-[var(--social-fg-muted)]">
-                        {t('groups.brief.empty')}
-                    </div>
+                    <EmptyState variant="page" className="flex-1" title={t('groups.brief.empty')} />
                 ) : (
                     <div className="min-h-0 flex-1">
                         <Virtuoso
@@ -1918,7 +1970,7 @@ function GroupBriefTurnList(props: {
                                 )
                                 const initiatorIsUser = (turn.initiatorSource ?? '').startsWith('user:')
                                 const footer = (
-                                    <div className="mt-2 flex items-center gap-1.5 px-1 text-[12px] text-[var(--social-fg-subtle)]">
+                                    <div className="mt-2 flex items-center gap-1.5 px-1 text-caption text-[var(--social-fg-subtle)]">
                                         <span>{formatMessageCount(turn.messageCount, t)}</span>
                                         <span aria-hidden="true">·</span>
                                         <button
@@ -1930,7 +1982,7 @@ function GroupBriefTurnList(props: {
                                         </button>
                                         {isOpen ? (
                                             <span className="ml-auto inline-flex items-center gap-1.5 text-[var(--social-fg-muted)]">
-                                                <span className="social-spinner" aria-hidden="true" />
+                                                <Spinner size="sm" label={null} />
                                                 {t('groups.brief.generating')}
                                             </span>
                                         ) : null}
@@ -1942,8 +1994,8 @@ function GroupBriefTurnList(props: {
                                         <div className={cn('flex', initiatorIsUser ? 'justify-end' : 'justify-start')}>
                                             <div
                                                 className={cn(
-                                                    'max-w-[88%] rounded-2xl px-4 py-2.5 text-[15px] lg:max-w-[75%]',
-                                                    initiatorIsUser ? 'social-bubble-self rounded-br-md' : 'social-card rounded-tl-md'
+                                                    'max-w-[88%] rounded-2xl px-4 py-2.5 text-body lg:max-w-[75%]',
+                                                    initiatorIsUser ? 'social-bubble-self rounded-br-md' : 'social-bubble-other rounded-tl-md'
                                                 )}
                                             >
                                                 <BriefCardMarkdownPreview content={initiatorPreview} />
@@ -1954,14 +2006,14 @@ function GroupBriefTurnList(props: {
                                             {isOpen ? (
                                                 <button
                                                     type="button"
-                                                    className="social-card w-full max-w-[88%] rounded-2xl rounded-tl-md px-4 py-3 text-left lg:max-w-[75%]"
+                                                    className="social-bubble-other w-full max-w-[88%] rounded-2xl rounded-tl-md px-4 py-3 text-left lg:max-w-[75%]"
                                                     onClick={() => openTurnDetails(turn.id)}
                                                     aria-label={t('groups.detail.openTurn')}
                                                 >
                                                     <BriefCardMarkdownPreview content={responderPreview} className="text-[var(--social-fg)]" />
                                                 </button>
                                             ) : (
-                                                <div className="social-card w-full max-w-[88%] rounded-2xl rounded-tl-md px-4 py-3 lg:max-w-[75%]">
+                                                <div className="social-bubble-other w-full max-w-[88%] rounded-2xl rounded-tl-md px-4 py-3 lg:max-w-[75%]">
                                                     <BriefFullMarkdownContent content={responderPreview} />
                                                 </div>
                                             )}
@@ -1996,7 +2048,7 @@ function GroupBriefTurnList(props: {
                                 <DialogTitle>{turnTitle}</DialogTitle>
                             </DialogHeader>
                             {turnSubtitle ? (
-                                <div className="mt-0.5 text-[12px] text-[var(--social-fg-muted)]">{turnSubtitle}</div>
+                                <div className="mt-0.5 text-caption text-[var(--social-fg-muted)]">{turnSubtitle}</div>
                             ) : null}
                         </div>
                         <div className="social-chat min-h-0 flex-1 overflow-hidden">
@@ -2039,6 +2091,24 @@ export default function GroupDetailPage() {
         loadMore: loadMoreTurns
     } = useGroupConversationTurns(api, groupId, { enabled: viewMode === 'brief' })
     const { note, isLoading: noteLoading } = useGroupNote(api, groupId)
+    // A task with a goal or a guide step opens as the lead's report; "All chats" shows this timeline.
+    const [taskView, setTaskView] = useState<'report' | 'chat'>('report')
+    useEffect(() => { setTaskView('report') }, [groupId])
+    const { task: groupTask } = useTask(api, group?.group.kind === 'task' ? groupId : null)
+    const hasTaskReport = group?.group.kind === 'task' && (group.group.status === 'guiding' || Boolean(group.group.goal))
+    const showTaskReport = hasTaskReport && taskView === 'report'
+    const latestTaskMessage = useMemo<LatestMessage | null>(() => {
+        for (let index = messages.length - 1; index >= 0; index -= 1) {
+            const message = messages[index]
+            const text = message && (message.type === 'chat' || message.type === 'system')
+                ? (message.payload as { text?: unknown } | null)?.text
+                : undefined
+            if (typeof text === 'string' && text.trim()) {
+                return { from: message.source.startsWith('user:') ? 'me' : 'lead', text, when: formatRelativeTime(message.createdAt, t) ?? '' }
+            }
+        }
+        return null
+    }, [messages, t])
     const { postMessage, updateNote, refreshNote, broadcastNote, addMember, removeMember, updateGroup, isPending } = useGroupActions(api, groupId)
     const { sessions } = useSessions(api)
     const [pendingQuickSessionId, setPendingQuickSessionId] = useState<string | null>(null)
@@ -2058,6 +2128,8 @@ export default function GroupDetailPage() {
     const [memberActionSessionId, setMemberActionSessionId] = useState<string | null>(null)
     const [memberRemoveSessionId, setMemberRemoveSessionId] = useState<string | null>(null)
     const [actionError, setActionError] = useState<string | null>(null)
+    const [renameOpen, setRenameOpen] = useState(false)
+    const { addToast } = useToast()
     const [quotedMessage, setQuotedMessage] = useState<GroupTimelineMessage | null>(null)
     const timelineRef = useRef<VirtuosoHandle | null>(null)
     const composerRef = useRef<HTMLTextAreaElement>(null)
@@ -2101,6 +2173,7 @@ export default function GroupDetailPage() {
     }, [groupId])
 
     const members = group?.members ?? []
+    const finishedSessionIds = useMemo(() => taskFinishedSessionIds(groupTask, group?.members ?? []), [groupTask, group?.members])
     const existingMemberSessionIds = useMemo(
         () => new Set(members.filter((m) => m.sessionId).map((m) => m.sessionId as string)),
         [members]
@@ -2155,6 +2228,22 @@ export default function GroupDetailPage() {
             count: session?.pendingRequestsCount ?? 0
         }]
     }), [members, sessionMap])
+    // The task report shows the lead's own approval card; the banner keeps the other members.
+    const leadSessionId = members.find((member) => member.role === 'lead')?.sessionId ?? null
+    const bannerPending = showTaskReport ? pendingMembers.filter((item) => item.sessionId !== leadSessionId) : pendingMembers
+    // In a task the prompt box talks to the lead: its chips are the lead session's model, thinking and permission.
+    const { session: leadSession } = useSession(api, group?.group.kind === 'task' ? leadSessionId : null)
+    const leadFlavor = leadSession?.metadata?.flavor ?? null
+    const leadActions = useSessionActions(api, leadSession?.id ?? null, leadFlavor)
+    const [toolPanelOpen, setToolPanelOpen] = useState(false)
+    const [composerDragging, setComposerDragging] = useState(false)
+    // The session's mic: dictated words join the draft. The repository's folder name is the word it most often gets wrong.
+    const repoWord = groupTask?.repoPath?.split('/').filter(Boolean).pop()
+    const dictation = useDictation({
+        api,
+        hotwords: repoWord ? [repoWord] : [],
+        onText: (text) => setComposer((previous) => appendDictatedText(previous, text))
+    })
     const noteExecutorOptions = useMemo(() => {
         const options = members
             .filter((member) => typeof member.sessionId === 'string' && member.sessionId.length > 0)
@@ -2659,10 +2748,11 @@ export default function GroupDetailPage() {
             if (isPending) {
                 return
             }
-            void handleSend()
+            // Through the form: the task report may send the text somewhere else (a request for changes).
+            e.currentTarget.form?.requestSubmit()
         }
 
-    }, [mentionQuery, mentionCandidates, mentionIndex, insertMention, isPending, handleSend])
+    }, [mentionQuery, mentionCandidates, mentionIndex, insertMention, isPending])
 
     // Saves what changed in the note editor: content, the note prompt and the executor.
     const handleSaveNote = async (draft: NoteDraft) => {
@@ -2786,14 +2876,14 @@ export default function GroupDetailPage() {
     if (groupLoading) {
         return (
             <div className="flex h-full items-center justify-center">
-                <LoadingState label={t('groups.loading')} className="text-[15px]" />
+                <LoadingState label={t('groups.loading')} className="text-body" />
             </div>
         )
     }
 
     if (!group || groupError) {
         return (
-            <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center text-[15px] text-[var(--social-fg-muted)]">
+            <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center text-body text-[var(--social-fg-muted)]">
                 {groupError ?? t('groups.notFound')}
             </div>
         )
@@ -2819,7 +2909,7 @@ export default function GroupDetailPage() {
                 onOpenSession={openSession}
             />
         ) : (
-            <div className="flex h-full items-center justify-center text-[15px] text-[var(--social-fg-muted)]">
+            <div className="flex h-full items-center justify-center text-body text-[var(--social-fg-muted)]">
                 {t('groups.unavailable')}
             </div>
         )
@@ -2829,13 +2919,10 @@ export default function GroupDetailPage() {
          expects. A dedicated groups-to-ChatBlock adapter would be needed to
          support CliThread here. */ messagesLoading && visibleMessages.length === 0 ? (
         <div className="flex h-full items-center justify-center">
-            <LoadingState label={t('groups.timeline.loading')} className="text-[15px]" />
+            <LoadingState label={t('groups.timeline.loading')} className="text-body" />
         </div>
     ) : visibleMessages.length === 0 ? (
-        <div className="flex h-full flex-col items-center justify-center gap-1 px-8 text-center">
-            <div className="text-[15px] font-semibold text-[var(--social-fg)]">{t('groups.timeline.emptyTitle')}</div>
-            <div className="text-[13px] text-[var(--social-fg-muted)]">{t('groups.timeline.emptyHint')}</div>
-        </div>
+        <EmptyState variant="page" className="h-full" title={t('groups.timeline.emptyTitle')} subtitle={t('groups.timeline.emptyHint')} />
     ) : (
         <Virtuoso
             ref={timelineRef}
@@ -2877,7 +2964,7 @@ export default function GroupDetailPage() {
 
     const quotedPreview = quotedMessage ? (
         <div className="flex items-start gap-2 border-l-2 border-[var(--social-fg-subtle)] pl-2.5">
-            <span className="min-w-0 flex-1 text-[13px] leading-snug text-[var(--social-fg-muted)]">
+            <span className="min-w-0 flex-1 text-footnote leading-snug text-[var(--social-fg-muted)]">
                 <span className="font-semibold text-[var(--social-fg)]">
                     {t('groups.composer.replyingTo', {
                         name: quotedMessage.actorName
@@ -2901,45 +2988,17 @@ export default function GroupDetailPage() {
         </div>
     ) : null
 
-    const attachButton = (compact: boolean) => (
-        <IconButton
-            variant={compact ? 'ghost' : 'muted'}
-            size={compact ? 'sm' : 'default'}
-            label={uploadSessionId ? t('mobile.composer.attach') : t('groups.composer.noUploader')}
-            onClick={openAttachmentPicker}
-            disabled={isPending || !uploadSessionId}
-        >
-            <PaperclipIcon className="h-[18px] w-[18px]" />
-        </IconButton>
-    )
-
-    const sendButton = (compact: boolean) => (
-        <IconButton
-            type="submit"
-            variant="filled"
-            size={compact ? 'sm' : 'default'}
-            label={t('composer.send')}
-            disabled={!canSendComposer}
-        >
-            {isPending ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current/40 border-t-current" />
-            ) : (
-                <SendArrowIcon className="h-[18px] w-[18px]" />
-            )}
-        </IconButton>
-    )
-
-    const composerTextarea = (className: string) => (
+    const composerTextarea = (className: string, placeholder?: string) => (
         <textarea
             ref={composerRef}
             value={composer}
             onChange={handleComposerChange}
             onPaste={handleComposerPaste}
             onKeyDown={handleComposerKeyDown}
-            placeholder={t('groups.detail.composerPlaceholder')}
+            placeholder={placeholder ?? (group?.group.kind === 'task' && group.group.status === 'guiding' ? t('taskGuide.composerPlaceholder') : t('groups.detail.composerPlaceholder'))}
             aria-label={t('groups.detail.composerPlaceholder')}
             rows={1}
-            className={cn('app-scrollbar block w-full resize-none bg-transparent text-[16px] leading-[22px] text-[var(--social-fg)] placeholder-[var(--social-fg-subtle)] outline-none', className)}
+            className={cn('block w-full resize-none bg-transparent text-headline leading-[1.375rem] text-[var(--social-fg)] placeholder-[var(--social-fg-subtle)] outline-none', className)}
         />
     )
 
@@ -2962,72 +3021,242 @@ export default function GroupDetailPage() {
                 />
             ) : null}
             {actionError ? (
-                <div className="px-4 pb-1.5 pt-2 text-[13px] text-[var(--social-danger)]">{actionError}</div>
+                <div className="px-4 pb-1.5 pt-2 text-footnote text-[var(--social-danger)]">{actionError}</div>
             ) : null}
         </>
     )
 
-    // Same composer as one-to-one chats: a pill with attach / send on phones, a card on desktop.
-    const composerArea = isMobileLayout ? (
-        <div
-            className="social-bar relative z-10 shrink-0 border-t border-[var(--social-border)]"
-            style={{ paddingBottom: 'max(var(--safe-bottom), 0.5rem)' }}
-        >
-            <form onSubmit={(e) => { void handleSend(e) }} className="relative mx-auto w-full max-w-content">
-                {composerOverlays}
-                <ComposerAttachmentList
-                    attachments={composerAttachments}
-                    disabled={isPending}
-                    onRemove={removeComposerAttachment}
-                    className="px-3 pt-2"
-                />
-                {quotedPreview ? <div className="px-4 pt-2">{quotedPreview}</div> : null}
-                <div className="flex items-end gap-2 px-3 pt-2">
-                    {attachButton(false)}
-                    <div className="flex min-h-11 min-w-0 flex-1 items-center rounded-2xl border border-[var(--social-border)] bg-[var(--social-surface)] px-4 py-[10px] transition-colors focus-within:border-[var(--social-fg-subtle)]">
-                        {composerTextarea('max-h-[132px] min-h-[22px]')}
-                    </div>
-                    {sendButton(false)}
+    // The lead's chips, read and picked as in the lead's own session.
+    const leadChips = leadSession ? (() => {
+        const model = leadSession.metadata?.model?.trim() || undefined
+        const modelMode = leadSession.modelMode ?? 'default'
+        const think = (leadSession.metadata?.thinkEffort ?? '').trim().toLowerCase()
+        const apply = (change: () => Promise<void>) => {
+            setActionError(null)
+            void change().catch((error) => setActionError(error instanceof Error ? error.message : String(error)))
+        }
+        return (
+            <SessionSettingChips
+                flavor={leadFlavor}
+                disabled={isPending || leadActions.isPending || !leadSession.active}
+                model={{ value: model ?? (modelMode === 'default' ? 'auto' : modelMode), custom: model, onChange: (value) => apply(() => leadActions.setModel(value)) }}
+                think={{
+                    value: getThinkEffortOptionsForFlavor(leadFlavor).some((option) => option.value === think) ? think as SessionThinkEffort : 'auto',
+                    onChange: (value) => apply(() => leadActions.setThinkEffort(value))
+                }}
+                permission={{ value: leadSession.permissionMode ?? 'default', onChange: (value) => apply(() => leadActions.setPermissionMode(value)) }}
+            />
+        )
+    })() : null
+
+    const dropFiles = (event: DragEvent<HTMLDivElement>) => {
+        event.preventDefault()
+        setComposerDragging(false)
+        const dropped = Array.from(event.dataTransfer?.files ?? [])
+        if (dropped.length === 0 || isPending) return
+        if (!uploadSessionId || !uploadAdapter) {
+            setActionError(t('groups.composer.noUploader'))
+            return
+        }
+        setActionError(null)
+        for (const file of dropped) void uploadComposerAttachment(file, uploadAdapter, uploadSessionId)
+    }
+    const dragProps = {
+        'data-dragging': composerDragging || undefined,
+        onDragOver: (event: DragEvent<HTMLDivElement>) => {
+            if (!event.dataTransfer?.types.includes('Files')) return
+            event.preventDefault()
+            setComposerDragging(true)
+        },
+        onDragLeave: () => setComposerDragging(false),
+        onDrop: dropFiles
+    }
+
+    /**
+     * The session's prompt box, for a group and for a task (its report and "All chats"): on a phone "+" (files and the
+     * chips) left of a pill, on a computer one frame with the files, the text and a toolbar. The main action is the mic
+     * on an empty draft and send once there is text. `options` come from the task report: its header line, its
+     * placeholder, and where a request for changes goes.
+     */
+    const renderComposer = (options?: TaskComposerOptions) => {
+        const submitText = options?.onSubmitText
+        const text = composer.trim()
+        const hasDraft = Boolean(text) || (!submitText && readyComposerAttachments.length > 0)
+        const canSend = submitText ? Boolean(text) && !isPending : canSendComposer
+        const attachDisabled = isPending || !uploadSessionId || Boolean(submitText)
+        const submit = (event: FormEvent) => {
+            if (!submitText) {
+                void handleSend(event)
+                return
+            }
+            event.preventDefault()
+            if (!text) return
+            setComposer('')
+            submitText(text)
+        }
+        const send = () => {
+            setToolPanelOpen(false)
+            composerRef.current?.form?.requestSubmit()
+        }
+        const dictationBar = dictation ? (
+            <DictationBar
+                status={dictation.status}
+                elapsedMs={dictation.elapsedMs}
+                error={dictation.error}
+                onCancel={dictation.cancel}
+                onFinish={dictation.finish}
+                onDismissError={dictation.clearError}
+            />
+        ) : null
+        const action = (
+            <MobileComposerAction
+                hasDraft={hasDraft}
+                canSend={canSend}
+                isSending={isPending && hasDraft}
+                showStop={false}
+                abortDisabled
+                isAborting={false}
+                voiceEnabled={false}
+                voiceStatus="disconnected"
+                controlsDisabled={isPending}
+                onSend={send}
+                onAbort={() => {}}
+                onVoiceToggle={() => {}}
+                dictation={dictation ? { status: dictation.status, onStart: dictation.start, onFinish: dictation.finish } : null}
+            />
+        )
+        const attachmentList = (className: string) => (
+            <ComposerAttachmentList
+                attachments={composerAttachments}
+                disabled={isPending}
+                onRemove={removeComposerAttachment}
+                className={className}
+            />
+        )
+
+        if (isMobileLayout) {
+            return (
+                <div
+                    className="social-bar relative z-10 shrink-0 border-t border-[var(--social-border)]"
+                    style={{ paddingBottom: 'max(var(--safe-bottom), 0.5rem)' }}
+                >
+                    <form onSubmit={submit} className="relative mx-auto w-full max-w-content">
+                        {composerOverlays}
+                        {options?.header ? <div className="px-3 pt-2.5">{options.header}</div> : null}
+                        {attachmentList('px-3 pt-2')}
+                        {quotedPreview ? <div className="px-4 pt-2">{quotedPreview}</div> : null}
+                        {dictationBar ? <div className="px-3 pt-2 empty:hidden">{dictationBar}</div> : null}
+                        <div {...dragProps} className="relative flex items-end gap-2 px-3 pt-2 data-[dragging=true]:bg-[var(--social-muted)]">
+                            <MobileComposerToggle
+                                open={toolPanelOpen}
+                                onClick={() => {
+                                    if (!toolPanelOpen) composerRef.current?.blur()
+                                    setToolPanelOpen((open) => !open)
+                                }}
+                            />
+                            <div className="flex min-h-11 min-w-0 flex-1 items-center rounded-[22px] border border-[var(--social-border)] bg-[var(--social-surface)] px-4 py-[10px] transition-colors focus-within:border-[var(--social-fg-subtle)]">
+                                {composerTextarea('max-h-[132px] min-h-[22px]', options?.placeholder)}
+                            </div>
+                            {action}
+                        </div>
+                        {toolPanelOpen ? (
+                            <div className="pb-3 pt-3">
+                                {leadChips ? (
+                                    <div className="flex gap-2 overflow-x-auto px-5 pb-3 [&>button]:h-11 [&>button]:text-footnote">
+                                        {leadChips}
+                                    </div>
+                                ) : null}
+                                <div className="grid grid-cols-4 gap-2 px-5 pt-1 [&_svg]:stroke-[1.6]">
+                                    <ActionTile
+                                        icon={<PaperclipIcon className="h-6 w-6" />}
+                                        label={uploadSessionId ? t('mobile.composer.attach') : t('groups.composer.noUploader')}
+                                        disabled={attachDisabled}
+                                        onClick={() => {
+                                            setToolPanelOpen(false)
+                                            openAttachmentPicker()
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ) : null}
+                    </form>
                 </div>
-            </form>
-        </div>
-    ) : (
-        <div className="shrink-0 bg-[var(--social-surface)] px-6 pb-5 pt-1">
-            <form onSubmit={(e) => { void handleSend(e) }} className="relative mx-auto w-full max-w-content">
-                {composerOverlays}
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--social-border)] bg-[var(--social-surface)] shadow-[var(--shadow-card)] transition-colors focus-within:border-[var(--social-fg-subtle)]">
-                    <ComposerAttachmentList
-                        attachments={composerAttachments}
-                        disabled={isPending}
-                        onRemove={removeComposerAttachment}
-                        className="px-4 pt-3"
-                    />
-                    {quotedPreview ? <div className="px-4 pt-3">{quotedPreview}</div> : null}
-                    <div className="px-4 pt-3">
-                        {composerTextarea('max-h-[220px] min-h-[44px]')}
-                    </div>
-                    <div className="flex items-center gap-0.5 px-2 pb-2 pt-1">
-                        {attachButton(true)}
-                        <div className="ml-auto flex shrink-0 items-center pl-2">
-                            {sendButton(true)}
+            )
+        }
+
+        return (
+            <div className="shrink-0 bg-[var(--social-surface)] px-6 pb-5 pt-1">
+                <form onSubmit={submit} className="relative mx-auto w-full max-w-content">
+                    {composerOverlays}
+                    {options?.header ? <div className="pt-2">{options.header}</div> : null}
+                    {dictationBar ? <div className="pb-2 empty:hidden">{dictationBar}</div> : null}
+                    <div
+                        {...dragProps}
+                        className="relative overflow-hidden rounded-2xl border border-[var(--social-border)] bg-[var(--social-surface)] shadow-[var(--shadow-card)] transition-colors focus-within:border-[var(--social-fg-subtle)] data-[dragging=true]:border-[var(--social-fg)] data-[dragging=true]:bg-[var(--social-muted)]"
+                    >
+                        {attachmentList('px-4 pt-3')}
+                        {quotedPreview ? <div className="px-4 pt-3">{quotedPreview}</div> : null}
+                        <div className="px-4 pt-3">
+                            {composerTextarea('max-h-[220px] min-h-[44px]', options?.placeholder)}
+                        </div>
+                        <div className="flex items-center gap-0.5 px-2 pb-2 pt-1">
+                            <IconButton
+                                size="sm"
+                                label={uploadSessionId ? t('mobile.composer.attach') : t('groups.composer.noUploader')}
+                                onClick={openAttachmentPicker}
+                                disabled={attachDisabled}
+                                className="[&_svg]:stroke-[1.7]"
+                            >
+                                <PaperclipIcon className="h-[18px] w-[18px]" />
+                            </IconButton>
+                            {leadChips ? (
+                                <div className="ml-1 flex min-w-0 items-center gap-1.5 overflow-x-auto [&>button]:text-footnote">
+                                    {leadChips}
+                                </div>
+                            ) : null}
+                            <div className="ml-auto flex shrink-0 items-center pl-2">
+                                {action}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </form>
-        </div>
-    )
+                </form>
+            </div>
+        )
+    }
 
     return (
         <div className="flex h-full min-h-0 flex-col bg-[var(--social-surface)]">
-            {pendingMembers.length > 0 ? (
-                <PendingBanner items={pendingMembers} onOpen={handleOpenPendingQuickModal} />
+            {bannerPending.length > 0 ? (
+                <PendingBanner items={bannerPending} onOpen={handleOpenPendingQuickModal} />
             ) : null}
 
-            <div className="social-chat min-h-0 flex-1">
-                {timeline}
-            </div>
-
-            {composerArea}
+            {showTaskReport ? (
+                <TaskReport
+                    key={groupId}
+                    taskId={groupId}
+                    api={api}
+                    latest={latestTaskMessage}
+                    renderComposer={renderComposer}
+                    onAllChats={() => setTaskView('chat')}
+                />
+            ) : (
+                <>
+                    {hasTaskReport ? (
+                        <button
+                            type="button"
+                            onClick={() => setTaskView('report')}
+                            className="flex min-h-11 shrink-0 items-center gap-1 border-b border-[var(--social-divider)] px-4 text-left text-footnote font-semibold text-[var(--social-fg)]"
+                        >
+                            <ChevronLeftIcon className="h-4 w-4" />
+                            {t('taskReport.back')}
+                        </button>
+                    ) : null}
+                    <div className="social-chat min-h-0 flex-1">
+                        {timeline}
+                    </div>
+                    {renderComposer()}
+                </>
+            )}
 
             <GroupInfoSheet
                 open={infoOpen}
@@ -3037,6 +3266,7 @@ export default function GroupDetailPage() {
                 description={group.group.description?.trim() || null}
                 members={members}
                 sessionMap={sessionMap}
+                finished={finishedSessionIds}
                 note={note ? { content: note.content ?? '', version: note.version } : null}
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}
@@ -3047,11 +3277,35 @@ export default function GroupDetailPage() {
                 onEditNote={() => setNoteEditorOpen(true)}
                 onGenerateNote={() => { void handleRefreshNote() }}
                 onBroadcastNote={() => { void handleBroadcastNote() }}
+                archived={Boolean(group.group.archivedAt)}
+                onRename={() => setRenameOpen(true)}
+                onCopyTitle={() => {
+                    void safeCopyToClipboard(group.group.name).then(
+                        () => addToast({ title: t('groups.action.copied'), body: group.group.name, sessionId: '', url: '' }),
+                        () => addToast({ title: t('groups.action.copyFailed'), body: '', sessionId: '', url: '' })
+                    )
+                }}
+                onArchive={(archived) => {
+                    void updateGroup({ archived }).catch((error) => {
+                        addToast({ title: t('groups.action.archiveFailed'), body: error instanceof Error ? error.message : '', sessionId: '', url: '' })
+                    })
+                }}
+            />
+
+            <RenameSessionDialog
+                isOpen={renameOpen}
+                onClose={() => setRenameOpen(false)}
+                currentName={group.group.name}
+                onRename={async (name) => { await updateGroup({ name }) }}
+                isPending={isPending}
+                title={t('groups.dialog.renameTitle')}
+                placeholder={t('groups.dialog.name')}
             />
 
             <MemberActionsSheet
                 member={memberActionMember}
                 session={memberActionSession}
+                finished={Boolean(memberActionMember?.sessionId && finishedSessionIds.has(memberActionMember.sessionId))}
                 onOpenChange={(open) => {
                     if (!open) setMemberActionSessionId(null)
                 }}

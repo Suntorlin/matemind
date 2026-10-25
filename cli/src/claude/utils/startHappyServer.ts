@@ -5,6 +5,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { AddressInfo } from "node:net";
 import { logger } from "@/ui/logger";
@@ -15,6 +16,11 @@ import { configuration } from "@/configuration";
 import { getAuthToken } from "@/api/auth";
 import {
     changeTitleInputSchema,
+    scheduledRunDoneInputSchema,
+    scheduleCreateInputSchema,
+    scheduleListInputSchema,
+    scheduleUpdateInputSchema,
+    SCHEDULE_TOOL_DESCRIPTIONS,
     MEMORY_PROPOSE_DESCRIPTION,
     MEMORY_SEARCH_DESCRIPTION,
     memoryProposeInputSchema,
@@ -26,6 +32,14 @@ import {
     reportListInputSchema,
     reportUpdateInputSchema,
     reviewLoopWorkerSubmitInputSchema,
+    taskDraftSubmitInputSchema,
+    taskPlanSubmitInputSchema,
+    subtaskDoneInputSchema,
+    taskDecisionAskInputSchema,
+    taskIntegratedInputSchema,
+    taskReviewSubmitInputSchema,
+    TASK_RUN_TOOL_DESCRIPTIONS,
+    TASK_DRAFT_SUBMIT_DESCRIPTION,
     reviewLoopReviewerSubmitInputSchema
 } from "@/mcp/matemindMcpTools";
 
@@ -106,6 +120,12 @@ export async function startHappyServer(client: ApiSessionClient) {
         }
 
         return payload ?? {};
+    };
+
+    /** The page is read here, on the session's machine, so the hub never reads local paths. */
+    const readHtmlPage = async (path: string | undefined): Promise<string | undefined> => {
+        if (!path) return undefined;
+        return await readFile(path, 'utf8');
     };
 
     const buildToolResult = (payload: JsonObject, summary: string) => ({
@@ -218,6 +238,7 @@ export async function startHappyServer(client: ApiSessionClient) {
         title?: string
         status?: string
         markdown?: string
+        html_path?: string
         metadata?: unknown
         share_expires_in_hours?: number
     }) => {
@@ -230,6 +251,7 @@ export async function startHappyServer(client: ApiSessionClient) {
                     title: args.title,
                     status: args.status,
                     markdown: args.markdown,
+                    html: await readHtmlPage(args.html_path),
                     metadata: args.metadata,
                     createShare: true,
                     shareExpiresInHours: args.share_expires_in_hours
@@ -268,12 +290,13 @@ export async function startHappyServer(client: ApiSessionClient) {
         description: MEMORY_SEARCH_DESCRIPTION,
         title: 'Search Memory',
         inputSchema: memorySearchInputSchema
-    }, async (args: { query: string; limit?: number }) => {
+    }, async (args: { query: string; limit?: number; tag?: string }) => {
         try {
             const query = new URLSearchParams({ q: args.query, limit: String(args.limit ?? 8) });
+            if (args.tag) query.set('tag', args.tag);
             const payload = await requestHubJson(`/api/memories/search?${query.toString()}`);
             const hits = Array.isArray(payload.hits) ? payload.hits as JsonObject[] : [];
-            const lines = hits.map((hit) => `- [${String(hit.level)} · ${hit.scope ? String(hit.scope) : 'global'} · ${String(hit.status)}] ${String(hit.text)}`);
+            const lines = hits.map((hit) => `- [${String(hit.level)} · ${hit.scope ? String(hit.scope) : 'global'} · ${String(hit.status)}] ${String(hit.text)}${Array.isArray(hit.tags) && hit.tags.length > 0 ? ` #${hit.tags.join(' #')}` : ''}`);
             return { content: [{ type: 'text' as const, text: lines.length > 0 ? lines.join('\n') : 'No matching memory.' }], isError: false };
         } catch (error) {
             return buildToolError('Failed to search memory', error);
@@ -290,6 +313,7 @@ export async function startHappyServer(client: ApiSessionClient) {
         title?: string
         status?: string
         markdown?: string
+        html_path?: string
         metadata?: unknown
     }) => {
         try {
@@ -300,6 +324,7 @@ export async function startHappyServer(client: ApiSessionClient) {
                     title: args.title,
                     status: args.status,
                     markdown: args.markdown,
+                    html: args.html_path === '' ? '' : await readHtmlPage(args.html_path),
                     metadata: args.metadata
                 })
             });
@@ -395,6 +420,173 @@ export async function startHappyServer(client: ApiSessionClient) {
             return buildToolResult(payload, summary);
         } catch (error) {
             return buildToolError(`Failed to create share for report ${args.report_id}`, error);
+        }
+    });
+
+    const taskRunTool = (name: keyof typeof TASK_RUN_TOOL_DESCRIPTIONS, title: string, inputSchema: unknown, path: (args: any) => string, body: (args: any) => unknown) => {
+        mcp.registerTool<any, any>(name, { description: TASK_RUN_TOOL_DESCRIPTIONS[name], title, inputSchema: inputSchema as any }, async (args: any) => {
+            try {
+                const payload = await requestHubJson(path(args), { method: 'POST', body: JSON.stringify(body(args)) });
+                const message = typeof payload.message === 'string' ? payload.message : 'Done.';
+                return { content: [{ type: 'text' as const, text: message }], isError: false };
+            } catch (error) {
+                return buildToolError(`Failed: ${title}`, error);
+            }
+        });
+    };
+    const taskPath = (args: { task_id: string }, rest: string) => `/api/tasks/${encodeURIComponent(args.task_id)}/${rest}`;
+    taskRunTool('task_plan_submit', 'Submit Task Plan', taskPlanSubmitInputSchema, (a) => taskPath(a, 'plan'), (a) => ({
+        subtasks: a.subtasks.map((s: any) => ({ id: s.id, title: s.title, brief: s.brief, criteria: s.criteria ?? [], dependsOn: s.depends_on ?? [] }))
+    }));
+    taskRunTool('subtask_done', 'Subtask Done', subtaskDoneInputSchema, (a) => taskPath(a, 'subtasks/done'), (a) => ({
+        subtaskId: a.subtask_id, summary: a.summary, evidence: a.evidence ?? []
+    }));
+    taskRunTool('task_decision_ask', 'Ask the User to Decide', taskDecisionAskInputSchema, (a) => taskPath(a, 'decisions'), (a) => ({
+        question: a.question, context: a.context, options: a.options, recommended: a.recommended, sessionId: client.sessionId
+    }));
+    taskRunTool('task_integrated', 'Branches Merged', taskIntegratedInputSchema, (a) => taskPath(a, 'integrated'), (a) => ({
+        branch: a.branch, worktreePath: a.worktree_path, summary: a.summary
+    }));
+    taskRunTool('task_review_submit', 'Submit Task Review', taskReviewSubmitInputSchema, (a) => taskPath(a, 'review'), (a) => ({
+        results: a.results.map((r: any) => ({ criterionId: r.criterion_id, status: r.status, evidence: r.evidence })), suggestions: a.suggestions ?? []
+    }));
+
+    type ScheduleArgs = {
+        id?: string; name?: string; prompt?: string; prompt_file?: string; cron?: string; run_at?: string; timezone?: string
+        directory?: string; model?: string; permission_mode?: string; max_minutes?: number; enabled?: boolean; manual?: boolean
+    };
+    const scheduleBody = (args: ScheduleArgs, creating: boolean): JsonObject => {
+        const body: JsonObject = {};
+        if (args.name !== undefined) body.name = args.name;
+        if (args.prompt !== undefined) body.prompt = args.prompt;
+        if (args.prompt_file !== undefined) body.promptFile = args.prompt_file;
+        if (args.directory !== undefined) body.directory = args.directory;
+        if (args.model !== undefined) body.model = args.model;
+        if (args.permission_mode !== undefined) body.permissionMode = args.permission_mode;
+        if (args.max_minutes !== undefined) body.maxMinutes = args.max_minutes;
+        if (args.enabled !== undefined) body.enabled = args.enabled;
+        if (args.run_at) {
+            const at = Date.parse(args.run_at);
+            if (!Number.isFinite(at)) throw new Error(`run_at is not an ISO 8601 time: ${args.run_at}`);
+            body.spec = { kind: 'once', at };
+        } else if (args.cron) {
+            body.spec = { kind: 'cron', expr: args.cron.trim() };
+        } else if (creating || args.manual) {
+            body.spec = { kind: 'manual' };
+        }
+        if (args.timezone !== undefined || creating) body.timezone = args.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+        return body;
+    };
+    const describeSchedule = (schedule: JsonObject): string => {
+        const next = typeof schedule.nextRunAt === 'number' ? new Date(schedule.nextRunAt).toISOString() : 'none';
+        const last = schedule.lastRun as JsonObject | null | undefined;
+        const lastText = last ? `${String(last.status)}${last.summary ? ` (${String(last.summary)})` : ''}` : 'never ran';
+        return `- ${String(schedule.id)} · ${String(schedule.name)} · ${JSON.stringify(schedule.spec)} ${String(schedule.timezone)} · ${schedule.enabled ? 'active' : 'paused'} · next ${next} · last ${lastText}`;
+    };
+
+    mcp.registerTool<any, any>('scheduled_run_done', {
+        description: SCHEDULE_TOOL_DESCRIPTIONS.scheduled_run_done,
+        title: 'Scheduled Run Done',
+        inputSchema: scheduledRunDoneInputSchema
+    }, async (args: { status: string; summary: string; links?: string[] }) => {
+        try {
+            await requestHubJson('/api/schedules/runs/done', {
+                method: 'POST',
+                body: JSON.stringify({ sessionId: client.sessionId, status: args.status, summary: args.summary, links: args.links ?? [] })
+            });
+            return { content: [{ type: 'text' as const, text: `Run recorded as ${args.status}.` }], isError: false };
+        } catch (error) {
+            return buildToolError('Failed to record the scheduled run', error);
+        }
+    });
+
+    mcp.registerTool<any, any>('schedule_create', {
+        description: SCHEDULE_TOOL_DESCRIPTIONS.schedule_create,
+        title: 'Create Scheduled Task',
+        inputSchema: scheduleCreateInputSchema
+    }, async (args: ScheduleArgs) => {
+        try {
+            const payload = await requestHubJson('/api/schedules', {
+                method: 'POST',
+                body: JSON.stringify({ ...scheduleBody(args, true), fromSessionId: client.sessionId })
+            });
+            const schedule = payload.schedule as JsonObject;
+            return { content: [{ type: 'text' as const, text: `Scheduled task created.\n${describeSchedule(schedule)}` }], isError: false };
+        } catch (error) {
+            return buildToolError('Failed to create the scheduled task', error);
+        }
+    });
+
+    mcp.registerTool<any, any>('schedule_list', {
+        description: SCHEDULE_TOOL_DESCRIPTIONS.schedule_list,
+        title: 'List Scheduled Tasks',
+        inputSchema: scheduleListInputSchema
+    }, async () => {
+        try {
+            const payload = await requestHubJson('/api/schedules');
+            const schedules = Array.isArray(payload.schedules) ? payload.schedules as JsonObject[] : [];
+            return { content: [{ type: 'text' as const, text: schedules.length > 0 ? schedules.map(describeSchedule).join('\n') : 'No scheduled tasks.' }], isError: false };
+        } catch (error) {
+            return buildToolError('Failed to list scheduled tasks', error);
+        }
+    });
+
+    mcp.registerTool<any, any>('schedule_update', {
+        description: SCHEDULE_TOOL_DESCRIPTIONS.schedule_update,
+        title: 'Update Scheduled Task',
+        inputSchema: scheduleUpdateInputSchema
+    }, async (args: ScheduleArgs & { id: string }) => {
+        try {
+            const payload = await requestHubJson(`/api/schedules/${encodeURIComponent(args.id)}`, {
+                method: 'PATCH',
+                body: JSON.stringify(scheduleBody(args, false))
+            });
+            return { content: [{ type: 'text' as const, text: `Scheduled task updated.\n${describeSchedule(payload.schedule as JsonObject)}` }], isError: false };
+        } catch (error) {
+            return buildToolError(`Failed to update scheduled task ${args.id}`, error);
+        }
+    });
+
+    mcp.registerTool<any, any>('task_draft_submit', {
+        description: TASK_DRAFT_SUBMIT_DESCRIPTION,
+        title: 'Submit Task Draft',
+        inputSchema: taskDraftSubmitInputSchema
+    }, async (args: {
+        task_id: string
+        tag?: string
+        repo_path?: string
+        goal: string
+        non_goals?: string[]
+        criteria: Array<{ text: string; source: 'principle' | 'repo' | 'inferred'; source_ref?: string; verify: string }>
+        questions?: Array<{ id: string; text: string; options: Array<{ id: string; label: string; good?: string; cost?: string }>; default: string; precedent_ref?: string }>
+    }) => {
+        try {
+            const payload = await requestHubJson(`/api/tasks/${encodeURIComponent(args.task_id)}/draft`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    tag: args.tag,
+                    repoPath: args.repo_path,
+                    goal: args.goal,
+                    nonGoals: args.non_goals ?? [],
+                    criteria: args.criteria.map((criterion) => ({
+                        text: criterion.text,
+                        source: criterion.source,
+                        sourceRef: criterion.source_ref,
+                        verify: criterion.verify
+                    })),
+                    questions: (args.questions ?? []).map((question) => ({
+                        id: question.id,
+                        text: question.text,
+                        options: question.options,
+                        default: question.default,
+                        precedentRef: question.precedent_ref
+                    }))
+                })
+            });
+            const message = typeof payload.message === 'string' ? payload.message : 'Draft submitted.';
+            return { content: [{ type: 'text' as const, text: message }], isError: false };
+        } catch (error) {
+            return buildToolError('Failed to submit the task draft', error);
         }
     });
 
@@ -524,8 +716,18 @@ export async function startHappyServer(client: ApiSessionClient) {
             'report_list',
             'report_add_asset',
             'report_create_share',
+            'task_draft_submit',
+            'task_plan_submit',
+            'subtask_done',
+            'task_decision_ask',
+            'task_integrated',
+            'task_review_submit',
             'review_loop_worker_submit',
-            'review_loop_reviewer_submit'
+            'review_loop_reviewer_submit',
+            'scheduled_run_done',
+            'schedule_create',
+            'schedule_list',
+            'schedule_update'
         ],
         stop: () => {
             logger.debug('[matemindMCP] Stopping server');

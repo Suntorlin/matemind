@@ -45,3 +45,28 @@ export type {
     PermissionModeOption,
     PermissionModeTone
 } from './modes'
+
+export type {
+    AcceptanceCriterion,
+    CriterionSource,
+    TaskDraft,
+    TaskDraftQuestion,
+    TaskFile,
+    TaskGuideState,
+    TaskLoad,
+    TaskStatus,
+    TaskView,
+    TaskPhase,
+    SubtaskState,
+    TaskSubtask,
+    TaskDecision,
+    TaskDecisionOption,
+    TaskRevision,
+    TaskDelivery,
+    TaskSignal,
+    CriterionVerdict,
+    TaskReview,
+    TaskRun,
+    SubtaskLive,
+    TaskWatchEntry
+} from './tasks'

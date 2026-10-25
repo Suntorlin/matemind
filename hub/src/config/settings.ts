@@ -12,6 +12,8 @@ export interface Settings {
     experimentalClaudeLoginShell?: boolean
     codexReportPromptEnabled?: boolean
     previewEnabled?: boolean
+    /** System switch: every session starts (and resumes) with every permission granted. On unless set to false. */
+    alwaysYolo?: boolean
     /** Memory capture: off, or record (Jev judges, nothing is injected yet); projects that may capture. */
     memoryCapture?: {
         mode?: 'off' | 'record'
@@ -34,6 +36,13 @@ export interface Settings {
     listenPort?: number
     publicUrl?: string
     reportPublicBaseUrl?: string
+    /** Feishu/Lark custom bot for scheduled-task failures. Kept here, never in the repository. */
+    alertWebhook?: {
+        url?: string
+        /** A macOS keychain generic password holding the URL, in place of `url`. */
+        keychainService?: string
+        secret?: string
+    }
     corsOrigins?: string[]
     // Legacy field names (for migration, read-only)
     webappHost?: string

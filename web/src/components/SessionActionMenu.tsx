@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useIsMobileLayout } from '@/hooks/useIsMobileLayout'
 import { useTranslation } from '@/lib/use-translation'
 import { cn } from '@/lib/utils'
-import type { SessionTask } from '@/types/api'
+import type { TaskView } from '@/types/api'
 import { formatSnoozeWake, getSnoozePresets } from '@/lib/session-snooze'
 import { CONTEXT_MENU_SURFACE, ContextMenu, ContextMenuItem, ContextMenuSeparator } from '@/components/mobile/ContextMenu'
 import {
@@ -43,9 +43,9 @@ type SessionActionMenuProps = {
     onTagsChange?: (tags: string[]) => Promise<void>
     tagsPending?: boolean
     /** Open tasks offered under "Task"; the checked ones are those in `taskIds`. */
-    tasks?: SessionTask[]
+    tasks?: TaskView[]
     taskIds?: string[]
-    onTaskToggle?: (task: SessionTask, linked: boolean) => void
+    onTaskToggle?: (task: TaskView, linked: boolean) => void
     /** Phones: "Task" closes the menu and calls this to open the task sheet. */
     onTasks?: () => void
     onSpawnSameConfig?: () => void
@@ -89,13 +89,13 @@ function TagsSubmenu(props: {
                     disabled={!props.onTagsChange || props.pending}
                     onSelect={() => toggle(tag)}
                     trailing={(
-                        <span className={cn('text-[15px]', selected.includes(tag) ? 'text-[var(--social-fg)]' : 'text-transparent')} aria-hidden="true">
+                        <span className={cn('text-body', selected.includes(tag) ? 'text-[var(--social-fg)]' : 'text-transparent')} aria-hidden="true">
                             ✓
                         </span>
                     )}
                 />
             )) : (
-                <div className="px-3 py-2.5 text-[15px] text-[var(--social-fg-muted)]">{t('session.action.noTags')}</div>
+                <div className="px-3 py-2.5 text-body text-[var(--social-fg-muted)]">{t('session.action.noTags')}</div>
             )}
             <ContextMenuSeparator />
             <ContextMenuItem
@@ -112,13 +112,13 @@ function TagsSubmenu(props: {
 
 /** Task choices: tapping one joins the session to it, or takes it out. */
 function TaskOptions(props: {
-    tasks: SessionTask[]
+    tasks: TaskView[]
     taskIds: string[]
-    onToggle: (task: SessionTask, linked: boolean) => void
+    onToggle: (task: TaskView, linked: boolean) => void
 }) {
     const { t } = useTranslation()
     if (props.tasks.length === 0) {
-        return <div className="px-3 py-2.5 text-[15px] text-[var(--social-fg-muted)]">{t('session.action.noTasks')}</div>
+        return <div className="px-3 py-2.5 text-body text-[var(--social-fg-muted)]">{t('session.action.noTasks')}</div>
     }
     return (
         <>
@@ -127,12 +127,12 @@ function TaskOptions(props: {
                 return (
                     <ContextMenuItem
                         key={task.id}
-                        label={task.title}
+                        label={task.name}
                         description={`#${task.tag}`}
                         checked={linked}
                         onSelect={() => props.onToggle(task, !linked)}
                         trailing={(
-                            <span className={cn('text-[15px]', linked ? 'text-[var(--social-fg)]' : 'text-transparent')} aria-hidden="true">
+                            <span className={cn('text-body', linked ? 'text-[var(--social-fg)]' : 'text-transparent')} aria-hidden="true">
                                 ✓
                             </span>
                         )}
@@ -223,7 +223,7 @@ export function SnoozeOptions(props: { onSnooze: (until: number) => void; onCust
                     icon={spacer}
                     label={t(`dialog.snooze.${preset.key}`)}
                     trailing={(
-                        <span className="shrink-0 text-[13px] text-[var(--social-fg-muted)]">
+                        <span className="shrink-0 text-footnote text-[var(--social-fg-muted)]">
                             {formatSnoozeWake(preset.until, now, locale, t)}
                         </span>
                     )}

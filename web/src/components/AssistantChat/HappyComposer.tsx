@@ -26,6 +26,8 @@ import type { Suggestion } from '@/hooks/useActiveSuggestions'
 import type { ConversationStatus } from '@/realtime/types'
 import type { QueueInlinePanelMode } from '@/hooks/useQueueInlinePanel'
 import { useActiveWord } from '@/hooks/useActiveWord'
+import { appendDictatedText, useDictation } from '@/hooks/useDictation'
+import type { ApiClient } from '@/api/client'
 import { useActiveSuggestions } from '@/hooks/useActiveSuggestions'
 import { applySuggestion } from '@/utils/applySuggestion'
 import { usePlatform } from '@/hooks/usePlatform'
@@ -45,15 +47,18 @@ import {
     MobileComposerToolPanel,
     QueueStrip,
     VoiceCallBar,
+    DictationBar,
+    DictationButton,
     type ComposerExtras
 } from '@/components/AssistantChat/MobileComposerParts'
-import { HIT_AREA_24_CLASS, HIT_AREA_CLASS } from '@/components/AssistantChat/hitArea'
+import { HIT_AREA_CLASS } from '@/components/AssistantChat/hitArea'
 import { Button } from '@/components/ui/button'
 import { IconButton } from '@/components/ui/IconButton'
+import { CloseIcon } from '@/components/mobile/icons'
 import { SettingChip, SwitchChip, ToggleChip } from '@/components/ui/SettingChip'
+import { buildClaudeModelOptions, getThinkEffortOptionsForFlavor, SessionSettingChips, type SessionThinkEffort } from '@/components/AssistantChat/SessionSettingChips'
 import { useIsMobileLayout } from '@/hooks/useIsMobileLayout'
 import { useTranslation } from '@/lib/use-translation'
-import { cn } from '@/lib/utils'
 import { modelOptionText, permissionModeText, serviceTierText, thinkEffortText } from '@/lib/option-labels'
 
 export interface TextInputState {
@@ -68,18 +73,7 @@ type QueueEnqueuePayload = {
     attachments?: AttachmentMetadata[]
 }
 
-type ComposerModelOption = {
-    value: string
-    label: string
-}
-
-type SessionThinkEffort = 'auto' | 'low' | 'medium' | 'high' | 'max' | 'xhigh'
 type SessionServiceTier = 'auto' | 'fast' | 'flex'
-
-type ComposerThinkEffortOption = {
-    value: SessionThinkEffort
-    label: string
-}
 
 type ComposerServiceTierOption = {
     value: SessionServiceTier
@@ -274,53 +268,6 @@ function parseAttachmentMetadataFromAttachment(attachment: Attachment): Attachme
     }
 }
 
-function buildClaudeModelOptions(
-    currentModel: string | undefined
-): ComposerModelOption[] {
-    const options: ComposerModelOption[] = [
-        { value: 'auto', label: 'Default (recommended)' },
-        { value: 'claude-fable-5', label: 'Fable 5' },
-        { value: 'sonnet', label: 'Sonnet (latest)' },
-        { value: 'opus', label: 'Opus (latest)' },
-        { value: 'haiku', label: 'Haiku (latest)' },
-        { value: 'claude-opus-5-5', label: 'Opus 5.5' },
-        { value: 'claude-sonnet-4-6', label: 'Sonnet 4.6' },
-        { value: 'claude-opus-4-6', label: 'Opus 4.6' },
-        { value: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5' },
-    ]
-
-    if (currentModel && !options.some((option) => option.value === currentModel)) {
-        options.push({ value: currentModel, label: currentModel })
-    }
-
-    return options
-}
-
-function getThinkEffortOptionsForFlavor(flavor?: string | null): ComposerThinkEffortOption[] {
-    if (flavor === 'claude') {
-        // cc CLI accepts low/medium/high/xhigh/max. xhigh is Opus 4.7-only;
-        // cc downgrades unsupported levels server-side, so it's safe to expose.
-        return [
-            { value: 'auto', label: 'Auto' },
-            { value: 'low', label: 'Low' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'high', label: 'High' },
-            { value: 'xhigh', label: 'Extra high' },
-            { value: 'max', label: 'Max' },
-        ]
-    }
-    if (flavor === 'codex') {
-        return [
-            { value: 'auto', label: 'Auto' },
-            { value: 'low', label: 'Low' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'high', label: 'High' },
-            { value: 'xhigh', label: 'XHigh' },
-        ]
-    }
-    return []
-}
-
 function getServiceTierOptionsForFlavor(flavor?: string | null): ComposerServiceTierOption[] {
     if (flavor === 'codex') {
         return [
@@ -380,6 +327,9 @@ export function HappyComposer(props: {
     voiceMicMuted?: boolean
     onVoiceToggle?: () => void
     onVoiceMicToggle?: () => void
+    // Local speech-to-text into the draft; hidden when the hub has no dictation service
+    dictationApi?: ApiClient | null
+    dictationHotwords?: string[]
     offlineWakeMessage?: string
     offlineWakeLabel?: string
     offlineWakingLabel?: string
@@ -434,6 +384,8 @@ export function HappyComposer(props: {
         voiceMicMuted = false,
         onVoiceToggle,
         onVoiceMicToggle,
+        dictationApi,
+        dictationHotwords,
         offlineWakeMessage,
         offlineWakeLabel,
         offlineWakingLabel,
@@ -673,6 +625,15 @@ export function HappyComposer(props: {
     }, [controlledByUser])
 
     const { haptic: platformHaptic, isTouch } = usePlatform()
+    const dictation = useDictation({
+        api: dictationApi,
+        hotwords: dictationHotwords,
+        onText: (text) => {
+            api.composer().setText(appendDictatedText(composerText, text))
+            // On phones the user reviews and sends; focusing would pop the keyboard over the draft.
+            if (!isTouch) textareaRef.current?.focus()
+        }
+    })
     const { enterBehavior } = useEnterBehavior()
     const { isStandalone, isIOS } = usePWAInstall()
     const isIOSPWA = isIOS && isStandalone
@@ -1122,7 +1083,8 @@ export function HappyComposer(props: {
     const showServiceTierSettings = Boolean(onServiceTierChange && serviceTierOptions.length > 0)
     const showSettingsButton = Boolean(showPermissionSettings || showModelSettings || showThinkEffortSettings || showServiceTierSettings)
     const showAbortButton = true
-    const voiceEnabled = Boolean(onVoiceToggle)
+    // One mic per composer: when local dictation is up, the empty-draft action no longer offers the voice call.
+    const voiceEnabled = Boolean(onVoiceToggle) && !dictation
 
     const overlays = suggestions.length > 0 ? (
         <div className="absolute bottom-[100%] mb-2 w-full">
@@ -1152,21 +1114,20 @@ export function HappyComposer(props: {
             {restoredDraftAttachments.map((attachment) => (
                 <div
                     key={`draft:${attachment.path}`}
-                    className="flex max-w-full items-center gap-2 rounded-full border border-[var(--social-border)] bg-[var(--social-surface)] py-1 pl-3.5 pr-1 text-[13px] text-[var(--social-fg)]"
+                    className="flex max-w-full items-center gap-2 rounded-full border border-[var(--social-border)] bg-[var(--social-surface)] py-1 pl-3.5 pr-1 text-footnote text-[var(--social-fg)]"
                     title={attachment.path}
                 >
                     <span className="max-w-[180px] truncate">
                         {attachment.filename}
                     </span>
                     <IconButton
-                        size="sm"
+                        size="xs"
                         label={t('composer.attachment.remove')}
-                        className={cn('h-6 w-6', HIT_AREA_24_CLASS)}
                         onClick={() => {
                             handleRemoveDraftAttachment(attachment)
                         }}
                     >
-                        ×
+                        <CloseIcon className="h-3.5 w-3.5" />
                     </IconButton>
                 </div>
             ))}
@@ -1183,6 +1144,32 @@ export function HappyComposer(props: {
     const hasDraft = hasText || hasAnyAttachments
     const showStop = threadIsRunning && !(hasDraft && canSend)
     const voiceActive = voiceStatus === 'connected' || voiceStatus === 'connecting'
+    const dictationBar = dictation ? (
+        <DictationBar
+            status={dictation.status}
+            elapsedMs={dictation.elapsedMs}
+            error={dictation.error}
+            onCancel={dictation.cancel}
+            onFinish={dictation.finish}
+            onDismissError={dictation.clearError}
+        />
+    ) : null
+    const dictationControl = dictation ? {
+        status: dictation.status,
+        onStart: () => {
+            haptic('light')
+            dictation.start()
+        },
+        onFinish: dictation.finish
+    } : null
+    // The mic is the main action on an empty draft; while that action is "stop", a small mic keeps dictation reachable.
+    const dictationButton = (className?: string) => dictationControl && showStop ? (
+        <DictationButton
+            {...dictationControl}
+            disabled={controlsDisabled}
+            className={className}
+        />
+    ) : null
     const voiceCallBar = voiceActive && onVoiceToggle ? (
         <VoiceCallBar
             status={voiceStatus}
@@ -1195,37 +1182,19 @@ export function HappyComposer(props: {
     // Each setting is a chip showing its value; tapping opens only that setting.
     const optionLabel = (options: ReadonlyArray<{ value: string; label: string }>, value: string) =>
         options.find((option) => option.value === value)?.label ?? value
-    const permissionChoices = permissionModeOptions.map((option) => ({ value: option.mode as string, label: option.label }))
     const sendModeChoices = [
         { value: 'direct' as const, label: t('queue.mode.direct'), description: t('queue.mode.directHint') },
         { value: 'queue' as const, label: t('queue.mode.queue'), description: t('queue.mode.queueHint') }
     ]
     const settingChips = showSettingsButton || (supportsQueueControls && (onCodexSendModeChange || onCodexPlanModeChange)) ? (
         <>
-            {showModelSettings ? (
-                <SettingChip
-                    title={t('misc.model')}
-                    valueLabel={optionLabel(modelOptions, currentModelValue)}
-                    disabled={controlsDisabled}
-                    group={{ options: modelOptions, value: currentModelValue, onChange: (value) => applyChatSetting(() => onModelChange?.(value)) }}
-                />
-            ) : null}
-            {showThinkEffortSettings ? (
-                <SettingChip
-                    title={t('newSession.think')}
-                    valueLabel={t('composer.chip.think', { value: optionLabel(thinkEffortOptions, currentThinkEffortValue) })}
-                    disabled={controlsDisabled}
-                    group={{ options: thinkEffortOptions, value: currentThinkEffortValue, onChange: (value) => applyChatSetting(() => onThinkEffortChange?.(value as SessionThinkEffort)) }}
-                />
-            ) : null}
-            {showPermissionSettings ? (
-                <SettingChip
-                    title={t('misc.permissionMode')}
-                    valueLabel={t('composer.chip.permission', { value: permissionModeText(permissionMode, t) })}
-                    disabled={controlsDisabled}
-                    group={{ options: permissionChoices, value: permissionMode as string, onChange: (value) => applyChatSetting(() => onPermissionModeChange?.(value as PermissionMode)) }}
-                />
-            ) : null}
+            <SessionSettingChips
+                flavor={agentFlavor}
+                disabled={controlsDisabled}
+                model={showModelSettings ? { value: currentModelValue, custom: model, onChange: (value) => applyChatSetting(() => onModelChange?.(value)) } : undefined}
+                think={showThinkEffortSettings ? { value: currentThinkEffortValue as SessionThinkEffort, onChange: (value) => applyChatSetting(() => onThinkEffortChange?.(value)) } : undefined}
+                permission={showPermissionSettings ? { value: permissionMode, onChange: (value) => applyChatSetting(() => onPermissionModeChange?.(value)) } : undefined}
+            />
             {showServiceTierSettings ? (
                 <SettingChip
                     title={t('newSession.serviceTier')}
@@ -1300,11 +1269,12 @@ export function HappyComposer(props: {
                     {attachmentsRow}
 
                     {voiceCallBar ? <div className="px-3 pt-2">{voiceCallBar}</div> : null}
+                    {dictationBar ? <div className="px-3 pt-2">{dictationBar}</div> : null}
 
                     <ComposerPrimitive.AttachmentDropzone asChild disabled={controlsDisabled}>
                         <div className="relative flex items-end gap-2 px-3 pt-2 data-[dragging=true]:bg-[var(--social-muted)]">
                             {!active ? (
-                                <div className="absolute inset-x-3 bottom-0 top-2 z-20 flex items-center justify-between gap-3 rounded-full border border-[var(--social-border)] bg-[var(--social-surface)] pl-4 pr-1 text-[15px] text-[var(--social-fg-muted)]">
+                                <div className="absolute inset-x-3 bottom-0 top-2 z-20 flex items-center justify-between gap-3 rounded-full border border-[var(--social-border)] bg-[var(--social-surface)] pl-4 pr-1 text-body text-[var(--social-fg-muted)]">
                                     <span className="min-w-0 truncate">{offlineWakeMessage ?? t('session.inactiveMessage')}</span>
                                     <Button
                                         size="sm"
@@ -1323,7 +1293,7 @@ export function HappyComposer(props: {
 
                             <div className="flex min-h-11 min-w-0 flex-1 items-center rounded-[22px] border border-[var(--social-border)] bg-[var(--social-surface)] px-4 py-[10px] transition-colors focus-within:border-[var(--social-fg-subtle)]">
                                 {cliMode ? (
-                                    <span className="mr-1.5 shrink-0 select-none text-[15px] font-semibold text-[var(--cli-prompt-color,var(--app-badge-info-text))]">{'❯'}</span>
+                                    <span className="mr-1.5 shrink-0 select-none text-body font-semibold text-[var(--cli-prompt-color,var(--app-badge-info-text))]">{'❯'}</span>
                                 ) : null}
                                 <ComposerPrimitive.Input
                                     ref={textareaRef}
@@ -1340,8 +1310,9 @@ export function HappyComposer(props: {
                                     onKeyDown={handleKeyDown}
                                     onPaste={handlePaste}
                                     onFocus={() => setShowToolPanel(false)}
-                                    className={`w-full flex-1 resize-none bg-transparent text-[16px] leading-[22px] text-[var(--social-fg)] placeholder-[var(--social-fg-subtle)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${cliMode ? 'font-mono' : ''}`}
+                                    className={`w-full flex-1 resize-none bg-transparent text-headline leading-[1.375rem] text-[var(--social-fg)] placeholder-[var(--social-fg-subtle)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${cliMode ? 'font-mono' : ''}`}
                                 />
+                                {dictationButton('-my-1 -mr-2 ml-1 self-end')}
                             </div>
 
                             <MobileComposerAction
@@ -1360,6 +1331,7 @@ export function HappyComposer(props: {
                                 }}
                                 onAbort={handleAbort}
                                 onVoiceToggle={onVoiceToggle ?? (() => {})}
+                                dictation={dictationControl}
                             />
                         </div>
                     </ComposerPrimitive.AttachmentDropzone>
@@ -1390,12 +1362,13 @@ export function HappyComposer(props: {
                 {overlays}
 
                 {voiceCallBar ? <div className="pb-2">{voiceCallBar}</div> : null}
+                {dictationBar ? <div className="pb-2">{dictationBar}</div> : null}
                 {inlineQueuePanel ? <div className="pb-2">{inlineQueuePanel}</div> : null}
 
                 <ComposerPrimitive.AttachmentDropzone asChild disabled={controlsDisabled}>
                     <div className="relative overflow-hidden rounded-2xl border border-[var(--social-border)] bg-[var(--social-surface)] shadow-[var(--shadow-card)] transition-colors focus-within:border-[var(--social-fg-subtle)] data-[dragging=true]:border-[var(--social-fg)] data-[dragging=true]:bg-[var(--social-muted)]">
                         {!active ? (
-                            <div className="absolute inset-0 z-20 flex items-center justify-between gap-3 bg-[var(--social-surface)] pl-5 pr-2.5 text-[15px] text-[var(--social-fg-muted)]">
+                            <div className="absolute inset-0 z-20 flex items-center justify-between gap-3 bg-[var(--social-surface)] pl-5 pr-2.5 text-body text-[var(--social-fg-muted)]">
                                 <span className="min-w-0 truncate">{offlineWakeMessage ?? t('session.inactiveMessage')}</span>
                                 <Button
                                     size="sm"
@@ -1414,7 +1387,7 @@ export function HappyComposer(props: {
 
                         <div className="flex items-start px-4 pt-3">
                             {cliMode ? (
-                                <span className="mr-1.5 shrink-0 select-none text-[15px] font-semibold leading-[22px] text-[var(--cli-prompt-color,var(--app-badge-info-text))]">{'❯'}</span>
+                                <span className="mr-1.5 shrink-0 select-none text-body font-semibold leading-[1.375rem] text-[var(--cli-prompt-color,var(--app-badge-info-text))]">{'❯'}</span>
                             ) : null}
                             <ComposerPrimitive.Input
                                 ref={textareaRef}
@@ -1430,7 +1403,7 @@ export function HappyComposer(props: {
                                 onSelect={handleSelect}
                                 onKeyDown={handleKeyDown}
                                 onPaste={handlePaste}
-                                className={`min-h-[44px] w-full flex-1 resize-none bg-transparent text-[15px] leading-[22px] text-[var(--social-fg)] placeholder-[var(--social-fg-subtle)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${cliMode ? 'font-mono text-[13px]' : ''}`}
+                                className={`min-h-[44px] w-full flex-1 resize-none bg-transparent text-body leading-[1.375rem] text-[var(--social-fg)] placeholder-[var(--social-fg-subtle)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${cliMode ? 'font-mono text-footnote' : ''}`}
                             />
                         </div>
 
@@ -1441,20 +1414,24 @@ export function HappyComposer(props: {
                             settings={settingChips}
                             extras={composerExtras}
                             action={(
-                                <MobileComposerAction
-                                    hasDraft={hasDraft}
-                                    canSend={canSend}
-                                    isSending={isSendButtonLoading}
-                                    showStop={showStop}
-                                    abortDisabled={abortDisabled}
-                                    isAborting={isAborting}
-                                    voiceEnabled={voiceEnabled}
-                                    voiceStatus={voiceStatus}
-                                    controlsDisabled={controlsDisabled}
-                                    onSend={() => { void sendComposerNow() }}
-                                    onAbort={handleAbort}
-                                    onVoiceToggle={onVoiceToggle ?? (() => {})}
-                                />
+                                <>
+                                    {dictationButton('mr-1.5')}
+                                    <MobileComposerAction
+                                        hasDraft={hasDraft}
+                                        canSend={canSend}
+                                        isSending={isSendButtonLoading}
+                                        showStop={showStop}
+                                        abortDisabled={abortDisabled}
+                                        isAborting={isAborting}
+                                        voiceEnabled={voiceEnabled}
+                                        voiceStatus={voiceStatus}
+                                        controlsDisabled={controlsDisabled}
+                                        onSend={() => { void sendComposerNow() }}
+                                        onAbort={handleAbort}
+                                        onVoiceToggle={onVoiceToggle ?? (() => {})}
+                                        dictation={dictationControl}
+                                    />
+                                </>
                             )}
                         />
                     </div>

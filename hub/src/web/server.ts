@@ -29,6 +29,9 @@ import { createReportsRoutes } from './routes/reports'
 import { createPublicReportsRoutes } from './routes/publicReports'
 import type { ReportPublicBaseUrlSettings } from '../config/reportPublicBaseUrl'
 import { createSessionTaskRoutes } from './routes/sessionTasks'
+import { createTaskRoutes } from './routes/tasks'
+import { createScheduleRoutes } from './routes/schedules'
+import { createInsightsRoutes } from './routes/insights'
 import { createSettingsRoutes } from './routes/settings'
 import type { SSEManager } from '../sse/sseManager'
 import type { VisibilityTracker } from '../visibility/visibilityTracker'
@@ -137,8 +140,11 @@ function createWebApp(options: {
     app.route('/api', createReviewLoopsRoutes(options.getSyncEngine))
     app.route('/api', createMemoryRoutes())
     app.route('/api', createMemoriesRoutes(options.getSyncEngine))
-    app.route('/api', createSettingsRoutes(options.store))
+    app.route('/api', createSettingsRoutes(options.store, undefined, options.getSyncEngine))
     app.route('/api', createSessionTaskRoutes(options.store))
+    app.route('/api', createTaskRoutes(options.getSyncEngine))
+    app.route('/api', createScheduleRoutes(options.getSyncEngine))
+    app.route('/api', createInsightsRoutes(options.getSyncEngine))
     const reportPublicBaseUrlState: { value: ReportPublicBaseUrlSettings } = {
         value: options.reportPublicBaseUrl
     }

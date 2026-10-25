@@ -2,8 +2,9 @@ import type {
     DecryptedMessage as ProtocolDecryptedMessage,
     Session,
     SessionSummary,
-    SessionTask,
     SyncEvent as ProtocolSyncEvent,
+    TaskStatus,
+    TaskView,
     WorktreeMetadata
 } from '@matemind/protocol/types'
 
@@ -22,7 +23,19 @@ export type {
     Session,
     SessionSummary,
     SessionSummaryMetadata,
-    SessionTask,
+    AcceptanceCriterion,
+    CriterionSource,
+    TaskDraft,
+    TaskDraftQuestion,
+    TaskGuideState,
+    TaskLoad,
+    TaskStatus,
+    TaskView,
+    TaskRun,
+    TaskSubtask,
+    TaskDecision,
+    TaskSignal,
+    TaskPhase,
     TeamControlAction,
     TeamControlRequest,
     TeamControlResponse,
@@ -264,6 +277,13 @@ export type Group = {
     description: string | null
     noteSessionId: string | null
     notePrompt: string | null
+    /** "task": a task group (goal, acceptance list, planner); its details come from /api/tasks/:id. */
+    kind?: 'chat' | 'task'
+    tag?: string | null
+    status?: TaskStatus | null
+    goal?: string | null
+    /** Set when archived: the group sits in the list's archived section; its sessions were stopped. */
+    archivedAt?: number | null
     createdAt: number
     updatedAt: number
 }
@@ -352,6 +372,29 @@ export type RefreshGroupNoteResponse = {
 
 export type GroupTaskActionResponse = {
     task: GroupTask
+}
+
+// ---- Scheduled task types ----
+
+export type {
+    ScheduleSpec,
+    ScheduledRun,
+    ScheduledRunFailure,
+    ScheduledRunStatus,
+    ScheduledRunTrigger,
+    ScheduledTask,
+    ScheduledTaskInput,
+    ScheduledTaskPatch
+} from '@matemind/protocol/schedules'
+
+export type SchedulesResponse = {
+    schedules: import('@matemind/protocol/schedules').ScheduledTask[]
+}
+
+export type ScheduleDetailResponse = {
+    schedule: import('@matemind/protocol/schedules').ScheduledTask
+    /** Newest first, up to 50. */
+    runs: import('@matemind/protocol/schedules').ScheduledRun[]
 }
 
 // ---- ReviewLoop types ----
@@ -478,6 +521,8 @@ export type MemoryItem = {
     jev: MemoryJevVerdict | null
     overridden: { level?: MemoryLevel; scope?: string } | null
     replaces: string | null
+    /** Tags of the session or task the memory came from. */
+    tags: string[]
     version: number
     createdAt: number
     updatedAt: number
@@ -506,11 +551,30 @@ export type MemoriesResponse = {
     recent: MemoryEvent[]
     /** For memories on trial: mentions in the last 30 days and when it last came up. */
     trial: Record<string, { recent: number; lastAt: number }>
+    /** Merges that can be undone, by the memory they went into. */
+    merges: Record<string, MemoryMerge>
     stats: { addedToday: number; skippedToday: number; skippedReasons: Record<string, number>; judged: number; corrected: number; costTodayUsd: number }
     settings: MemoryCaptureSettings & { jevReady: boolean; knownProjects: Array<{ name: string; path: string | null; sessions: number }> }
 }
 
 export type MemoryHit = MemoryItem & { score: number }
+
+/** A memory that may be the same as another: `same` is Jev's yes, null when Jev was not asked. */
+export type MemoryRelatedHit = MemoryHit & { same: number | null }
+
+export type MemoryMerge = { eventId: string; createdAt: number; drops: Array<{ id: string; text: string }> }
+
+/** What merging would give: the memory that stays and the text written again (`rewritten` false: its own text). */
+export type MemoryMergePreview = {
+    keepId: string
+    text: string
+    rewritten: boolean
+    level: MemoryLevel
+    scope: string
+    status: MemoryItem['status']
+    support: number
+    costUsd: number
+}
 
 export type MemoryMaintainResult = { moved: number; embedded: number; merged: number; promoted: number; expired: number; offered: number; costUsd: number }
 
@@ -518,10 +582,14 @@ export type ExperimentalSettings = {
     claudeLoginShell: boolean
     codexReportPromptEnabled: boolean
     previewEnabled: boolean
+    /** System switch: every session starts with every permission granted. */
+    alwaysYolo: boolean
 }
 
 export type ExperimentalSettingsResponse = {
     settings: ExperimentalSettings
+    /** After turning "always YOLO" on: how many running sessions switched. */
+    switched?: number
 }
 
 export type ReportDomainSettings = {
@@ -538,8 +606,18 @@ export type ProjectOfflineSettingsResponse = {
     directories: string[]
 }
 
-export type SessionTasksResponse = {
-    tasks: SessionTask[]
+export type TasksResponse = {
+    tasks: TaskView[]
+}
+
+/** What the user sends back from the guide sheet. */
+export type TaskConfirmInput = {
+    goal?: string
+    nonGoals?: string[]
+    criteria: Array<{ id: string; kept: boolean; text?: string }>
+    /** Criteria the user wrote in the guide step. */
+    added?: Array<{ text: string }>
+    answers: Record<string, string>
 }
 
 /** The model settings picked last (new-session form or a chat switch), shared by every device. */
@@ -673,6 +751,7 @@ export type QueueResponse = {
     queue?: QueueState
     removedId?: string
     movedId?: string
+    updatedId?: string
     clearedCount?: number
 }
 

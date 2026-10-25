@@ -14,7 +14,10 @@ import { GroupStore } from './groupStore'
 import { ReportStore } from './reportStore'
 import { ReviewLoopStore } from './reviewLoopStore'
 import { MemoryStore } from './memoryStore'
-import { MEMORY_SCHEMA_SQL } from './memories'
+import { MEMORY_ADDED_COLUMNS, MEMORY_SCHEMA_SQL } from './memories'
+import { MessageClassStore } from './messageClassStore'
+import { ScheduleStore } from './scheduleStore'
+import { TaskEventStore } from './taskEventStore'
 import { createConversationTurnsSchema } from './turns'
 import { createGroupConversationTurnsSchema } from './groupTurns'
 
@@ -83,7 +86,13 @@ const REQUIRED_TABLES = [
     'memories',
     'memory_links',
     'memory_events',
-    'memory_vectors'
+    'memory_vectors',
+    'memory_tags',
+    'task_events',
+    'message_classes',
+    'scheduled_tasks',
+    'scheduled_task_runs',
+    'report_pages'
 ] as const
 
 export class Store {
@@ -102,6 +111,9 @@ export class Store {
     readonly reports: ReportStore
     readonly reviewLoops: ReviewLoopStore
     readonly memories: MemoryStore
+    readonly taskEvents: TaskEventStore
+    readonly messageClasses: MessageClassStore
+    readonly schedules: ScheduleStore
 
     constructor(dbPath: string) {
         this.dbPath = dbPath
@@ -150,13 +162,29 @@ export class Store {
         this.reports = new ReportStore(this.db)
         this.reviewLoops = new ReviewLoopStore(this.db)
         this.memories = new MemoryStore(this.db)
+        this.taskEvents = new TaskEventStore(this.db)
+        this.messageClasses = new MessageClassStore(this.db)
+        this.schedules = new ScheduleStore(this.db)
     }
 
     getDatabasePath(): string {
         return this.dbPath
     }
 
+    /**
+     * Every startup path ends here, including a fresh database and each migration step, so the column repair and the
+     * task merge run on all of them. None of these bump the schema version: an older build still opens the database.
+     */
     private initSchema(): void {
+        this.migrateSchema()
+        this.ensureRequiredTablesPresent()
+        this.ensureGroupMessageColumnsPresent()
+        this.ensureGroupColumnsPresent()
+        this.ensureMemoryColumnsPresent()
+        this.mergeSessionTasksIntoGroups()
+    }
+
+    private migrateSchema(): void {
         const currentVersion = this.getUserVersion()
         if (currentVersion === 0) {
             if (this.hasAnyUserTables()) {
@@ -174,91 +202,91 @@ export class Store {
         if (currentVersion === 1 && SCHEMA_VERSION >= 2) {
             this.migrateFromV1ToV2()
             this.setUserVersion(2)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 2 && SCHEMA_VERSION >= 3) {
             this.migrateFromV2ToV3()
             this.setUserVersion(3)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 3 && SCHEMA_VERSION >= 4) {
             this.migrateFromV3ToV4()
             this.setUserVersion(4)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 4 && SCHEMA_VERSION >= 5) {
             this.migrateFromV4ToV5()
             this.setUserVersion(5)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 5 && SCHEMA_VERSION >= 6) {
             this.migrateFromV5ToV6()
             this.setUserVersion(6)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 6 && SCHEMA_VERSION >= 7) {
             this.migrateFromV6ToV7()
             this.setUserVersion(7)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 7 && SCHEMA_VERSION >= 8) {
             this.migrateFromV7ToV8()
             this.setUserVersion(8)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 8 && SCHEMA_VERSION >= 9) {
             this.migrateFromV8ToV9()
             this.setUserVersion(9)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 9 && SCHEMA_VERSION >= 10) {
             this.migrateFromV9ToV10()
             this.setUserVersion(10)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 10 && SCHEMA_VERSION >= 11) {
             this.migrateFromV10ToV11()
             this.setUserVersion(11)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 11 && SCHEMA_VERSION >= 12) {
             this.migrateFromV11ToV12()
             this.setUserVersion(12)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 12 && SCHEMA_VERSION >= 13) {
             this.migrateFromV12ToV13()
             this.setUserVersion(13)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
         if (currentVersion === 13 && SCHEMA_VERSION >= 14) {
             this.migrateFromV13ToV14()
             this.setUserVersion(14)
-            this.initSchema()
+            this.migrateSchema()
             return
         }
 
@@ -271,9 +299,6 @@ export class Store {
         if (currentVersion !== SCHEMA_VERSION) {
             throw this.buildSchemaMismatchError(currentVersion)
         }
-
-        this.ensureRequiredTablesPresent()
-        this.ensureGroupMessageColumnsPresent()
     }
 
     private createSchema(): void {
@@ -619,6 +644,95 @@ export class Store {
                 ON review_rounds(namespace);
             CREATE UNIQUE INDEX IF NOT EXISTS idx_review_rounds_loop_round
                 ON review_rounds(loop_id, round);
+
+            -- Tasks are groups (kind = 'task'). Added without a schema version bump, like session_tasks.
+            CREATE TABLE IF NOT EXISTS task_events (
+                id TEXT PRIMARY KEY,
+                namespace TEXT NOT NULL DEFAULT 'default',
+                group_id TEXT NOT NULL,
+                type TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_task_events_group
+                ON task_events(namespace, group_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS message_classes (
+                message_id TEXT PRIMARY KEY,
+                namespace TEXT NOT NULL DEFAULT 'default',
+                session_id TEXT NOT NULL,
+                class TEXT NOT NULL,
+                confidence REAL NOT NULL,
+                jev_cost_usd REAL NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_message_classes_namespace_created
+                ON message_classes(namespace, created_at);
+
+            -- A report's full HTML page, shown at its share link in place of the markdown. Its own table keeps a
+            -- multi-megabyte page out of report lists. Added without a schema version bump.
+            CREATE TABLE IF NOT EXISTS report_pages (
+                report_id TEXT PRIMARY KEY,
+                namespace TEXT NOT NULL DEFAULT 'default',
+                html TEXT NOT NULL,
+                updated_at INTEGER NOT NULL,
+                FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
+            );
+
+            -- Scheduled tasks. Added without a schema version bump, like task_events.
+            CREATE TABLE IF NOT EXISTS scheduled_tasks (
+                id TEXT PRIMARY KEY,
+                namespace TEXT NOT NULL DEFAULT 'default',
+                name TEXT NOT NULL,
+                prompt TEXT NOT NULL,
+                prompt_file TEXT,
+                machine_id TEXT NOT NULL,
+                directory TEXT NOT NULL,
+                agent TEXT NOT NULL,
+                model TEXT,
+                think_effort TEXT,
+                permission_mode TEXT,
+                account_id TEXT,
+                worktree INTEGER NOT NULL DEFAULT 0,
+                max_minutes INTEGER NOT NULL DEFAULT 90,
+                spec TEXT NOT NULL,
+                timezone TEXT NOT NULL,
+                enabled INTEGER NOT NULL DEFAULT 1,
+                next_run_at INTEGER,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_due
+                ON scheduled_tasks(enabled, next_run_at);
+
+            CREATE TABLE IF NOT EXISTS scheduled_task_runs (
+                id TEXT PRIMARY KEY,
+                namespace TEXT NOT NULL DEFAULT 'default',
+                schedule_id TEXT NOT NULL,
+                trigger TEXT NOT NULL,
+                status TEXT NOT NULL,
+                scheduled_for INTEGER,
+                started_at INTEGER NOT NULL,
+                finished_at INTEGER,
+                session_id TEXT,
+                failure TEXT,
+                reported TEXT,
+                summary TEXT,
+                links TEXT NOT NULL DEFAULT '[]',
+                account_id TEXT,
+                attempts INTEGER NOT NULL DEFAULT 0,
+                saw_busy INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (schedule_id) REFERENCES scheduled_tasks(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_scheduled_task_runs_schedule
+                ON scheduled_task_runs(schedule_id, started_at);
+            -- One run per planned time: a second start of the same time is refused. Manual runs have no planned time.
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_scheduled_task_runs_planned
+                ON scheduled_task_runs(schedule_id, scheduled_for);
+            CREATE INDEX IF NOT EXISTS idx_scheduled_task_runs_session
+                ON scheduled_task_runs(session_id);
+            CREATE INDEX IF NOT EXISTS idx_scheduled_task_runs_status
+                ON scheduled_task_runs(status);
         `)
         this.db.exec(MEMORY_SCHEMA_SQL)
     }
@@ -1195,6 +1309,114 @@ export class Store {
         }
 
         this.db.exec('ALTER TABLE group_messages ADD COLUMN quoted_message_id TEXT')
+    }
+
+    /** Task columns on groups. Nullable or with a constant default, so an older build reads the table unchanged. */
+    private ensureGroupColumnsPresent(): void {
+        const columns = new Set(
+            (this.db.prepare('PRAGMA table_info(groups)').all() as Array<{ name: string }>).map((row) => row.name)
+        )
+        if (columns.size === 0) {
+            return
+        }
+        const wanted: Array<[string, string]> = [
+            ['kind', "TEXT NOT NULL DEFAULT 'chat'"],
+            ['tag', 'TEXT'],
+            ['status', 'TEXT'],
+            ['goal', 'TEXT'],
+            ['non_goals', 'TEXT'],
+            ['acceptance', 'TEXT'],
+            ['repo_path', 'TEXT'],
+            ['machine_id', 'TEXT'],
+            ['lead_session_id', 'TEXT'],
+            ['completed_at', 'INTEGER'],
+            ['archived_at', 'INTEGER']
+        ]
+        for (const [name, type] of wanted) {
+            if (!columns.has(name)) {
+                this.db.exec(`ALTER TABLE groups ADD COLUMN ${name} ${type}`)
+            }
+        }
+        this.db.exec('CREATE INDEX IF NOT EXISTS idx_groups_namespace_kind ON groups(namespace, kind, tag)')
+    }
+
+    /**
+     * Each session task becomes a task group with the same id; its members come from the sessions' `task:<id>` tags.
+     * Runs at every startup and only touches tasks not merged yet, so a member removed later is not added back. The
+     * old table and tags stay, so an older build still shows the old tasks.
+     */
+    private mergeSessionTasksIntoGroups(): void {
+        if (!this.hasTable('session_tasks')) {
+            return
+        }
+        const tasks = this.db.prepare(`
+            SELECT t.id, t.namespace, t.tag, t.title, t.status, t.created_at, t.updated_at, t.completed_at
+            FROM session_tasks t
+            WHERE NOT EXISTS (SELECT 1 FROM groups g WHERE g.id = t.id)
+        `).all() as Array<{
+            id: string
+            namespace: string
+            tag: string
+            title: string
+            status: string
+            created_at: number
+            updated_at: number
+            completed_at: number | null
+        }>
+        if (tasks.length === 0) {
+            return
+        }
+        const insertGroup = this.db.prepare(`
+            INSERT OR IGNORE INTO groups (id, namespace, name, description, note_session_id, kind, tag, status, completed_at, created_at, updated_at)
+            VALUES (@id, @namespace, @name, NULL, NULL, 'task', @tag, @status, @completed_at, @created_at, @updated_at)
+        `)
+        const insertNote = this.db.prepare(`
+            INSERT OR IGNORE INTO group_notes (group_id, namespace, content, version, updated_by, updated_at)
+            VALUES (?, ?, '', 1, NULL, ?)
+        `)
+        const insertMember = this.db.prepare(`
+            INSERT INTO group_members (group_id, namespace, member_type, session_id, user_id, role, created_at)
+            SELECT @group_id, @namespace, 'session', @session_id, NULL, 'member', @created_at
+            WHERE NOT EXISTS (
+                SELECT 1 FROM group_members WHERE group_id = @group_id AND member_type = 'session' AND session_id = @session_id
+            )
+        `)
+        const members = this.db.prepare(`
+            SELECT s.id FROM sessions s,
+                json_each(CASE WHEN json_valid(s.metadata) THEN json_extract(s.metadata, '$.tags') END) tag
+            WHERE s.namespace = ? AND tag.value = ?
+        `)
+        this.db.exec('BEGIN')
+        try {
+            for (const task of tasks) {
+                insertGroup.run({
+                    id: task.id,
+                    namespace: task.namespace,
+                    name: task.title,
+                    tag: task.tag,
+                    status: task.status === 'done' ? 'done' : 'active',
+                    completed_at: task.completed_at,
+                    created_at: task.created_at,
+                    updated_at: task.updated_at
+                })
+                insertNote.run(task.id, task.namespace, task.updated_at)
+                const sessionRows = members.all(task.namespace, `task:${task.id}`) as Array<{ id: string }>
+                for (const row of sessionRows) {
+                    insertMember.run({ group_id: task.id, namespace: task.namespace, session_id: row.id, created_at: task.updated_at })
+                }
+            }
+            this.db.exec('COMMIT')
+        } catch (error) {
+            this.db.exec('ROLLBACK')
+            throw error
+        }
+    }
+
+    private ensureMemoryColumnsPresent(): void {
+        for (const { table, column, type } of MEMORY_ADDED_COLUMNS) {
+            const columns = new Set((this.db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map((row) => row.name))
+            if (columns.size > 0 && !columns.has(column)) this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`)
+        }
     }
 
     private getMissingRequiredTables(): string[] {

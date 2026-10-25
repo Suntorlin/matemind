@@ -5,6 +5,7 @@ import {
     buildTurn, TURNS, MESSAGES, G, GROUPS, GROUP_MESSAGES, GROUP_TASKS, gmsg, chatFrom, FILES, DIRS, numstatLine,
     unifiedDiff, claudeAccounts, SLASH, b64, sessionFull
 } from './fixtures'
+import { nextRunTime } from '@matemind/protocol/schedules'
 
 const state = { tasks: [...TASKS], groupMessages: {} as Record<string, any[]> }
 
@@ -52,6 +53,25 @@ const MEMORY = {
     stats: { addedToday: 2, skippedToday: 5, skippedReasons: { 'one-off task': 3, duplicate: 2 }, judged: 7, corrected: 0, costTodayUsd: 0 },
     settings: { mode: 'record', projects: ['acme-web', 'billing-api'], jevReady: true, knownProjects: [{ name: 'acme-web', path: `${HOME}/code/acme-web`, sessions: 8 }, { name: 'billing-api', path: `${HOME}/code/billing-api`, sessions: 5 }] },
 }
+
+// ---------- scheduled tasks ----------
+const scheduleRun = (id, scheduleId, startedAt, summary, sessionId = null) => ({
+    id, scheduleId, trigger: 'schedule', status: 'done', scheduledFor: startedAt, startedAt, finishedAt: startedAt + 6 * MIN,
+    sessionId, failure: null, reported: 'success', summary, links: [], accountId: 'work', attempts: 1,
+})
+const schedule = (id, name, prompt, spec, runs, extra = {}) => ({
+    id, namespace: 'default', name, prompt, promptFile: null, machineId: MACHINE_ID, directory: `${HOME}/code/acme-web`, agent: 'claude',
+    model: 'sonnet', thinkEffort: null, permissionMode: 'acceptEdits', accountId: 'work', worktree: true, maxMinutes: 90, spec,
+    timezone: 'Asia/Tokyo', enabled: true, nextRunAt: nextRunTime(spec, 'Asia/Tokyo', NOW), createdAt: NOW - 9 * DAY, updatedAt: NOW - DAY, lastRun: runs[0] ?? null, ...extra,
+})
+const SCHEDULE_RUNS = {
+    'sch-deps': [1, 2, 3].map((d) => scheduleRun(`run-deps-${d}`, 'sch-deps', NOW - d * DAY, d === 1 ? 'Two patch updates; tests pass; PR draft opened.' : 'No dependency updates today.')),
+    'sch-flaky': [scheduleRun('run-flaky-1', 'sch-flaky', NOW - 3 * DAY, '1 flaky test this week: e2e/login.spec.ts (1 of 20 runs).', 's-flaky')],
+}
+const SCHEDULES = [
+    schedule('sch-deps', 'Check dependency updates', 'Check for dependency updates. Apply patch updates, run the tests, and open a draft PR if they pass.', { kind: 'weekdays', time: '09:00' }, SCHEDULE_RUNS['sch-deps']),
+    schedule('sch-flaky', 'Weekly flaky-test report', 'Run the e2e suite 20 times and list the tests that fail sometimes.', { kind: 'weekly', weekday: 1, time: '08:30' }, SCHEDULE_RUNS['sch-flaky']),
+]
 
 // ---------- live events ----------
 const sources = new Set<any>()
@@ -279,6 +299,14 @@ function handleGet(method, url) {
     if ((m = p.match(/^\/api\/sessions\/([^/]+)\/usage$/))) return json({ error: 'n/a' }, 404)
     if ((m = p.match(/^\/api\/machines\/([^/]+)\/claude-accounts$/))) return json(claudeAccounts)
     if ((m = p.match(/^\/api\/machines\/([^/]+)\/paths\/exists$/))) return json({ exists: {} })
+    if (p === '/api/tasks') return json({ tasks: [] })
+    if (p === '/api/schedules') return json({ schedules: SCHEDULES })
+    if ((m = p.match(/^\/api\/schedules\/([^/]+)$/))) {
+        const found = SCHEDULES.find((x) => x.id === m[1])
+        return found ? json({ schedule: found, runs: SCHEDULE_RUNS[found.id] ?? [] }) : json({ error: 'not found' }, 404)
+    }
+    if (p === '/api/voice/dictation') return json({ available: false })
+    if ((m = p.match(/^\/api\/memories\/([^/]+)\/related$/))) return json({ hits: [] })
     if (p === '/api/sessions/preview-url-history') return json({ urls: [], entries: [] })
     if (p === '/api/settings/new-session-defaults') return json({ defaults: { agent: 'claude', model: 'opus', thinkEffort: 'high', yoloMode: false, claudeAccountId: 'work', updatedAt: NOW - DAY } })
     return null
@@ -288,6 +316,16 @@ let spawned = 0
 function handleMutation(method: string, url: URL, body: any) {
     const p = url.pathname
     let m
+    if ((m = p.match(/^\/api\/schedules\/([^/]+)$/)) && method === 'PATCH') {
+        const found = SCHEDULES.find((x) => x.id === m[1])
+        if (!found) return json({ error: 'not found' }, 404)
+        if (typeof body?.enabled === 'boolean') Object.assign(found, { enabled: body.enabled, nextRunAt: body.enabled ? nextRunTime(found.spec, found.timezone, Date.now()) : null, updatedAt: Date.now() })
+        return json({ schedule: found })
+    }
+    // Newer features that need a real hub: say so instead of returning an empty success.
+    if (p.startsWith('/api/schedules') || p.startsWith('/api/tasks') || p.startsWith('/api/memories/merge') || p === '/api/memories/archive' || p.startsWith('/api/voice/')) {
+        return json({ error: 'Not available in the demo' }, 403)
+    }
     if (p === '/api/auth' || p === '/api/bind') return json({ token: 'demo-token', user: { id: 1, firstName: 'You', username: 'you' } })
     if ((m = p.match(/^\/api\/sessions\/([^/]+)\/(messages|queue\/enqueue|codex-queue\/enqueue)$/)) && method === 'POST') {
         runTurn(m[1], body?.text ?? '')

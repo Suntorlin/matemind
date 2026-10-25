@@ -5,13 +5,17 @@ import { readSettings, writeSettings, type Settings } from '../config/settings'
 import type { Store, StoredMemory, StoredMemoryEvent, StoredMemoryLink } from '../store'
 import { cosine, embedTexts, EmbedError } from './embed'
 import { listClaudeMemoryFiles, listMemoryMdBullets, projectNameFor } from './harvest'
-import { askJev, JevError, resolveJevApiKey } from './jev'
+import { ChatError } from './chat'
+import { askJev, JevError, resolveJevApiKey, yesProbability } from './jev'
 import { extractRules, ExtractError, gate, GATE, userText } from './extract'
-import { buildQuestions, decide, matchQuestion, parseVerdict, REVIEW, THRESHOLDS, TRIAL, type JevVerdict, type MemoryLevel, type Origin } from './judge'
+import { realUserText } from './userMessage'
+import { buildQuestions, decide, matchQuestion, parseVerdict, REVIEW, sameQuestions, THRESHOLDS, TRIAL, type JevVerdict, type MemoryLevel, type Origin } from './judge'
+import { rewriteMerged } from './rewrite'
 import { mostSimilar, similarity } from './similarity'
 
 export type MemoryMode = 'off' | 'record'
-export type MemorySource = 'propose' | 'claude_auto' | 'import' | 'user_message'
+/** decision: the user's answer to a question in a task's guide step. */
+export type MemorySource = 'propose' | 'claude_auto' | 'import' | 'user_message' | 'decision'
 
 export type MemoryCaptureSettings = { mode: MemoryMode; projects: string[] }
 
@@ -26,6 +30,30 @@ export type ProposeInput = {
     /** Repository the candidate came from; null = no project (global candidates only). */
     project: string | null
     sourceRef?: string | null
+    /** Tags for the memory; by default the user tags of `sessionId`. */
+    tags?: string[]
+}
+
+/** One choice the user made in a task's guide step: the situation, the options, and what they chose. */
+export type DecisionInput = {
+    namespace: string
+    situation: string
+    options: string[]
+    chosen: string
+    /** Repository name; '' = global. */
+    project: string | null
+    tags: string[]
+    sessionId: string | null
+    /** Where the choice was made, such as `task:<id>#<questionId>`. */
+    sourceRef: string
+}
+
+export type SearchFilter = {
+    levels?: MemoryLevel[]
+    statuses?: StoredMemory['status'][]
+    /** Global memories plus the ones scoped to this repository. */
+    project?: string
+    tag?: string
 }
 
 export type ProposeResult = {
@@ -46,6 +74,28 @@ export type MemoryNotice = { title: string; body: string; url: string }
 
 export type SearchHit = { memory: StoredMemory; score: number }
 
+/** A memory that may be the same as another: closeness by meaning, and Jev's yes (null when Jev was not asked). */
+export type RelatedHit = SearchHit & { same: number | null }
+
+/** Kept on a merge event: the kept memory as it was, the archived ones, and the links the merge added. */
+export type MergeDetail = {
+    keep: Pick<StoredMemory, 'id' | 'text' | 'level' | 'scope' | 'status' | 'reason' | 'support' | 'said'>
+    drops: Array<Pick<StoredMemory, 'id' | 'text' | 'status' | 'reason'>>
+    links: Array<[string, string]>
+}
+
+export type MergePreview = {
+    keepId: string
+    text: string
+    /** False when the text could not be written again and is the kept memory's own. */
+    rewritten: boolean
+    level: MemoryLevel
+    scope: string
+    status: StoredMemory['status']
+    support: number
+    costUsd: number
+}
+
 /** How far a memory on trial is: mentions inside the window, and when it last came up. */
 export type TrialState = { recent: number; lastAt: number }
 
@@ -54,7 +104,7 @@ const MAX_TEXT = 400
 const LEVEL_LABEL: Record<MemoryLevel, string> = { fact: '事实', experience: '经验', principle: '原则' }
 const DAY_MS = 24 * 3600 * 1000
 /** Cosine floors: a neighbour worth showing Jev when capturing, one worth asking about when cleaning up, a related one, a search hit. */
-const VECTOR_FLOOR = { similar: 0.45, duplicate: 0.6, related: 0.5, search: 0.3 } as const
+const VECTOR_FLOOR = { similar: 0.45, duplicate: 0.55, related: 0.5, search: 0.3 } as const
 const STATUS_RANK: Record<StoredMemory['status'], number> = { active: 3, pending: 2, candidate: 1, archived: 0 }
 
 /** Values that look like credentials; caught before anything leaves the machine. */
@@ -86,7 +136,8 @@ function trialMessage(): string {
 
 /** Only what the user wrote or typed counts as theirs; whatever an agent passes on is the agent's. */
 function originOf(source: MemorySource): Origin {
-    if (source === 'import') return 'written'
+    // A choice the user clicked counts as written by them: it goes in active and the housekeeping rule keeps it so.
+    if (source === 'import' || source === 'decision') return 'written'
     if (source === 'user_message') return 'said'
     return 'agent'
 }
@@ -152,6 +203,7 @@ export class MemoryService {
         const origin = originOf(input.source)
         const said = origin !== 'agent'
         const text = normalize(input.text)
+        const tags = input.tags ?? this.sessionTags(input.namespace, input.sessionId)
         if (text.length < 4) return { action: 'skipped', memoryId: null, message: '没记：内容太短。' }
         const hash = textHash(text)
         if (this.store.memories.hasEventHash(input.namespace, hash)) {
@@ -199,7 +251,7 @@ export class MemoryService {
             const memory = this.store.memories.insert({
                 namespace: input.namespace, text, level: said ? 'principle' : 'experience', scope: said ? '' : input.project ?? '',
                 status, reason: `Jev 没判断：${jevProblem}`, source: input.source, sourceLabel: input.sourceLabel, sessionId: input.sessionId,
-                said, support: 1, jev: null, overridden: null, replaces: null
+                said, support: 1, jev: null, overridden: null, replaces: null, tags
             })
             this.saveVector(input.namespace, memory, vector)
             this.log({ ...base, memoryId: memory.id, action: status, text, reason: memory.reason, jev: null, costUsd: 0, latencyMs: 0 })
@@ -228,6 +280,7 @@ export class MemoryService {
                 ...(said ? { said: true } : {}),
                 ...(lifted ? { status: 'pending', reason: '你说过（之前 agent 也记过）' } : {})
             })
+            this.store.memories.addTags(input.namespace, matched.id, tags)
             this.log({ ...base, memoryId: matched.id, action: 'reinforced', text, reason: null, jev, ...jevMeta })
             const promoted = !lifted && matched.status === 'candidate' && this.promoteIfDue(input.namespace, matched.id)
             if (promoted || lifted) this.options.onChange(input.namespace)
@@ -240,7 +293,7 @@ export class MemoryService {
         const memory = this.store.memories.insert({
             namespace: input.namespace, text, level: decision.level, scope, status: decision.status, reason: decision.reason,
             source: input.source, sourceLabel: input.sourceLabel, sessionId: input.sessionId, said, support: 1,
-            jev, overridden: null, replaces: null
+            jev, overridden: null, replaces: null, tags
         })
         this.saveVector(input.namespace, memory, vector)
         if (decision.link) {
@@ -253,6 +306,42 @@ export class MemoryService {
         if (decision.status === 'active') return { action: 'added', memoryId: memory.id, message: `已记下：${where}。` }
         if (decision.status === 'pending') return { action: 'pending', memoryId: memory.id, message: `已放进“等你审批”（${where}）：${decision.reason}。` }
         return { action: 'candidate', memoryId: memory.id, message: `已记下（${where}），${decision.reason}。${trialMessage()}` }
+    }
+
+    /**
+     * The user's choice becomes an active experience right away: no Jev verdict, because the user made it. Dedupe, the
+     * secret check, the vector and the log still apply; duplicates are merged by the housekeeping like any other.
+     */
+    async recordDecision(input: DecisionInput): Promise<ProposeResult> {
+        const settings = await this.getSettings()
+        if (settings.mode === 'off') return { action: 'off', memoryId: null, message: '记忆采集已关闭。' }
+        const text = decisionText(input)
+        const hash = textHash(text)
+        if (this.store.memories.hasEventHash(input.namespace, hash)) {
+            return { action: 'duplicate', memoryId: null, message: '这条已经记过。' }
+        }
+        const base = { namespace: input.namespace, source: 'decision', sourceLabel: '你在任务里的选择', sourceRef: input.sourceRef, hash, sessionId: input.sessionId }
+        if (SECRET_PATTERNS.some((pattern) => pattern.test(text))) {
+            this.log({ ...base, memoryId: null, action: 'rejected', text: '（含密钥，原文没有保存）', reason: '含密钥', jev: null, costUsd: 0, latencyMs: 0 })
+            return { action: 'rejected', memoryId: null, message: '没记：内容里像是有密钥。' }
+        }
+        const memory = this.store.memories.insert({
+            namespace: input.namespace, text, level: 'experience', scope: input.project ?? '', status: 'active', reason: null,
+            source: 'decision', sourceLabel: base.sourceLabel, sessionId: input.sessionId, said: true, support: 1,
+            jev: null, overridden: null, replaces: null, tags: input.tags
+        })
+        const apiKey = resolveJevApiKey(settings.jevApiKey)
+        this.saveVector(input.namespace, memory, apiKey ? await this.embedOne(apiKey, text) : null)
+        this.log({ ...base, memoryId: memory.id, action: 'added', text, reason: null, jev: null, costUsd: 0, latencyMs: 0 })
+        return { action: 'added', memoryId: memory.id, message: `已记下：经验 · ${memory.scope || '全局'}。` }
+    }
+
+    /** The user tags of a session; system tags such as `task:<id>` are left out. */
+    private sessionTags(namespace: string, sessionId: string | null): string[] {
+        if (!sessionId) return []
+        const metadata = this.store.sessions.getSessionByNamespace(sessionId, namespace)?.metadata as { tags?: unknown } | null | undefined
+        const tags = Array.isArray(metadata?.tags) ? metadata.tags : []
+        return tags.filter((tag): tag is string => typeof tag === 'string' && !tag.includes(':'))
     }
 
     edit(namespace: string, id: string, patch: { text?: string; level?: MemoryLevel; scope?: string }): StoredMemory | null {
@@ -321,6 +410,7 @@ export class MemoryService {
         links: StoredMemoryLink[]
         recent: StoredMemoryEvent[]
         trial: Record<string, TrialState>
+        merges: ReturnType<MemoryService['undoableMerges']>
         stats: { addedToday: number; skippedToday: number; skippedReasons: Record<string, number>; judged: number; corrected: number; costTodayUsd: number }
         settings: MemoryCaptureSettings & { jevReady: boolean; knownProjects: KnownProject[] }
     }> {
@@ -343,6 +433,7 @@ export class MemoryService {
             links: this.store.memories.links(namespace),
             recent: this.store.memories.events(namespace, 80),
             trial,
+            merges: this.undoableMerges(namespace),
             stats: {
                 addedToday: today.filter((e) => e.action === 'added' || e.action === 'pending' || e.action === 'candidate').length,
                 skippedToday: today.filter((e) => e.action === 'skipped' || e.action === 'rejected').length,
@@ -418,7 +509,7 @@ export class MemoryService {
                 const turns = this.store.memories.userTurns(namespace, cursor, MESSAGE_PAGE)
                 if (turns.length === 0) break
                 const items = turns.map((turn) => {
-                    const text = messageText(turn.content)
+                    const text = realUserText(turn.content)
                     const path = (parseJson(turn.sessionMetadata) as { path?: unknown } | null)?.path
                     const project = typeof path === 'string' ? projectNameFor(path) : null
                     const usable = text !== null && (!project || settings.projects.includes(project))
@@ -497,10 +588,10 @@ export class MemoryService {
     }
 
     /** Memories close to `query` in meaning (or containing it word for word), best first. */
-    async search(namespace: string, query: string, limit = 8): Promise<SearchHit[]> {
+    async search(namespace: string, query: string, limit = 8, filter: SearchFilter = {}): Promise<SearchHit[]> {
         const needle = query.trim()
         if (!needle) return []
-        const memories = this.store.memories.list(namespace)
+        const memories = this.store.memories.list(namespace).filter((memory) => matchesFilter(memory, filter))
         const apiKey = resolveJevApiKey((await this.getSettings()).jevApiKey)
         const vector = apiKey ? await this.embedOne(apiKey, needle) : null
         const vectors = new Map(this.store.memories.vectors(namespace).map((v) => [v.memoryId, v.vector]))
@@ -519,7 +610,7 @@ export class MemoryService {
 
     /**
      * Housekeeping, run after every harvest: only principles wait for the user; every memory gets a vector;
-     * duplicates Jev confirms are merged; trials are promoted or let go; busy experiences are offered as principles.
+     * duplicates Jev is sure about are merged and written again; trials are promoted or let go; busy experiences are offered as principles.
      */
     async maintain(namespace = 'default'): Promise<MaintainResult> {
         const result: MaintainResult = { moved: 0, embedded: 0, merged: 0, promoted: 0, expired: 0, offered: 0, costUsd: 0 }
@@ -529,6 +620,10 @@ export class MemoryService {
             const approved = this.store.memories.approved(namespace)
             const backed = this.store.memories.backedByUser(namespace)
             for (const memory of this.store.memories.list(namespace)) {
+                // Memories from before tags: the tags of the session they came from, while it still exists.
+                if (memory.tags.length === 0 && memory.sessionId) {
+                    this.store.memories.addTags(namespace, memory.id, this.sessionTags(namespace, memory.sessionId))
+                }
                 const next = this.underRule(memory, approved, backed)
                 if (!next) continue
                 this.store.memories.update(memory.id, namespace, next)
@@ -537,8 +632,8 @@ export class MemoryService {
 
             const apiKey = resolveJevApiKey((await this.getSettings()).jevApiKey)
             if (apiKey) {
-                const fresh = await this.embedMissing(namespace, apiKey, result)
-                await this.mergeDuplicates(namespace, apiKey, fresh, result)
+                await this.embedMissing(namespace, apiKey, result)
+                await this.sweepDuplicates(namespace, apiKey, result)
             }
 
             const now = Date.now()
@@ -652,19 +747,15 @@ export class MemoryService {
         return [...semantic, ...lexical].filter((m) => !seen.has(m.id) && Boolean(seen.add(m.id))).slice(0, limit)
     }
 
-    /** Vectors for memories without one, or whose text changed since; returns the ids that got a new vector. */
-    private async embedMissing(namespace: string, apiKey: string, result: MaintainResult): Promise<Set<string>> {
+    /** Vectors for memories without one, or whose text changed since. */
+    private async embedMissing(namespace: string, apiKey: string, result: MaintainResult): Promise<void> {
         const stored = new Map(this.store.memories.vectors(namespace).map((v) => [v.memoryId, v.textHash]))
         const todo = this.store.memories.list(namespace).filter((m) => stored.get(m.id) !== textHash(m.text))
-        const fresh = new Set<string>()
         for (let i = 0; i < todo.length; i += 64) {
             const batch = todo.slice(i, i + 64)
             try {
                 const embedded = await embedTexts({ apiKey, texts: batch.map((m) => m.text), fetchFn: this.options.fetchFn })
-                batch.forEach((memory, index) => {
-                    this.saveVector(namespace, memory, embedded.vectors[index] ?? null)
-                    fresh.add(memory.id)
-                })
+                batch.forEach((memory, index) => this.saveVector(namespace, memory, embedded.vectors[index] ?? null))
                 result.costUsd += embedded.costUsd
                 result.embedded += batch.length
             } catch (error) {
@@ -673,88 +764,252 @@ export class MemoryService {
                 break
             }
         }
-        return fresh
     }
 
     /**
-     * For each memory with a new vector: neighbours at the same level whose scopes overlap and that read close,
-     * then Jev picks the one that is the same memory, if any. The weaker of the two is merged into the stronger.
+     * Every memory against its close neighbours, at any level and scope (the same rule is often noted once as a fact
+     * and once as a principle, or in two projects): Jev answers "the same memory?" for each neighbour, and the sure
+     * ones are merged into one, written again. A neighbourhood Jev has already seen unchanged is not asked again.
      */
-    private async mergeDuplicates(namespace: string, apiKey: string, fresh: Set<string>, result: MaintainResult): Promise<void> {
-        const vectors = new Map(this.store.memories.vectors(namespace).map((v) => [v.memoryId, v.vector]))
-        const gone = new Set<string>()
+    private async sweepDuplicates(namespace: string, apiKey: string, result: MaintainResult): Promise<void> {
+        const vectors = new Map(this.store.memories.vectors(namespace).map((v) => [v.memoryId, v]))
         const all = this.store.memories.list(namespace)
-        for (const memory of all) {
-            if (!fresh.has(memory.id) || gone.has(memory.id)) continue
+        const gone = new Set<string>()
+        const todo = all.flatMap((memory) => {
             const own = vectors.get(memory.id)
-            if (!own) continue
+            if (!own || own.textHash !== textHash(memory.text)) return []
             const close = all
-                .filter((other) => other.id !== memory.id && !gone.has(other.id) && other.level === memory.level
-                    && (other.scope === memory.scope || other.scope === '' || memory.scope === '') && vectors.has(other.id))
-                .map((other) => ({ other, score: cosine(own, vectors.get(other.id)!) }))
+                .filter((other) => mayMerge(memory, other) && vectors.has(other.id))
+                .map((other) => ({ other, score: cosine(own.vector, vectors.get(other.id)!.vector) }))
                 .filter((entry) => entry.score >= VECTOR_FLOOR.duplicate)
                 .sort((a, b) => b.score - a.score)
                 .slice(0, 6)
                 .map((entry) => entry.other)
-            if (close.length === 0) continue
-            let found: { choice: string; confidence: number } | null = null
-            try {
-                const answer = await askJev({
-                    apiKey,
-                    state: { candidate: memory.text },
-                    questions: { match: matchQuestion(close.map((m) => ({ id: m.id, text: m.text }))) },
-                    fetchFn: this.options.fetchFn
-                })
+            if (close.length === 0) return []
+            const seen = textHash([memory, ...close].map((m) => `${m.id}:${textHash(m.text)}`).join('|'))
+            return own.checked === seen ? [] : [{ memory, close, seen }]
+        })
+        for (let i = 0; i < todo.length; i += GATE_PARALLEL) {
+            const batch = todo.slice(i, i + GATE_PARALLEL)
+            const answers = await Promise.all(batch.map(async (item) => {
+                try {
+                    return await this.sameAs(apiKey, item.memory, item.close)
+                } catch (error) {
+                    if (!(error instanceof JevError)) throw error
+                    console.warn(`[MemoryService] Duplicate check failed: ${error.message}`)
+                    return null
+                }
+            }))
+            for (const [index, item] of batch.entries()) {
+                const answer = answers[index]
+                if (!answer) continue
                 result.costUsd += answer.costUsd
-                const raw = answer.answers.match
-                found = raw && raw.type === 'choice' ? { choice: raw.choice, confidence: raw.confidence } : null
-            } catch (error) {
-                if (!(error instanceof JevError)) throw error
-                console.warn(`[MemoryService] Duplicate check failed: ${error.message}`)
-                return
+                this.store.memories.setChecked(namespace, item.memory.id, item.seen)
+                if (gone.has(item.memory.id)) continue
+                const twins = answer.same.filter((s) => s.yes >= THRESHOLDS.match && !gone.has(s.memory.id))
+                if (twins.length === 0) continue
+                // Read again: the user may have merged or archived some of them while Jev was answering.
+                const group = [item.memory, ...twins.map((s) => s.memory)]
+                    .map((m) => this.store.memories.get(m.id, namespace))
+                    .filter((m): m is StoredMemory => Boolean(m) && m!.status !== 'archived')
+                if (group.length < 2) continue
+                const sure = Math.min(...twins.map((s) => s.yes))
+                const merged = await this.combine(namespace, group, { apiKey, by: 'jev', reason: `Jev 认为 ${group.length} 条说的是同一件事（把握 ${sure.toFixed(2)}）` })
+                result.costUsd += merged.costUsd
+                for (const memory of group) if (memory.id !== merged.memory.id) gone.add(memory.id)
+                result.merged += group.length - 1
             }
-            const match = found
-            const twin = match && match.confidence >= THRESHOLDS.match ? close.find((m) => m.id === match.choice) : undefined
-            if (!match || !twin) continue
-            const [keep, drop] = this.stronger(memory, twin)
-            this.absorb(namespace, keep, drop, `并入了一条说同一件事的记忆（Jev ${match.confidence.toFixed(2)}）`)
-            gone.add(drop.id)
-            result.merged += 1
+            // Jev is down: stop here and try the rest next time, instead of failing once per memory.
+            if (answers.includes(null)) break
         }
     }
 
-    /** `drop` is archived into `keep`: mentions add up, its links move over, and a global one keeps the pair global. */
-    private absorb(namespace: string, keep: StoredMemory, drop: StoredMemory, reason: string): void {
-        this.store.memories.update(keep.id, namespace, { support: keep.support + drop.support, scope: keep.scope && drop.scope ? keep.scope : '' })
-        this.store.memories.update(drop.id, namespace, { status: 'archived', reason: '和另一条是同一件事，已并入' })
+    /** Jev's yes for "the same memory as `memory`?", one per entry. */
+    private async sameAs(apiKey: string, memory: StoredMemory, entries: StoredMemory[]): Promise<{ same: Array<{ memory: StoredMemory; yes: number }>; costUsd: number }> {
+        const answer = await askJev({ apiKey, state: { candidate: memory.text }, questions: sameQuestions(entries), fetchFn: this.options.fetchFn })
+        return { same: entries.map((entry, index) => ({ memory: entry, yes: yesProbability(answer.answers[`same${index}`]) })), costUsd: answer.costUsd }
+    }
+
+    /**
+     * Several memories become one: the strongest stays (its status and level), the others are archived into it.
+     * Mentions add up, links move over, a global one makes the result global, and the text is written again from all
+     * of them. Jev's merges keep the stronger text when a weaker memory would add words the user has not approved.
+     * What changed is kept on the event, so the merge can be undone.
+     */
+    private async combine(
+        namespace: string,
+        group: StoredMemory[],
+        options: { apiKey: string | null; by: 'user' | 'jev'; reason: string; text?: string }
+    ): Promise<{ memory: StoredMemory; eventId: string; costUsd: number }> {
+        const keep = group.reduce((a, b) => this.stronger(a, b)[0])
+        const drops = group.filter((m) => m.id !== keep.id)
+        let costUsd = 0
+        let text = options.text ? normalize(options.text) : keep.text
+        const mayRewrite = options.by === 'user' || drops.every((m) => STATUS_RANK[m.status] >= STATUS_RANK[keep.status])
+        if (!options.text && mayRewrite && options.apiKey) {
+            const rewritten = await this.rewrite(options.apiKey, group)
+            costUsd += rewritten.costUsd
+            text = rewritten.text ?? keep.text
+        }
+
+        const ids = new Set(group.map((m) => m.id))
+        const existing = new Set(this.store.memories.links(namespace).map((l) => `${l.fromId}>${l.toId}`))
+        const added: Array<[string, string]> = []
         for (const link of this.store.memories.links(namespace)) {
-            if (link.fromId === drop.id && link.toId !== keep.id) this.store.memories.link(namespace, keep.id, link.toId)
-            if (link.toId === drop.id && link.fromId !== keep.id) this.store.memories.link(namespace, link.fromId, keep.id)
+            const from = ids.has(link.fromId) ? keep.id : link.fromId
+            const to = ids.has(link.toId) ? keep.id : link.toId
+            if (from === to || existing.has(`${from}>${to}`)) continue
+            this.store.memories.link(namespace, from, to)
+            existing.add(`${from}>${to}`)
+            added.push([from, to])
         }
-        this.quietLog(namespace, keep.id, 'merged', drop.text, reason)
+        const detail: MergeDetail = {
+            keep: { id: keep.id, text: keep.text, level: keep.level, scope: keep.scope, status: keep.status, reason: keep.reason, support: keep.support, said: keep.said },
+            drops: drops.map((m) => ({ id: m.id, text: m.text, status: m.status, reason: m.reason })),
+            links: added
+        }
+        for (const drop of drops) this.store.memories.update(drop.id, namespace, { status: 'archived', reason: '和另一条是同一件事，已合并' })
+        this.store.memories.update(keep.id, namespace, {
+            text,
+            support: group.reduce((sum, m) => sum + m.support, 0),
+            said: group.some((m) => m.said),
+            scope: mergedScope(group, keep),
+            bumpVersion: text !== keep.text
+        })
+        const event = this.store.memories.addEvent({
+            namespace, memoryId: keep.id, action: 'merged', text, reason: options.reason,
+            source: options.by === 'user' ? 'user_edit' : 'system', sourceLabel: options.by === 'user' ? '你' : '整理',
+            sourceRef: null, hash: null, sessionId: null, jev: null, costUsd, latencyMs: 0, detail
+        })
+        return { memory: this.store.memories.get(keep.id, namespace)!, eventId: event.id, costUsd }
     }
 
-    /** The user merges one memory into another from the edit sheet. */
-    merge(namespace: string, dropId: string, keepId: string): StoredMemory | null {
-        const drop = this.store.memories.get(dropId, namespace)
-        const keep = this.store.memories.get(keepId, namespace)
-        if (!drop || !keep || drop.id === keep.id || drop.status === 'archived' || keep.status === 'archived') return null
-        this.absorb(namespace, keep, drop, '你把一条说同一件事的记忆并了进来')
+    private async rewrite(apiKey: string, group: StoredMemory[]): Promise<{ text: string | null; costUsd: number }> {
+        try {
+            const oldestFirst = [...group].sort((a, b) => a.createdAt - b.createdAt)
+            const result = await rewriteMerged({ apiKey, texts: oldestFirst.map((m) => m.text), fetchFn: this.options.fetchFn })
+            return { text: result.text ? normalize(result.text) : null, costUsd: result.costUsd }
+        } catch (error) {
+            if (!(error instanceof ChatError)) throw error
+            console.warn(`[MemoryService] Rewrite failed: ${error.message}`)
+            return { text: null, costUsd: 0 }
+        }
+    }
+
+    /** Memories the user picked, in the given order, or null when fewer than two are usable. */
+    private picked(namespace: string, ids: string[]): StoredMemory[] | null {
+        const group = Array.from(new Set(ids)).map((id) => this.store.memories.get(id, namespace)).filter((m): m is StoredMemory => Boolean(m) && m!.status !== 'archived')
+        return group.length >= 2 ? group : null
+    }
+
+    /** What merging these would give, without changing anything: which one stays and the text written again. */
+    async previewMerge(namespace: string, ids: string[]): Promise<MergePreview | null> {
+        const group = this.picked(namespace, ids)
+        if (!group) return null
+        const keep = group.reduce((a, b) => this.stronger(a, b)[0])
+        const apiKey = resolveJevApiKey((await this.getSettings()).jevApiKey)
+        const rewritten = apiKey ? await this.rewrite(apiKey, group) : { text: null, costUsd: 0 }
+        return {
+            keepId: keep.id,
+            text: rewritten.text ?? keep.text,
+            rewritten: rewritten.text !== null,
+            level: keep.level,
+            scope: mergedScope(group, keep),
+            status: keep.status,
+            support: group.reduce((sum, m) => sum + m.support, 0),
+            costUsd: rewritten.costUsd
+        }
+    }
+
+    /** The user merges memories into one; `text` is what they settled on in the preview (written again when left out). */
+    async mergeMany(namespace: string, ids: string[], text?: string): Promise<{ memory: StoredMemory; eventId: string } | null> {
+        const group = this.picked(namespace, ids)
+        if (!group) return null
+        const apiKey = resolveJevApiKey((await this.getSettings()).jevApiKey)
+        const merged = await this.combine(namespace, group, { apiKey, by: 'user', reason: `你把 ${group.length} 条合成了一条`, text: text?.trim() || undefined })
         this.options.onChange(namespace)
-        return this.store.memories.get(keepId, namespace)
+        return { memory: merged.memory, eventId: merged.eventId }
     }
 
-    /** Memories that read close to `id`, for merging by hand. */
-    related(namespace: string, id: string, limit = 5): SearchHit[] {
+    /** Puts a merge back: the kept memory gets its old text and numbers, the archived ones come back, moved links go. */
+    undoMerge(namespace: string, eventId: string): StoredMemory | null {
+        const event = this.store.memories.event(eventId, namespace)
+        const detail = event?.detail as MergeDetail | null | undefined
+        if (!event || event.action !== 'merged' || !detail?.keep) return null
+        const { keep } = detail
+        const current = this.store.memories.get(keep.id, namespace)
+        // Only the newest merge into a memory that is still there: an older one would throw away what came after it.
+        if (!current || current.status === 'archived' || this.store.memories.merges(namespace).find((e) => e.memoryId === keep.id)?.id !== eventId) return null
+        for (const [from, to] of detail.links) this.store.memories.unlink(namespace, from, to)
+        for (const drop of detail.drops) {
+            if (this.store.memories.get(drop.id, namespace)?.status === 'archived') this.store.memories.update(drop.id, namespace, { status: drop.status, reason: drop.reason })
+        }
+        this.store.memories.update(keep.id, namespace, {
+            text: keep.text, level: keep.level, scope: keep.scope, status: keep.status, reason: keep.reason, support: keep.support, said: keep.said,
+            bumpVersion: current.text !== keep.text
+        })
+        this.store.memories.setEventAction(eventId, namespace, 'merge_undone')
+        this.log({
+            namespace, memoryId: keep.id, action: 'unmerged', text: keep.text, reason: `拆回了 ${detail.drops.length} 条`,
+            source: 'user_edit', sourceLabel: '你', sourceRef: null, hash: null, sessionId: null, jev: null, costUsd: 0, latencyMs: 0
+        })
+        return this.store.memories.get(keep.id, namespace)
+    }
+
+    /** Archives the given memories in one go; returns how many were archived. */
+    archiveMany(namespace: string, ids: string[]): number {
+        let archived = 0
+        for (const id of new Set(ids)) {
+            const current = this.store.memories.get(id, namespace)
+            if (!current || current.status === 'archived') continue
+            this.store.memories.update(id, namespace, { status: 'archived', reason: '你归档了' })
+            this.quietLog(namespace, id, 'archived', current.text, '你归档了')
+            archived += 1
+        }
+        if (archived > 0) this.options.onChange(namespace)
+        return archived
+    }
+
+    /**
+     * Memories that may be the same as `id`, for the user to merge: close ones by meaning, kept only when Jev
+     * thinks they may be the same (`same`); without Jev, only the very close ones, unjudged.
+     */
+    async related(namespace: string, id: string, limit = 6): Promise<RelatedHit[]> {
+        const memory = this.store.memories.get(id, namespace)
         const vectors = new Map(this.store.memories.vectors(namespace).map((v) => [v.memoryId, v.vector]))
         const own = vectors.get(id)
-        if (!own) return []
-        return this.store.memories.list(namespace)
-            .filter((m) => m.id !== id && vectors.has(m.id))
-            .map((memory) => ({ memory, score: cosine(own, vectors.get(memory.id)!) }))
+        if (!memory || !own) return []
+        const close = this.store.memories.list(namespace)
+            .filter((m) => mayMerge(memory, m) && vectors.has(m.id))
+            .map((m) => ({ memory: m, score: cosine(own, vectors.get(m.id)!) }))
             .filter((hit) => hit.score >= VECTOR_FLOOR.related)
             .sort((a, b) => b.score - a.score)
             .slice(0, limit)
+        if (close.length === 0) return []
+        const apiKey = resolveJevApiKey((await this.getSettings()).jevApiKey)
+        if (apiKey) {
+            try {
+                const answer = await this.sameAs(apiKey, memory, close.map((hit) => hit.memory))
+                return close
+                    .map((hit, index) => ({ ...hit, same: answer.same[index]!.yes }))
+                    .filter((hit) => hit.same >= THRESHOLDS.maybe)
+                    .sort((a, b) => b.same - a.same)
+            } catch (error) {
+                if (!(error instanceof JevError)) throw error
+            }
+        }
+        return close.filter((hit) => hit.score >= VECTOR_FLOOR.duplicate).map((hit) => ({ ...hit, same: null }))
+    }
+
+    /** Merges that can still be undone, by the memory they went into (the newest one each). */
+    undoableMerges(namespace: string): Record<string, { eventId: string; createdAt: number; drops: Array<{ id: string; text: string }> }> {
+        const merges: Record<string, { eventId: string; createdAt: number; drops: Array<{ id: string; text: string }> }> = {}
+        for (const event of this.store.memories.merges(namespace)) {
+            const detail = event.detail as MergeDetail | null
+            if (!event.memoryId || !detail?.drops || merges[event.memoryId]) continue
+            merges[event.memoryId] = { eventId: event.id, createdAt: event.createdAt, drops: detail.drops.map((d) => ({ id: d.id, text: d.text })) }
+        }
+        return merges
     }
 
     /** Which of two duplicates stays: the more settled status, then what the user said, then more mentions, then the older. */
@@ -777,6 +1032,38 @@ export class MemoryService {
     }
 }
 
+const DECISION_PART_CHARS = { situation: 200, options: 120, chosen: 60 } as const
+
+/** "情境：…；选项：A/B；你选了：A", each part cut so the whole stays within one memory. */
+export function decisionText(input: Pick<DecisionInput, 'situation' | 'options' | 'chosen'>): string {
+    const cut = (text: string, max: number) => {
+        const flat = normalize(text)
+        return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat
+    }
+    // A question's own "？" or "。" before "；" reads as doubled punctuation.
+    const situation = input.situation.trim().replace(/[。.？?！!；;：:，,]+$/u, '')
+    const text = `情境：${cut(situation, DECISION_PART_CHARS.situation)}；选项：${cut(input.options.join('/'), DECISION_PART_CHARS.options)}；你选了：${cut(input.chosen, DECISION_PART_CHARS.chosen)}`
+    return text.slice(0, MAX_TEXT)
+}
+
+function matchesFilter(memory: StoredMemory, filter: SearchFilter): boolean {
+    if (filter.levels && !filter.levels.includes(memory.level)) return false
+    if (filter.statuses && !filter.statuses.includes(memory.status)) return false
+    if (filter.project !== undefined && memory.scope !== '' && memory.scope !== filter.project) return false
+    if (filter.tag && !memory.tags.includes(filter.tag.toLowerCase())) return false
+    return true
+}
+
+/** Two different memories, neither of them the offer to promote the other (that pair is the same text on purpose). */
+function mayMerge(a: StoredMemory, b: StoredMemory): boolean {
+    return a.id !== b.id && a.replaces !== b.id && b.replaces !== a.id
+}
+
+/** Global when any of them is global; otherwise the kept one's project, the narrower reading. */
+function mergedScope(group: StoredMemory[], keep: StoredMemory): string {
+    return group.every((m) => m.scope) ? keep.scope : ''
+}
+
 function parseJson(raw: string | null): unknown {
     if (!raw) return null
     try {
@@ -784,11 +1071,4 @@ function parseJson(raw: string | null): unknown {
     } catch {
         return null
     }
-}
-
-/** The text of a message the user typed, or null for anything else. */
-function messageText(content: string): string | null {
-    const message = parseJson(content) as { role?: unknown; content?: { type?: unknown; text?: unknown } } | null
-    if (message?.role !== 'user' || message.content?.type !== 'text' || typeof message.content.text !== 'string') return null
-    return userText(message.content.text)
 }

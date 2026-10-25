@@ -7,6 +7,8 @@ export type MatemindMcpToolDefinition = {
     inputSchema: z.ZodTypeAny
 }
 
+const HTML_PATH_DESCRIPTION = 'Absolute path of a full HTML page (up to 10 MB) on this machine. The share link then shows this page in place of the markdown, and keeps the same link when you update it.'
+
 export const changeTitleInputSchema: z.ZodTypeAny = z.object({
     title: z.string().describe('The new title for the chat session')
 })
@@ -17,6 +19,7 @@ export const reportCreateInputSchema: z.ZodTypeAny = z.object({
     title: z.string().min(1).max(200).optional(),
     status: z.string().min(1).max(40).optional(),
     markdown: z.string().max(400_000).optional(),
+    html_path: z.string().min(1).max(1000).optional().describe(HTML_PATH_DESCRIPTION),
     metadata: z.unknown().optional(),
     share_expires_in_hours: z.number().positive().max(24 * 365).optional()
 })
@@ -28,7 +31,8 @@ export const memoryProposeInputSchema: z.ZodTypeAny = z.object({
 
 export const memorySearchInputSchema: z.ZodTypeAny = z.object({
     query: z.string().min(1).max(500).describe('What to look up, in any language'),
-    limit: z.number().int().min(1).max(20).optional().describe('Most results to return (default 8)')
+    limit: z.number().int().min(1).max(20).optional().describe('Most results to return (default 8)'),
+    tag: z.string().min(1).max(40).optional().describe('Only memories with this tag, such as the tag of the current task')
 })
 
 export const MEMORY_SEARCH_DESCRIPTION = "Search the user's long-term memory by meaning (Chinese and English both match). Use it to look up the user's rules, preferences and lessons about this project before you decide how to do something. Each result shows its level (fact, experience, principle), scope and status (active; pending = waiting for the user; candidate = on trial, not yet confirmed)."
@@ -41,6 +45,7 @@ export const reportUpdateInputSchema: z.ZodTypeAny = z.object({
     title: z.string().min(1).max(200).optional(),
     status: z.string().min(1).max(40).optional(),
     markdown: z.string().max(400_000).optional(),
+    html_path: z.string().max(1000).optional().describe(`${HTML_PATH_DESCRIPTION} An empty string removes the page.`),
     metadata: z.unknown().optional()
 })
 
@@ -106,6 +111,89 @@ export const reviewLoopWorkerSubmitInputSchema: z.ZodTypeAny = z.object({
     exit_status: z.enum(['success', 'error']).describe('Overall execution status')
 })
 
+export const taskDraftSubmitInputSchema: z.ZodTypeAny = z.object({
+    task_id: z.string().min(1).max(40).describe('The task id from the guide message'),
+    tag: z.string().min(1).max(40).optional().describe('The tag you picked for the task (lowercase); leave out when the guide message says the user set it'),
+    repo_path: z.string().min(1).max(500).optional().describe('Absolute path of the repository you picked, when the guide message asks you to pick one'),
+    goal: z.string().min(1).max(120).describe('One sentence: what the task achieves'),
+    non_goals: z.array(z.string().min(1).max(200)).max(3).optional().describe('What the task does not do (at most 3)'),
+    criteria: z.array(z.object({
+        text: z.string().min(1).max(300).describe('One acceptance criterion that can be checked'),
+        source: z.enum(['principle', 'repo', 'inferred']).describe('principle = from a user principle; repo = from a repository convention file; inferred = your own guess'),
+        source_ref: z.string().min(1).max(200).optional().describe('The principle id or the file name'),
+        verify: z.string().min(1).max(300).describe('How to check it: a command, a page or data')
+    })).min(3).max(6).describe('3 to 6 acceptance criteria'),
+    questions: z.array(z.object({
+        id: z.string().min(1).max(40),
+        text: z.string().min(1).max(200).describe('Only what the context and the repository cannot settle'),
+        options: z.array(z.object({
+            id: z.string().min(1).max(40),
+            label: z.string().min(1).max(80),
+            good: z.string().min(1).max(100).optional().describe('What picking this option gains'),
+            cost: z.string().min(1).max(100).optional().describe('What it costs')
+        })).min(2).max(4),
+        default: z.string().min(1).max(40).describe('The id of the default option'),
+        precedent_ref: z.string().min(1).max(80).optional().describe('The experience id the default comes from')
+    })).max(3).optional().describe('At most 3 choice questions for the user')
+})
+
+export const taskPlanSubmitInputSchema: z.ZodTypeAny = z.object({
+    task_id: z.string().min(1).max(40).describe('The task id from the message'),
+    subtasks: z.array(z.object({
+        id: z.string().min(1).max(40).describe('Short English id: letters, digits, - and _'),
+        title: z.string().min(1).max(60).describe('At most 20 Chinese characters'),
+        brief: z.string().min(1).max(4000).describe('What to change, where, and how to verify; the executor sees only this'),
+        criteria: z.array(z.string().min(1).max(40)).describe('Acceptance criterion ids this subtask is responsible for'),
+        depends_on: z.array(z.string().min(1).max(40)).optional().describe('Ids of subtasks that must finish first')
+    })).min(1).max(5).describe('1 to 5 subtasks that together cover every acceptance criterion')
+})
+
+export const subtaskDoneInputSchema: z.ZodTypeAny = z.object({
+    task_id: z.string().min(1).max(40),
+    subtask_id: z.string().min(1).max(60),
+    summary: z.string().min(1).max(4000).describe('What you changed and how you verified it'),
+    evidence: z.array(z.string().min(1).max(1000)).max(20).optional().describe('One piece of evidence each: a command and its result, a file and line, a screenshot path')
+})
+
+export const taskDecisionAskInputSchema: z.ZodTypeAny = z.object({
+    task_id: z.string().min(1).max(40),
+    question: z.string().min(1).max(300).describe('The one thing the user has to decide'),
+    context: z.string().max(1000).optional().describe('Why it needs the user, in one or two sentences'),
+    options: z.array(z.object({
+        label: z.string().min(1).max(80),
+        good: z.string().max(120).optional().describe('What picking it gains'),
+        cost: z.string().max(120).optional().describe('What it costs')
+    })).min(2).max(4),
+    recommended: z.string().max(80).optional().describe('The label you recommend')
+})
+
+export const taskIntegratedInputSchema: z.ZodTypeAny = z.object({
+    task_id: z.string().min(1).max(40),
+    branch: z.string().min(1).max(200),
+    worktree_path: z.string().min(1).max(500).describe('Absolute path of the merge worktree'),
+    summary: z.string().max(4000).optional().describe('Merge result and test results')
+})
+
+export const taskReviewSubmitInputSchema: z.ZodTypeAny = z.object({
+    task_id: z.string().min(1).max(40),
+    results: z.array(z.object({
+        criterion_id: z.string().min(1).max(40),
+        status: z.enum(['met', 'not_met', 'unclear']),
+        evidence: z.string().min(1).max(2000).describe('What you checked and saw')
+    })).min(1).describe('One result per acceptance criterion'),
+    suggestions: z.array(z.string().min(1).max(500)).max(10).optional().describe('Your own ideas outside the acceptance list; they never fail the review')
+})
+
+export const TASK_RUN_TOOL_DESCRIPTIONS = {
+    task_plan_submit: 'Submit how a confirmed Matemind task splits into subtasks. Each subtask goes to an executor session in its own git worktree. Do not change code yourself.',
+    subtask_done: 'Tell Matemind your subtask is done, with a summary and evidence. Commit to your branch first. Do not push.',
+    task_decision_ask: 'Ask the user to decide something the work needs (a disagreement, out of scope, an unclear criterion, anything that pushes, deploys, spends or sends). Give 2 to 4 options with gains and costs. Go on with the parts that do not depend on it; the answer comes back to this session.',
+    task_integrated: 'Tell Matemind the subtask branches are merged into one branch, with the test results.',
+    task_review_submit: 'Submit your review of a Matemind task: one result per acceptance criterion (met / not_met / unclear) with evidence.'
+} as const
+
+export const TASK_DRAFT_SUBMIT_DESCRIPTION = 'Submit the goal and acceptance criteria you drafted for a Matemind task, during its guide step. The user ticks the criteria and answers the questions in the Matemind web app. Call it again with a new draft when the user asks for changes. Do not start the work.'
+
 export const reviewLoopReviewerSubmitInputSchema: z.ZodTypeAny = z.object({
     loop_id: z.string().min(1).describe('The review loop ID'),
     round_id: z.string().min(1).describe('The current round ID'),
@@ -119,6 +207,46 @@ export const reviewLoopReviewerSubmitInputSchema: z.ZodTypeAny = z.object({
         note: z.string().optional()
     })).describe('Status of each acceptance criterion')
 })
+
+export const scheduledRunDoneInputSchema: z.ZodTypeAny = z.object({
+    status: z.enum(['success', 'failed', 'skipped']).describe('success: done; failed: it could not be done; skipped: nothing to do this time'),
+    summary: z.string().min(1).max(2000).describe('One sentence: the result, in the language of the task'),
+    links: z.array(z.string().min(1).max(2000)).max(20).optional().describe('Links to what the run produced')
+})
+
+const scheduleFields = {
+    name: z.string().min(1).max(120).optional().describe('Short name of the task'),
+    prompt: z.string().max(20_000).optional().describe('What to do on each run'),
+    prompt_file: z.string().min(1).max(1000).optional().describe('Absolute path of a file with the instructions; it is read fresh on each run'),
+    cron: z.string().min(9).max(120).optional().describe('Five-field cron in the time zone, e.g. "0 9 * * 1-5" (weekdays 09:00). Sunday is 0'),
+    run_at: z.string().min(1).max(40).optional().describe('One run at this ISO 8601 time instead of a cron, e.g. "2026-10-26T15:00:00+09:00"'),
+    timezone: z.string().min(1).max(80).optional().describe('IANA time zone of the cron, e.g. "Asia/Tokyo". Default: this machine\'s time zone'),
+    directory: z.string().min(1).max(1000).optional().describe('Folder the run starts in. Default: this session\'s folder'),
+    model: z.string().min(1).max(100).optional(),
+    permission_mode: z.enum(['default', 'acceptEdits', 'bypassPermissions', 'plan']).optional().describe('bypassPermissions runs without permission prompts'),
+    max_minutes: z.number().int().min(1).max(1440).optional().describe('A run still open after this fails and stops (default 90)'),
+    enabled: z.boolean().optional()
+}
+
+export const scheduleCreateInputSchema: z.ZodTypeAny = z.object({
+    ...scheduleFields,
+    name: z.string().min(1).max(120).describe('Short name of the task')
+})
+
+export const scheduleUpdateInputSchema: z.ZodTypeAny = z.object({
+    id: z.string().min(1).max(80).describe('The scheduled task id, from schedule_list'),
+    ...scheduleFields,
+    manual: z.boolean().optional().describe('true: remove the clock; the task runs only with Run now')
+})
+
+export const scheduleListInputSchema: z.ZodTypeAny = z.object({})
+
+export const SCHEDULE_TOOL_DESCRIPTIONS = {
+    scheduled_run_done: 'Report the result of this scheduled run to Matemind. Call it once, at the end of every scheduled run. A run without it counts as failed and raises an alert.',
+    schedule_create: 'Create a Matemind scheduled task: at each time of its cron (or once at run_at) Matemind starts a new session on this machine and sends the prompt. Give a cron, a run_at, or neither (run only on demand).',
+    schedule_list: "List the user's Matemind scheduled tasks with their next run and last result.",
+    schedule_update: 'Change a Matemind scheduled task: its prompt, schedule, folder or settings. enabled=false pauses it; enabled=true resumes it.'
+} as const
 
 export const MATEMIND_MCP_TOOL_DEFINITIONS: MatemindMcpToolDefinition[] = [
     {
@@ -148,7 +276,7 @@ export const MATEMIND_MCP_TOOL_DEFINITIONS: MatemindMcpToolDefinition[] = [
     {
         name: 'report_update',
         title: 'Update Report',
-        description: 'Update report title/status/markdown/metadata',
+        description: 'Update report title/status/markdown/metadata, or its full HTML page (html_path). The share link stays the same.',
         inputSchema: reportUpdateInputSchema
     },
     {
@@ -175,6 +303,21 @@ export const MATEMIND_MCP_TOOL_DEFINITIONS: MatemindMcpToolDefinition[] = [
         description: 'Create a public share link for a report. Public links use /share/r/<token> (for example <report-public-base-url>/share/r/FrG7h-uOFtuKw0Ay1S8NNWhuBB9uNgDq).',
         inputSchema: reportCreateShareInputSchema
     },
+    {
+        name: 'task_draft_submit',
+        title: 'Submit Task Draft',
+        description: TASK_DRAFT_SUBMIT_DESCRIPTION,
+        inputSchema: taskDraftSubmitInputSchema
+    },
+    { name: 'task_plan_submit', title: 'Submit Task Plan', description: TASK_RUN_TOOL_DESCRIPTIONS.task_plan_submit, inputSchema: taskPlanSubmitInputSchema },
+    { name: 'subtask_done', title: 'Subtask Done', description: TASK_RUN_TOOL_DESCRIPTIONS.subtask_done, inputSchema: subtaskDoneInputSchema },
+    { name: 'task_decision_ask', title: 'Ask the User to Decide', description: TASK_RUN_TOOL_DESCRIPTIONS.task_decision_ask, inputSchema: taskDecisionAskInputSchema },
+    { name: 'task_integrated', title: 'Branches Merged', description: TASK_RUN_TOOL_DESCRIPTIONS.task_integrated, inputSchema: taskIntegratedInputSchema },
+    { name: 'task_review_submit', title: 'Submit Task Review', description: TASK_RUN_TOOL_DESCRIPTIONS.task_review_submit, inputSchema: taskReviewSubmitInputSchema },
+    { name: 'scheduled_run_done', title: 'Scheduled Run Done', description: SCHEDULE_TOOL_DESCRIPTIONS.scheduled_run_done, inputSchema: scheduledRunDoneInputSchema },
+    { name: 'schedule_create', title: 'Create Scheduled Task', description: SCHEDULE_TOOL_DESCRIPTIONS.schedule_create, inputSchema: scheduleCreateInputSchema },
+    { name: 'schedule_list', title: 'List Scheduled Tasks', description: SCHEDULE_TOOL_DESCRIPTIONS.schedule_list, inputSchema: scheduleListInputSchema },
+    { name: 'schedule_update', title: 'Update Scheduled Task', description: SCHEDULE_TOOL_DESCRIPTIONS.schedule_update, inputSchema: scheduleUpdateInputSchema },
     {
         name: 'review_loop_worker_submit',
         title: 'Submit Review Loop Worker Output',

@@ -14,14 +14,18 @@ import {
     getGroupMessages,
     getGroupTasks,
     getGroupsByNamespace,
+    getActiveTaskNamespaces,
     getGroupNote,
     getGroupTaskByDedupeKey,
     hasGroupTaskForTargetSession,
     getGroupTaskByNamespace,
     removeGroupMember,
+    replaceGroupSession,
     updateGroup,
     updateGroupNote,
-    updateGroupTaskStatus
+    updateGroupTaskStatus,
+    updateTaskFields,
+    type TaskFieldsPatch
 } from './groups'
 import {
     appendGroupMessageToConversationTurns,
@@ -33,6 +37,8 @@ import {
 } from './groupTurns'
 import type {
     StoredGroup,
+    StoredGroupKind,
+    StoredTaskStatus,
     StoredGroupConversationTurn,
     StoredGroupMember,
     StoredGroupMessage,
@@ -58,8 +64,13 @@ export class GroupStore {
             userId?: number | null
             role?: string
         }>
+        task?: { id: string; tag: string; status: StoredTaskStatus; repoPath?: string | null; machineId?: string | null }
     }): StoredGroup {
         return createGroup(this.db, options)
+    }
+
+    updateTaskFields(options: { groupId: string; namespace: string; patch: TaskFieldsPatch }): StoredGroup | null {
+        return updateTaskFields(this.db, options)
     }
 
     deleteGroup(options: {
@@ -69,8 +80,12 @@ export class GroupStore {
         return deleteGroup(this.db, options)
     }
 
-    getGroupsByNamespace(namespace: string): StoredGroup[] {
-        return getGroupsByNamespace(this.db, namespace)
+    getGroupsByNamespace(namespace: string, kind?: StoredGroupKind): StoredGroup[] {
+        return getGroupsByNamespace(this.db, namespace, kind)
+    }
+
+    getActiveTaskNamespaces(): string[] {
+        return getActiveTaskNamespaces(this.db)
     }
 
     getAllGroups(): StoredGroup[] {
@@ -106,12 +121,17 @@ export class GroupStore {
         return removeGroupMember(this.db, options)
     }
 
+    replaceSession(options: { namespace: string; fromSessionId: string; toSessionId: string }): string[] {
+        return replaceGroupSession(this.db, options)
+    }
+
     updateGroup(options: {
         groupId: string
         namespace: string
         name?: string
         description?: string | null
         noteSessionId?: string | null
+        archived?: boolean
     }): StoredGroup | null {
         return updateGroup(this.db, options)
     }

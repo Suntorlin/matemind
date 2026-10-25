@@ -127,8 +127,8 @@ export function LoginPrompt(props: LoginPromptProps) {
                 {/* Header */}
                 <div className="text-center space-y-2">
                     <MatemindMark className="mx-auto mb-4 h-14 w-14 text-[var(--social-fg)]" />
-                    <div className="text-[20px] font-semibold text-[var(--social-fg)]">{title}</div>
-                    <div className="text-[15px] text-[var(--social-fg-muted)]">
+                    <div className="text-title font-semibold text-[var(--social-fg)]">{title}</div>
+                    <div className="text-body text-[var(--social-fg-muted)]">
                         {subtitle}
                     </div>
                 </div>
@@ -147,7 +147,7 @@ export function LoginPrompt(props: LoginPromptProps) {
                     />
 
                     {displayError && (
-                        <div className="text-center text-[13px] text-[var(--social-danger)]">
+                        <div className="text-center text-footnote text-[var(--social-danger)]">
                             {displayError}
                         </div>
                     )}
@@ -171,7 +171,7 @@ export function LoginPrompt(props: LoginPromptProps) {
 
                 {/* Help links */}
                 {!isBindMode && (
-                    <div className="flex items-center justify-between text-[13px] text-[var(--social-fg-muted)]">
+                    <div className="flex items-center justify-between text-footnote text-[var(--social-fg-muted)]">
                         <a href="https://matemind.ai/docs" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline hover:text-[var(--social-fg)]">
                             {t('login.help')}
                         </a>
@@ -189,7 +189,7 @@ export function LoginPrompt(props: LoginPromptProps) {
                                     </DialogDescription>
                                 </DialogHeader>
                                 <form onSubmit={handleSaveServer} className="space-y-4">
-                                    <div className="text-[12px] text-[var(--social-fg-muted)]">
+                                    <div className="text-caption text-[var(--social-fg-muted)]">
                                         {t('login.server.current')} {serverSummary}
                                     </div>
                                     <FormField label={t('login.server.origin')} htmlFor={serverInputId} hint={t('login.server.hint')}>
@@ -207,7 +207,7 @@ export function LoginPrompt(props: LoginPromptProps) {
                                     </FormField>
 
                                     {serverError && (
-                                        <div className="text-[13px] text-[var(--social-danger)]">
+                                        <div className="text-footnote text-[var(--social-danger)]">
                                             {serverError}
                                         </div>
                                     )}
@@ -230,7 +230,7 @@ export function LoginPrompt(props: LoginPromptProps) {
             </div>
 
             {/* Footer */}
-            <div className="absolute bottom-4 left-0 right-0 text-center text-[12px] text-[var(--social-fg-muted)] space-y-1">
+            <div className="absolute bottom-4 left-0 right-0 text-center text-caption text-[var(--social-fg-muted)] space-y-1">
                 <div>{t('login.footer')}</div>
                 <div>{t('login.footer.copyright')} {new Date().getFullYear()} Matemind</div>
             </div>

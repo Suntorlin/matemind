@@ -4,6 +4,8 @@ import type {
     MemoriesResponse,
     MemoryCaptureSettings,
     MemoryHit,
+    MemoryMergePreview,
+    MemoryRelatedHit,
     MemoryItem,
     MemoryMaintainResult,
     MemoryLevel,
@@ -37,8 +39,10 @@ import type {
     ExperimentalSettingsResponse,
     ReportDomainResponse,
     ProjectOfflineSettingsResponse,
-    SessionTask,
-    SessionTasksResponse,
+    TaskConfirmInput,
+    TaskStatus,
+    TaskView,
+    TasksResponse,
     NewSessionDefaults,
     NewSessionDefaultsResponse,
     UpdateMemoryResponse,
@@ -251,6 +255,7 @@ export class ApiClient {
         description?: string | null
         noteSessionId?: string | null
         notePrompt?: string | null
+        archived?: boolean
     }): Promise<UpdateGroupResponse> {
         return await this.request<UpdateGroupResponse>(
             `/api/groups/${encodeURIComponent(groupId)}`,
@@ -439,12 +444,24 @@ export class ApiClient {
         return await this.request<{ hits: MemoryHit[] }>(`/api/memories/search?q=${encodeURIComponent(query)}&limit=20`)
     }
 
-    async relatedMemories(id: string): Promise<{ hits: MemoryHit[] }> {
-        return await this.request<{ hits: MemoryHit[] }>(`/api/memories/${encodeURIComponent(id)}/related`)
+    async relatedMemories(id: string): Promise<{ hits: MemoryRelatedHit[] }> {
+        return await this.request<{ hits: MemoryRelatedHit[] }>(`/api/memories/${encodeURIComponent(id)}/related`)
     }
 
-    async mergeMemoryItem(id: string, into: string): Promise<{ memory: MemoryItem }> {
-        return await this.request<{ memory: MemoryItem }>(`/api/memories/${encodeURIComponent(id)}/merge`, { method: 'POST', body: JSON.stringify({ into }) })
+    async previewMemoryMerge(ids: string[]): Promise<MemoryMergePreview> {
+        return await this.request<MemoryMergePreview>('/api/memories/merge/preview', { method: 'POST', body: JSON.stringify({ ids }) })
+    }
+
+    async mergeMemories(ids: string[], text?: string): Promise<{ memory: MemoryItem; eventId: string }> {
+        return await this.request<{ memory: MemoryItem; eventId: string }>('/api/memories/merge', { method: 'POST', body: JSON.stringify({ ids, ...(text ? { text } : {}) }) })
+    }
+
+    async undoMemoryMerge(eventId: string): Promise<{ memory: MemoryItem }> {
+        return await this.request<{ memory: MemoryItem }>(`/api/memories/merge/${encodeURIComponent(eventId)}/undo`, { method: 'POST', body: JSON.stringify({}) })
+    }
+
+    async archiveMemories(ids: string[]): Promise<{ archived: number }> {
+        return await this.request<{ archived: number }>('/api/memories/archive', { method: 'POST', body: JSON.stringify({ ids }) })
     }
 
     async maintainMemories(): Promise<MemoryMaintainResult> {
@@ -475,6 +492,7 @@ export class ApiClient {
         claudeLoginShell?: boolean
         codexReportPromptEnabled?: boolean
         previewEnabled?: boolean
+        alwaysYolo?: boolean
     }): Promise<ExperimentalSettingsResponse> {
         return await this.request<ExperimentalSettingsResponse>('/api/settings/experimental', {
             method: 'PATCH',
@@ -704,6 +722,13 @@ export class ApiClient {
 
     async moveCodexQueueItem(sessionId: string, id: string, toIndex: number): Promise<QueueResponse> {
         return await this.moveQueueItem(sessionId, id, toIndex)
+    }
+
+    async updateQueueItem(sessionId: string, id: string, text: string): Promise<QueueResponse> {
+        return await this.request<QueueResponse>(`/api/sessions/${encodeURIComponent(sessionId)}/queue/update`, {
+            method: 'POST',
+            body: JSON.stringify({ id, text })
+        })
     }
 
     async clearQueue(sessionId: string): Promise<QueueResponse> {
@@ -1065,28 +1090,119 @@ export class ApiClient {
         })
     }
 
-    async getSessionTasks(): Promise<SessionTasksResponse> {
-        return await this.request<SessionTasksResponse>('/api/session-tasks')
+    async getTasks(): Promise<TasksResponse> {
+        return await this.request<TasksResponse>('/api/tasks')
     }
 
-    async createSessionTask(input: { tag: string; title: string }): Promise<SessionTask> {
-        const result = await this.request<{ task: SessionTask }>('/api/session-tasks', {
-            method: 'POST',
-            body: JSON.stringify(input)
-        })
+    async getTask(taskId: string): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}`)
         return result.task
     }
 
-    async updateSessionTask(taskId: string, patch: { title?: string; status?: SessionTask['status'] }): Promise<SessionTask> {
-        const result = await this.request<{ task: SessionTask }>(`/api/session-tasks/${encodeURIComponent(taskId)}`, {
+    /** Creates a task in the guide step; the planner starts in the background. */
+    async createTask(input: {
+        text: string
+        tag?: string
+        draft?: boolean
+        fromSessionId?: string
+        machineId?: string
+        directory?: string
+        files?: Array<{ filename: string; mimeType: string; content: string }>
+        /** Defaults for every session the task starts. */
+        settings?: { model?: string; thinkEffort?: 'auto' | 'low' | 'medium' | 'high' | 'max' | 'xhigh'; permissionMode?: PermissionMode }
+    }): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>('/api/tasks', { method: 'POST', body: JSON.stringify(input) })
+        return result.task
+    }
+
+    /** A file the user attached when creating the task, with its bytes in base64. */
+    async getTaskFile(taskId: string, index: number): Promise<{ filename: string; mimeType: string; content: string }> {
+        const result = await this.request<{ file: { filename: string; mimeType: string; content: string } }>(
+            `/api/tasks/${encodeURIComponent(taskId)}/files/${index}`
+        )
+        return result.file
+    }
+
+    async updateTask(taskId: string, patch: { name?: string; tag?: string; status?: TaskStatus }): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}`, {
             method: 'PATCH',
             body: JSON.stringify(patch)
         })
         return result.task
     }
 
-    async deleteSessionTask(taskId: string): Promise<void> {
-        await this.request(`/api/session-tasks/${encodeURIComponent(taskId)}`, { method: 'DELETE' })
+    async deleteTask(taskId: string): Promise<void> {
+        await this.request(`/api/tasks/${encodeURIComponent(taskId)}`, { method: 'DELETE' })
+    }
+
+    async reviseTaskDraft(taskId: string, text: string): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}/revise`, {
+            method: 'POST',
+            body: JSON.stringify({ text })
+        })
+        return result.task
+    }
+
+    async askTaskDecision(taskId: string, decisionId: string, text: string): Promise<{ to: string; task: TaskView }> {
+        return await this.request<{ to: string; task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}/decisions/${encodeURIComponent(decisionId)}/ask`, {
+            method: 'POST',
+            body: JSON.stringify({ text })
+        })
+    }
+
+    async answerTaskDecision(taskId: string, decisionId: string, label: string): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}/decisions/${encodeURIComponent(decisionId)}`, {
+            method: 'POST',
+            body: JSON.stringify({ label })
+        })
+        return result.task
+    }
+
+    async restartTaskSubtask(taskId: string, subtaskId: string): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}/subtasks/${encodeURIComponent(subtaskId)}/restart`, { method: 'POST', body: '{}' })
+        return result.task
+    }
+
+    async reopenTask(taskId: string): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}/reopen`, { method: 'POST' })
+        return result.task
+    }
+
+    async taskVerdict(taskId: string, input: { approved: boolean; text?: string }): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}/verdict`, {
+            method: 'POST',
+            body: JSON.stringify(input)
+        })
+        return result.task
+    }
+
+    async confirmTask(taskId: string, input: TaskConfirmInput): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}/confirm`, {
+            method: 'POST',
+            body: JSON.stringify(input)
+        })
+        return result.task
+    }
+
+    async retryTaskGuide(taskId: string): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}/retry`, { method: 'POST', body: '{}' })
+        return result.task
+    }
+
+    async addTaskMember(taskId: string, sessionId: string): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(`/api/tasks/${encodeURIComponent(taskId)}/members`, {
+            method: 'POST',
+            body: JSON.stringify({ sessionId })
+        })
+        return result.task
+    }
+
+    async removeTaskMember(taskId: string, sessionId: string): Promise<TaskView> {
+        const result = await this.request<{ task: TaskView }>(
+            `/api/tasks/${encodeURIComponent(taskId)}/members/${encodeURIComponent(sessionId)}`,
+            { method: 'DELETE' }
+        )
+        return result.task
     }
 
     async updateSessionTags(sessionId: string, tags: string[]): Promise<string[]> {
@@ -1195,6 +1311,57 @@ export class ApiClient {
         return await this.request(`/api/review-loops/${encodeURIComponent(loopId)}/continue`, {
             method: 'POST',
             body: JSON.stringify(options ?? {})
+        })
+    }
+
+    // ---- Scheduled task API ----
+
+    async getSchedules(): Promise<import('../types/api').SchedulesResponse> {
+        return await this.request('/api/schedules')
+    }
+
+    async getSchedule(scheduleId: string): Promise<import('../types/api').ScheduleDetailResponse> {
+        return await this.request(`/api/schedules/${encodeURIComponent(scheduleId)}`)
+    }
+
+    async createSchedule(input: import('../types/api').ScheduledTaskInput): Promise<{ schedule: import('../types/api').ScheduledTask }> {
+        return await this.request('/api/schedules', {
+            method: 'POST',
+            body: JSON.stringify(input)
+        })
+    }
+
+    async updateSchedule(scheduleId: string, patch: import('../types/api').ScheduledTaskPatch): Promise<{ schedule: import('../types/api').ScheduledTask }> {
+        return await this.request(`/api/schedules/${encodeURIComponent(scheduleId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify(patch)
+        })
+    }
+
+    async deleteSchedule(scheduleId: string): Promise<{ ok: true }> {
+        return await this.request(`/api/schedules/${encodeURIComponent(scheduleId)}`, {
+            method: 'DELETE'
+        })
+    }
+
+    /** 409 when the previous run is still open or the machine is offline. */
+    async runScheduleNow(scheduleId: string): Promise<{ run: import('../types/api').ScheduledRun }> {
+        return await this.request(`/api/schedules/${encodeURIComponent(scheduleId)}/run`, {
+            method: 'POST'
+        })
+    }
+
+    async getDictationStatus(): Promise<{ available: boolean; model?: string }> {
+        return await this.request('/api/voice/dictation')
+    }
+
+    async transcribeAudio(audio: Blob, options?: { hotwords?: string[] }): Promise<{ text: string; audioSeconds?: number }> {
+        const hotwords = options?.hotwords?.filter(Boolean) ?? []
+        const query = hotwords.length > 0 ? `?hotwords=${encodeURIComponent(hotwords.join(','))}` : ''
+        return await this.request(`/api/voice/transcribe${query}`, {
+            method: 'POST',
+            headers: { 'content-type': audio.type || 'application/octet-stream' },
+            body: audio
         })
     }
 

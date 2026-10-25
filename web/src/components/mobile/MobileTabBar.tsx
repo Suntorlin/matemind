@@ -4,58 +4,19 @@ import { useSessions } from '@/hooks/queries/useSessions'
 import { usePlatform } from '@/hooks/usePlatform'
 import { CountBadge } from '@/components/ui/badge'
 import { IconButton } from '@/components/ui/IconButton'
+import { ChatsIcon, GroupsIcon, MeIcon, MemoryIcon, ScheduledIcon } from '@/components/mobile/icons'
 import { useAppContext } from '@/lib/app-context'
 import { useTranslation } from '@/lib/use-translation'
 import { cn } from '@/lib/utils'
 import { MatemindMark } from '@/components/brand/MatemindMark'
 
-export type MobileTab = 'sessions' | 'groups' | 'memory' | 'settings'
+export type MobileTab = 'sessions' | 'groups' | 'memory' | 'scheduled' | 'settings'
 
-function ChatsIcon(props: { filled: boolean }) {
-    return (
-        <svg viewBox="0 0 24 24" className="h-[25px] w-[25px]" fill={props.filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={props.filled ? 0 : 1.7} strokeLinejoin="round" aria-hidden="true">
-            <path d="M12 3.5c-4.97 0-9 3.47-9 7.75 0 2.33 1.2 4.42 3.09 5.84-.13 1.17-.62 2.33-1.44 3.25 1.9-.12 3.56-.8 4.73-1.73.84.25 1.72.39 2.62.39 4.97 0 9-3.47 9-7.75S16.97 3.5 12 3.5z" />
-        </svg>
-    )
-}
-
-function GroupsIcon(props: { filled: boolean }) {
-    return (
-        <svg viewBox="0 0 24 24" className="h-[25px] w-[25px]" fill={props.filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={props.filled ? 0 : 1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="9" cy="8.5" r="3.5" />
-            <path d="M2.5 19.5c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5z" />
-            <circle cx="16.8" cy="9.2" r="2.7" />
-            <path d="M16.6 13.6c2.6.1 4.4 1.9 4.9 4.9h-4.1" />
-        </svg>
-    )
-}
-
-function MemoryIcon(props: { filled: boolean }) {
-    return (
-        <svg viewBox="0 0 24 24" className="h-[25px] w-[25px]" fill="none" stroke="currentColor" strokeWidth={props.filled ? 2.2 : 1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="5" r="2.2" fill={props.filled ? 'currentColor' : 'none'} />
-            <circle cx="5.5" cy="12.5" r="2.2" />
-            <circle cx="18.5" cy="12.5" r="2.2" />
-            <circle cx="9" cy="19.5" r="2" />
-            <circle cx="15" cy="19.5" r="2" />
-            <path d="M10.5 6.6 6.9 10.6M13.5 6.6l3.6 4M6.6 14.5l1.7 3.1M17.4 14.5l-1.7 3.1" />
-        </svg>
-    )
-}
-
-function MeIcon(props: { filled: boolean }) {
-    return (
-        <svg viewBox="0 0 24 24" className="h-[25px] w-[25px]" fill={props.filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={props.filled ? 0 : 1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="8" r="4" />
-            <path d="M4 20.5c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5z" />
-        </svg>
-    )
-}
-
-const TAB_ROUTES: Record<MobileTab, '/sessions' | '/groups' | '/memory' | '/settings'> = {
+const TAB_ROUTES: Record<MobileTab, '/sessions' | '/groups' | '/memory' | '/scheduled' | '/settings'> = {
     sessions: '/sessions',
     groups: '/groups',
     memory: '/memory',
+    scheduled: '/scheduled',
     settings: '/settings'
 }
 
@@ -67,6 +28,7 @@ function useNavTabs(sessionsBadge?: number): NavTab[] {
         { key: 'sessions', label: t('mobile.tab.sessions'), icon: (filled) => <ChatsIcon filled={filled} />, badge: sessionsBadge },
         { key: 'groups', label: t('mobile.tab.groups'), icon: (filled) => <GroupsIcon filled={filled} /> },
         { key: 'memory', label: t('mobile.tab.memory'), icon: (filled) => <MemoryIcon filled={filled} /> },
+        { key: 'scheduled', label: t('mobile.tab.scheduled'), icon: (filled) => <ScheduledIcon filled={filled} /> },
         { key: 'settings', label: t('mobile.tab.me'), icon: (filled) => <MeIcon filled={filled} /> }
     ]
 }
@@ -115,8 +77,9 @@ export function MobileTabBar(props: { active: MobileTab; sessionsBadge?: number 
 
 function getActiveTab(pathname: string): MobileTab {
     if (pathname.startsWith('/groups')) return 'groups'
-    // Loops moved under 我 (settings): its pages light that tab.
+    // Review loops have no entry of their own any more; their pages light 我 (settings).
     if (pathname.startsWith('/review-loops')) return 'settings'
+    if (pathname.startsWith('/scheduled')) return 'scheduled'
     if (pathname.startsWith('/memory')) return 'memory'
     if (pathname.startsWith('/settings')) return 'settings'
     return 'sessions'
@@ -157,15 +120,13 @@ export function DesktopNavRail() {
 
     return (
         <nav className="flex h-full w-[72px] shrink-0 flex-col items-center border-r border-[var(--social-border)] bg-[var(--social-surface)] pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
-            <button
-                type="button"
+            <IconButton
+                label="Matemind"
                 onClick={() => navigate({ to: '/sessions' })}
-                className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl text-[var(--social-fg)] [-webkit-tap-highlight-color:transparent]"
-                aria-label="Matemind"
-                title="Matemind"
+                className="mb-6 rounded-xl text-[var(--social-fg)]"
             >
                 <MatemindMark className="h-8 w-8" small />
-            </button>
+            </IconButton>
             <div className="flex flex-col items-center gap-2">
                 {tabs.filter((tab) => tab.key !== 'settings').map(renderTab)}
             </div>
@@ -188,11 +149,11 @@ export function MobilePageHeader(props: {
         <header className="social-bar relative z-20 shrink-0 pt-[env(safe-area-inset-top)]">
             <div className={cn('mx-auto flex h-[54px] items-center gap-2 pr-3 lg:h-[68px]', props.contentWidth ? 'max-w-content pl-3' : 'max-w-xl pl-5')}>
                 <div className="min-w-0 flex-1">
-                    <div className="truncate text-[20px] font-semibold leading-none tracking-[-0.035em] text-[var(--social-fg)]">
+                    <div className="truncate text-title font-semibold leading-none tracking-[-0.035em] text-[var(--social-fg)]">
                         {props.title}
                     </div>
                     {props.subtitle ? (
-                        <div className="mt-1 truncate text-[12px] leading-none text-[var(--social-fg-muted)]">
+                        <div className="mt-1 truncate text-caption leading-none text-[var(--social-fg-muted)]">
                             {props.subtitle}
                         </div>
                     ) : null}
@@ -207,14 +168,3 @@ export function MobilePageHeader(props: {
     )
 }
 
-export function MobileHeaderIconButton(props: { label: string; onClick: () => void; children: ReactNode; active?: boolean }) {
-    return (
-        <IconButton
-            label={props.label}
-            onClick={props.onClick}
-            className={cn('text-[var(--social-fg)]', props.active ? 'bg-[var(--social-muted)]' : '')}
-        >
-            {props.children}
-        </IconButton>
-    )
-}

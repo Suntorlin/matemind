@@ -1,4 +1,7 @@
-import type { ClaudeAccountSelection, ClaudeAccountPoolView } from '@matemind/protocol/schemas'
+import { randomUUID } from 'node:crypto'
+import { join } from 'node:path'
+import type { AttachmentMetadata, ClaudeAccountSelection, ClaudeAccountPoolView } from '@matemind/protocol/schemas'
+import { ClaudeAccountPoolSchema } from '@matemind/protocol/schemas'
 /**
  * Sync Engine for Matemind Telegram Bot (Direct Connect)
  *
@@ -36,7 +39,14 @@ import {
 } from './rpcGateway'
 import { SessionCache } from './sessionCache'
 import { MemoryService, type MemoryNotice } from '../memory/service'
+import { TaskService, type TaskSession, type TaskSessionSettings } from '../tasks/taskService'
+import { ACCOUNT_NOTE, SCHEDULE_TICK_MS, ScheduleService, type ScheduleAlert, type ScheduleSpawnInput, type ScheduleSpawnResult } from '../schedules/scheduleService'
+import { TaskFiles, type TaskFileContent } from '../tasks/taskFiles'
+import { LoadService } from '../tasks/loadService'
+import { sessionActivity } from '../tasks/sessionActivity'
+import { resolveJevApiKey } from '../memory/jev'
 import { configuration } from '../configuration'
+import { readSettings } from '../config/settings'
 
 export type { Session, SyncEvent } from '@matemind/protocol/types'
 export type { Machine } from './machineCache'
@@ -102,6 +112,10 @@ const MAX_NOTE_REFRESH_CONTENT_LENGTH = 20_000
 const MAX_GROUP_MIRROR_TEXT_LENGTH = 8_000
 const GROUP_NOTE_FILE_SYNC_INTERVAL_MS = 3 * 60 * 1000
 const MEMORY_HARVEST_INTERVAL_MS = 15 * 60 * 1000
+/** How often the task observer looks at running tasks. */
+const TASK_OBSERVER_INTERVAL_MS = 20 * 1000
+/** A task file's first message shows an inline preview for images up to this size; larger ones show as a file. */
+const PREVIEW_MAX_BYTES = 1024 * 1024
 const MEMORY_HARVEST_FIRST_DELAY_MS = 60 * 1000
 const CODEX_TOOL_PROCESS_EVENT_TYPES = new Set([
     'tool-call',
@@ -471,7 +485,15 @@ export class SyncEngine {
     private memoryHarvestTimer: NodeJS.Timeout | null = null
     private memoryHarvestKickoff: NodeJS.Timeout | null = null
     private readonly memoryService: MemoryService
+    private readonly taskService: TaskService
+    private readonly loadService: LoadService
     private memoryNotifier: ((namespace: string, notice: MemoryNotice) => Promise<void>) | null = null
+    private pushNotifier: ((namespace: string, notice: { title: string; body: string; url: string; tag: string }) => Promise<void>) | null = null
+    private reportShareBase: string | null = null
+    private alertNotifier: ((namespace: string, alert: ScheduleAlert) => Promise<void>) | null = null
+    private taskObserverTimer: NodeJS.Timeout | null = null
+    private readonly scheduleService: ScheduleService
+    private scheduleTimer: NodeJS.Timeout | null = null
 
     constructor(
         store: Store,
@@ -517,9 +539,135 @@ export class SyncEngine {
             onChange: (namespace) => this.eventPublisher.emit({ type: 'memories-updated', namespace }),
             notify: async (namespace, notice) => { await this.memoryNotifier?.(namespace, notice) }
         })
+        this.loadService = new LoadService(store, {
+            jevKey: async () => resolveJevApiKey((await this.memoryService.getSettings()).jevApiKey),
+            goals: (namespace) => {
+                const goals = new Map<string, string>()
+                for (const task of this.taskService.list(namespace)) {
+                    if (!task.goal) continue
+                    for (const member of task.members) goals.set(member.sessionId, task.goal)
+                }
+                return goals
+            }
+        })
+        this.taskService = new TaskService(store, this.memoryService, {
+            planner: {
+                spawnAndPrompt: async (input) => {
+                    const task = this.taskSpawn(input.meta, input.machineId)
+                    const result = await this.spawnAndPrompt(input.machineId, input.directory, task.options({}), task.prompt(input))
+                    if (result.type === 'error') return { error: result.message }
+                    await this.renameSession(result.sessionId, input.name).catch(() => {})
+                    await this.setSessionTags(result.sessionId, input.tags).catch(() => {})
+                    return { sessionId: result.sessionId }
+                },
+                send: async (sessionId, text, meta) => {
+                    if (!this.getSession(sessionId)?.active) return false
+                    await this.sendMessage(sessionId, { text, sentFrom: 'webapp', meta })
+                    return true
+                }
+            },
+            session: (namespace, sessionId) => {
+                const session = this.getSessionByNamespace(sessionId, namespace)
+                return session ? toTaskSession(session) : null
+            },
+            sessions: (namespace) => this.getSessionsByNamespace(namespace).map(toTaskSession),
+            machineOnline: (namespace, machineId) => this.machineCache.getOnlineMachinesByNamespace(namespace).some((machine) => machine.id === machineId),
+            changed: (namespace, taskId) => this.eventPublisher.emit({ type: 'task-updated', namespace, groupId: taskId }),
+            files: new TaskFiles(() => join(configuration.dataDir, 'task-files')),
+            stopSession: async (_namespace, sessionId) => { await this.archiveSession(sessionId) },
+            run: {
+                spawnWorker: async (input) => {
+                    const task = this.taskSpawn(input.meta, input.machineId)
+                    const result = await this.spawnAndPrompt(input.machineId, input.directory, task.options({
+                        yolo: true, sessionType: input.worktreeName ? 'worktree' : 'simple', worktreeName: input.worktreeName
+                    }), task.prompt(input))
+                    if (result.type === 'error') return { error: result.message }
+                    await this.renameSession(result.sessionId, input.name).catch(() => {})
+                    await this.setSessionTags(result.sessionId, input.tags).catch(() => {})
+                    return { sessionId: result.sessionId }
+                },
+                spawnLead: async (input) => {
+                    const task = this.taskSpawn(input.meta, input.machineId)
+                    const result = await this.spawnAndPrompt(input.machineId, input.directory, task.options({}), task.prompt(input))
+                    if (result.type === 'error') return { error: result.message }
+                    await this.renameSession(result.sessionId, input.name).catch(() => {})
+                    await this.setSessionTags(result.sessionId, input.tags).catch(() => {})
+                    return { sessionId: result.sessionId }
+                },
+                send: async (sessionId, text, meta) => {
+                    if (!this.getSession(sessionId)?.active) return false
+                    await this.sendMessage(sessionId, { text, sentFrom: 'webapp', meta })
+                    return true
+                },
+                resume: async (namespace, sessionId) => {
+                    const result = await this.resumeSession(sessionId, namespace)
+                    return result.type === 'success' ? result.sessionId : null
+                },
+                session: (namespace, sessionId) => {
+                    const session = this.getSessionByNamespace(sessionId, namespace)
+                    if (!session) return null
+                    const worktree = session.metadata?.worktree
+                    return {
+                        id: session.id,
+                        active: session.active,
+                        thinking: session.thinking,
+                        path: session.metadata?.path ?? null,
+                        worktree: worktree ? { branch: worktree.branch, path: worktree.worktreePath ?? session.metadata?.path ?? null } : null,
+                        pendingRequests: Object.entries(session.agentState?.requests ?? {}).map(([id, request]) => {
+                            const args = request.arguments as { command?: unknown; file_path?: unknown } | null
+                            const detail = typeof args?.command === 'string' ? args.command : typeof args?.file_path === 'string' ? args.file_path : ''
+                            return { id, tool: request.tool, detail: detail.slice(0, 200), args: request.arguments }
+                        })
+                    }
+                },
+                activity: (sessionId, since) => sessionActivity(this.store.messages.getMessages(sessionId, 60), since),
+                approve: async (sessionId, requestId) => { await this.approvePermission(sessionId, requestId, undefined, undefined, 'approved', undefined, undefined, 'auto') },
+                push: async (namespace, notice) => { await this.pushNotifier?.(namespace, { ...notice, tag: `task:${notice.url}` }) },
+                createReport: (namespace, input) => {
+                    const report = this.store.reports.createReport({ namespace, title: input.title, markdown: input.markdown, status: 'final' })
+                    const share = this.store.reports.createShare({ reportId: report.id, namespace, createdBy: 'system:task' })
+                    return { shareUrl: this.reportShareBase ? `${this.reportShareBase}/share/r/${encodeURIComponent(share.token)}` : null }
+                }
+            },
+            timeline: (namespace, taskId, text, extra) => {
+                void this.groupService.addTimelineMessage({ groupId: taskId, namespace, type: 'system', source: 'system:task', payload: { text, ...extra } })
+                    .catch((error) => console.error('[Tasks] timeline line failed', error))
+            },
+            load: (namespace, sessionIds, since) => this.loadService.taskLoad(namespace, sessionIds, since)
+        })
+        this.scheduleService = new ScheduleService(store, {
+            spawn: (input) => this.spawnScheduledRun(input),
+            session: (namespace, sessionId) => {
+                const session = this.getSessionByNamespace(sessionId, namespace)
+                if (!session) return null
+                return {
+                    active: session.active,
+                    thinking: session.thinking,
+                    pendingRequests: Object.keys(session.agentState?.requests ?? {}).length
+                }
+            },
+            lastActivity: (sessionId) => {
+                const last = sessionActivity(this.store.messages.getMessages(sessionId, 20), 0).lastMessageAt
+                return last > 0 ? last : null
+            },
+            machineOnline: (namespace, machineId) => this.machineCache.getOnlineMachinesByNamespace(namespace).some((machine) => machine.id === machineId),
+            archive: async (sessionId) => { await this.archiveSession(sessionId) },
+            changed: (namespace, scheduleId) => this.eventPublisher.emit({ type: 'schedule-updated', namespace, scheduleId }),
+            alert: async (namespace, alert) => {
+                if (this.alertNotifier) {
+                    await this.alertNotifier(namespace, alert)
+                } else {
+                    await this.pushNotifier?.(namespace, { title: alert.title, body: alert.body, url: alert.url, tag: `schedule:${alert.url}` })
+                }
+            }
+        })
         if (store.getDatabasePath() !== ':memory:') {
+            this.scheduleTimer = setInterval(() => {
+                void this.scheduleService.tick().catch((error: unknown) => console.warn('[Schedules] tick failed', error))
+            }, SCHEDULE_TICK_MS)
             this.memoryHarvestKickoff = setTimeout(() => this.harvestMemories(), MEMORY_HARVEST_FIRST_DELAY_MS)
             this.memoryHarvestTimer = setInterval(() => this.harvestMemories(), MEMORY_HARVEST_INTERVAL_MS)
+            this.taskObserverTimer = setInterval(() => this.observeTasks(), TASK_OBSERVER_INTERVAL_MS)
         }
     }
 
@@ -527,15 +675,51 @@ export class SyncEngine {
         return this.memoryService
     }
 
+    getTaskService(): TaskService {
+        return this.taskService
+    }
+
+    getScheduleService(): ScheduleService {
+        return this.scheduleService
+    }
+
+    getLoadService(): LoadService {
+        return this.loadService
+    }
+
     /** The hub hands in push delivery once it exists; the engine is created first. */
     setMemoryNotifier(notifier: (namespace: string, notice: MemoryNotice) => Promise<void>): void {
         this.memoryNotifier = notifier
+    }
+
+    /** Push to the user's devices; the task run uses it when the user has to step in. */
+    setPushNotifier(notifier: (namespace: string, notice: { title: string; body: string; url: string; tag: string }) => Promise<void>): void {
+        this.pushNotifier = notifier
+    }
+
+    /** Scheduled-run results: a failure goes to every channel (push, Telegram, webhook), a success to push only. */
+    setAlertNotifier(notifier: (namespace: string, alert: ScheduleAlert) => Promise<void>): void {
+        this.alertNotifier = notifier
+    }
+
+    /** Public base URL of report share links (task reports). */
+    setReportShareBase(base: string): void {
+        this.reportShareBase = base.replace(/\/$/, '')
+    }
+
+    private observeTasks(): void {
+        const runs = this.taskService.runs
+        if (!runs) return
+        for (const namespace of this.store.groups.getActiveTaskNamespaces()) {
+            void runs.tick(namespace).catch((error: unknown) => console.warn('[Tasks] observer failed', error))
+        }
     }
 
     private harvestMemories(): void {
         void this.memoryService.harvestClaude()
             .then(() => this.memoryService.readUserMessages())
             .then(() => this.memoryService.maintain())
+            .then(() => this.loadService.classifyRecent())
             .catch((error: unknown) => {
                 const message = error instanceof Error ? error.message : String(error)
                 console.warn(`[SyncEngine] Memory harvest failed: ${message}`)
@@ -558,6 +742,14 @@ export class SyncEngine {
         if (this.memoryHarvestTimer) {
             clearInterval(this.memoryHarvestTimer)
             this.memoryHarvestTimer = null
+        }
+        if (this.taskObserverTimer) {
+            clearInterval(this.taskObserverTimer)
+            this.taskObserverTimer = null
+        }
+        if (this.scheduleTimer) {
+            clearInterval(this.scheduleTimer)
+            this.scheduleTimer = null
         }
     }
 
@@ -693,7 +885,36 @@ export class SyncEngine {
         targetSessionIds?: string[] | null
         quotedMessageId?: string | null
     }) {
-        return this.groupService.addTimelineMessage(options)
+        const result = await this.groupService.addTimelineMessage(options)
+        await this.taskFromChat(options)
+        return result
+    }
+
+    /**
+     * What the user says in a task's group without an @ goes to the task, so the task page's composer always reaches
+     * someone: in the guide step to the planner as a change request, while it runs to the sessions working now.
+     */
+    private async taskFromChat(options: { groupId: string; namespace: string; type: string; payload: unknown; source?: string; actorSessionId?: string | null }): Promise<void> {
+        if (options.type !== 'chat' || options.actorSessionId || !(options.source ?? 'user:web').startsWith('user:')) return
+        const text = options.payload && typeof options.payload === 'object' && typeof (options.payload as { text?: unknown }).text === 'string'
+            ? (options.payload as { text: string }).text.trim()
+            : ''
+        if (!text) return
+        const task = this.taskService.kernel.get(options.namespace, options.groupId)
+        if (task?.status === 'guiding') {
+            await this.taskService.revise(options.namespace, options.groupId, text)
+            return
+        }
+        // An @ already routes the message to the named sessions.
+        if (task?.status === 'active' && !/\B@[A-Za-z0-9._:-]+/.test(text)) {
+            await this.taskService.runs?.userMessage(options.namespace, options.groupId, text).catch(() => {})
+        }
+    }
+
+    /** A resumed session that came back under a new id takes over the old one's rows and task roles. */
+    private async mergeSessions(oldSessionId: string, newSessionId: string, namespace: string): Promise<void> {
+        this.taskService.sessionReplaced(namespace, oldSessionId, newSessionId)
+        await this.sessionCache.mergeSessions(oldSessionId, newSessionId, namespace)
     }
 
     getGroupNote(groupId: string, namespace: string) {
@@ -748,8 +969,12 @@ export class SyncEngine {
         name?: string
         description?: string | null
         noteSessionId?: string | null
+        archived?: boolean
     }): GroupWithDetails {
-        return this.groupService.updateGroup(options)
+        const updated = this.groupService.updateGroup(options)
+        // An archived task stops its sessions; the observer leaves it alone until it is brought back.
+        if (options.archived && updated.group.kind === 'task') void this.taskService.archived(options.namespace, options.groupId)
+        return updated
     }
 
     deleteGroup(namespace: string, groupId: string, actorMachineId?: string): void {
@@ -1841,6 +2066,8 @@ ${note.content}
         sourceClaudeAccountId?: string
     ): Promise<{ type: 'success'; sessionId: string } | { type: 'error'; message: string }> {
         const resolvedAgent = agent ?? this.inferSpawnFlavor(machineId, directory)
+        // The system switch overrides each caller: the task lead, a resume, the new-session form.
+        if (await this.alwaysYolo()) yolo = true
         const result = await this.rpcGateway.spawnSession(
             machineId,
             directory,
@@ -1918,7 +2145,7 @@ ${note.content}
         )
         if (result.type !== 'success') return result
         if (!await this.waitForSessionActive(result.sessionId)) return { type: 'error', message: '切换后的会话未能启动' }
-        if (result.sessionId !== session.id) await this.sessionCache.mergeSessions(session.id, result.sessionId, namespace)
+        if (result.sessionId !== session.id) await this.mergeSessions(session.id, result.sessionId, namespace)
         return result
     }
 
@@ -2284,9 +2511,9 @@ ${note.content}
 
         // A woken session must come back with the settings it was started with, not the defaults.
         const { model, thinkEffort, serviceTier } = this.readSpawnPreferences(metadata, flavor)
-        const yolo = session.permissionMode !== undefined
+        const yolo = await this.alwaysYolo() || (session.permissionMode !== undefined
             && YOLO_PERMISSION_MODES.has(session.permissionMode)
-            && isPermissionModeAllowedForFlavor(session.permissionMode, flavor)
+            && isPermissionModeAllowedForFlavor(session.permissionMode, flavor))
 
         const spawn = async (resumeSessionId?: string) => await this.rpcGateway.spawnSession(
             targetMachine.id,
@@ -2320,7 +2547,7 @@ ${note.content}
 
         if (spawnResult.sessionId !== access.sessionId) {
             try {
-                await this.sessionCache.mergeSessions(access.sessionId, spawnResult.sessionId, namespace)
+                await this.mergeSessions(access.sessionId, spawnResult.sessionId, namespace)
             } catch (error) {
                 const message = error instanceof Error ? error.message : 'Failed to merge resumed session'
                 return { type: 'error', message, code: 'resume_failed' }
@@ -2328,6 +2555,203 @@ ${note.content}
         }
 
         return { type: 'success', sessionId: spawnResult.sessionId }
+    }
+
+    /**
+     * Starts a session and sends it a first message once it runs. The message is stored like one from the web, with
+     * `meta`, so memory can tell it is not the user's.
+     */
+    /** The system switch "every session in YOLO" (settings.json `alwaysYolo`); on unless the user turned it off. */
+    async alwaysYolo(): Promise<boolean> {
+        try {
+            const settings = await readSettings(configuration.settingsFile)
+            return settings !== null && settings.alwaysYolo !== false
+        } catch {
+            // No readable settings (e.g. not configured): each caller's own choice stands.
+            return false
+        }
+    }
+
+    /** The switch was turned on: sessions already running switch to YOLO too. Returns how many did. */
+    async yoloRunningSessions(namespace: string): Promise<number> {
+        let switched = 0
+        for (const session of this.getSessionsByNamespace(namespace)) {
+            if (!session.active) continue
+            const flavor = session.metadata?.flavor ?? 'claude'
+            const mode = yoloPermissionModeForFlavor(flavor)
+            if (session.permissionMode === mode || !isPermissionModeAllowedForFlavor(mode, flavor)) continue
+            try {
+                await this.applySessionConfig(session.id, { permissionMode: mode })
+                switched += 1
+            } catch {
+                // A session that does not answer keeps its mode; it starts in YOLO next time.
+            }
+        }
+        return switched
+    }
+
+    async spawnAndPrompt(
+        machineId: string,
+        directory: string,
+        options: {
+            agent?: 'claude' | 'codex' | 'cursor' | 'gemini' | 'opencode'
+            model?: string
+            thinkEffort?: 'auto' | 'low' | 'medium' | 'high' | 'max' | 'xhigh'
+            yolo?: boolean
+            claudeAccount?: ClaudeAccountSelection
+            sessionType?: 'simple' | 'worktree'
+            worktreeName?: string
+        },
+        prompt: { text: string; meta?: Record<string, unknown>; files?: TaskFileContent[]; permissionMode?: PermissionMode }
+    ): Promise<{ type: 'success'; sessionId: string } | { type: 'error'; message: string }> {
+        const spawned = await this.spawnSession(
+            machineId,
+            directory,
+            options.agent ?? 'claude',
+            options.model,
+            options.thinkEffort,
+            undefined,
+            options.yolo,
+            options.sessionType ?? 'simple',
+            options.worktreeName,
+            undefined,
+            undefined,
+            options.claudeAccount
+        )
+        if (spawned.type === 'error') return spawned
+        if (!await this.waitForSessionActive(spawned.sessionId)) {
+            return { type: 'error', message: '会话没能在 15 秒内启动' }
+        }
+        // Before the first message, so the agent never acts under another mode.
+        if (prompt.permissionMode) await this.applySessionConfig(spawned.sessionId, { permissionMode: prompt.permissionMode }).catch(() => {})
+        const attachments = await this.uploadAll(spawned.sessionId, prompt.files ?? [])
+        await this.sendMessage(spawned.sessionId, {
+            text: prompt.text,
+            sentFrom: 'webapp',
+            meta: prompt.meta,
+            ...(attachments.length > 0 ? { attachments } : {})
+        })
+        return spawned
+    }
+
+    /** Uploads files into a session for its first message. A file that fails is left out; the rest still go. */
+    private async uploadAll(sessionId: string, files: TaskFileContent[]): Promise<AttachmentMetadata[]> {
+        const attachments: AttachmentMetadata[] = []
+        for (const file of files) {
+            try {
+                const result = await this.rpcGateway.uploadFile(sessionId, file.filename, file.content, file.mimeType)
+                if (!result.success || !result.path) continue
+                const size = Buffer.byteLength(file.content, 'base64')
+                attachments.push({
+                    id: randomUUID(),
+                    filename: file.filename,
+                    mimeType: file.mimeType,
+                    size,
+                    path: result.path,
+                    ...(file.mimeType.startsWith('image/') && size <= PREVIEW_MAX_BYTES ? { previewUrl: `data:${file.mimeType};base64,${file.content}` } : {})
+                })
+            } catch {
+                // The session reads the rest; the user still sees every file on the task page.
+            }
+        }
+        return attachments
+    }
+
+    /**
+     * What a session started for a task gets from the task: its files, and its default settings (model, thinking,
+     * permission). Without settings the sessions start as before: medium thinking, the caller's own permission.
+     */
+    private taskSpawn(meta: Record<string, unknown>, machineId: string) {
+        const owner = (meta.taskGuide ?? meta.taskWork) as { taskId?: unknown } | undefined
+        const taskId = typeof owner?.taskId === 'string' ? owner.taskId : null
+        const namespace = this.machineCache.getMachine(machineId)?.namespace ?? null
+        const settings: TaskSessionSettings = taskId && namespace ? this.taskService.sessionSettings(namespace, taskId) : {}
+        const files = taskId ? this.taskService.fileContents(taskId) : []
+        return {
+            options: <T extends { yolo?: boolean }>(base: T) => ({
+                ...base,
+                thinkEffort: settings.thinkEffort ?? 'medium' as const,
+                ...(settings.model ? { model: settings.model } : {}),
+                ...(settings.permissionMode ? { yolo: settings.permissionMode === 'bypassPermissions' } : {})
+            }),
+            prompt: (input: { text: string; meta: Record<string, unknown> }) => ({
+                text: input.text, meta: input.meta, files, ...(settings.permissionMode ? { permissionMode: settings.permissionMode as PermissionMode } : {})
+            })
+        }
+    }
+
+    /**
+     * Starts a scheduled run's session. For Claude on a machine with an account pool it tries the default account,
+     * then the other enabled accounts of the same trust group, and moves on when an account is logged out (checked
+     * before the start, or refused by the runner) or its session does not come up.
+     */
+    private async spawnScheduledRun(input: ScheduleSpawnInput): Promise<ScheduleSpawnResult> {
+        const yolo = input.permissionMode === 'bypassPermissions' || input.permissionMode === 'yolo'
+        const options = {
+            agent: input.agent,
+            ...(input.model ? { model: input.model } : {}),
+            ...(input.thinkEffort ? { thinkEffort: input.thinkEffort as 'auto' | 'low' | 'medium' | 'high' | 'max' | 'xhigh' } : {}),
+            yolo,
+            sessionType: input.worktree ? 'worktree' as const : 'simple' as const,
+            ...(input.worktree ? { worktreeName: `scheduled-${Date.now().toString(36)}` } : {})
+        }
+        const prompt = {
+            text: input.text,
+            meta: input.meta,
+            ...(input.permissionMode ? { permissionMode: input.permissionMode as PermissionMode } : {})
+        }
+        const pool = input.agent === 'claude' ? await this.scheduledAccountOrder(input.machineId, input.accountId) : null
+        const candidates: Array<{ id: string; automatic: boolean } | null> = pool && pool.ids.length > 0
+            ? pool.ids.map((id) => ({ id, automatic: pool.autoSwitch }))
+            : [null]
+        const notes: string[] = []
+        let attempts = 0
+        for (const candidate of candidates) {
+            if (candidate) {
+                const check = await this.claudeAccounts(input.machineId, 'check', { id: candidate.id }).catch((error: unknown) => ({ error: String(error) }))
+                const checkError = (check as { error?: unknown } | null)?.error
+                if (typeof checkError === 'string') {
+                    notes.push(`${candidate.id}: ${checkError}`)
+                    continue
+                }
+            }
+            attempts += 1
+            const result = await this.spawnAndPrompt(input.machineId, input.directory, {
+                ...options,
+                ...(candidate ? { claudeAccount: { accountId: candidate.id, automatic: candidate.automatic } } : {})
+            }, prompt)
+            if (result.type === 'success') {
+                await this.renameSession(result.sessionId, input.name).catch(() => {})
+                const tags = this.getSession(result.sessionId)?.metadata?.tags ?? []
+                if (!tags.includes('scheduled')) await this.setSessionTags(result.sessionId, [...tags, 'scheduled']).catch(() => {})
+                const accountId = this.getSession(result.sessionId)?.metadata?.claudeAccount?.id ?? candidate?.id ?? null
+                return {
+                    sessionId: result.sessionId,
+                    accountId,
+                    attempts,
+                    note: notes.length > 0 ? `${ACCOUNT_NOTE}：${notes.join('；')}` : null
+                }
+            }
+            notes.push(`${candidate?.id ?? '默认账号'}: ${result.message}`)
+            if (!candidate || !isAccountStartFailure(result.message)) break
+        }
+        return { error: notes.join('；') || '没有可用的账号', attempts }
+    }
+
+    /**
+     * The account pool's start order: the task's own account (or the pool's default), then the other enabled accounts
+     * of its trust group. Null without a pool.
+     */
+    private async scheduledAccountOrder(machineId: string, preferred: string | null): Promise<{ ids: string[]; autoSwitch: boolean } | null> {
+        const reply = await this.claudeAccounts(machineId, 'get').catch(() => null) as { pool?: unknown } | null
+        const parsed = ClaudeAccountPoolSchema.safeParse(reply?.pool)
+        if (!parsed.success || parsed.data.profiles.length === 0) return null
+        const pool = parsed.data
+        const first = pool.profiles.find((profile) => profile.id === preferred && profile.enabled)
+            ?? pool.profiles.find((profile) => profile.id === pool.initialAccount && profile.enabled)
+        if (!first) return null
+        const rest = pool.profiles.filter((profile) => profile.enabled && profile.id !== first.id && profile.trustGroup === first.trustGroup)
+        return { ids: [first.id, ...rest.map((profile) => profile.id)], autoSwitch: pool.autoSwitch }
     }
 
     async waitForSessionActive(sessionId: string, timeoutMs: number = 15_000): Promise<boolean> {
@@ -2577,6 +3001,11 @@ ${note.content}
         return this.attachLocalQueueTextToResponse(sessionId, response)
     }
 
+    async updateCodexQueueItem(sessionId: string, id: string, text: string): Promise<RpcCodexQueueResponse> {
+        const response = await this.rpcGateway.updateCodexQueueItem(sessionId, id, text)
+        return this.attachLocalQueueTextToResponse(sessionId, response)
+    }
+
     async clearCodexQueue(sessionId: string): Promise<RpcCodexQueueResponse> {
         const response = await this.rpcGateway.clearCodexQueue(sessionId)
         return this.attachLocalQueueTextToResponse(sessionId, response)
@@ -2621,6 +3050,11 @@ ${note.content}
 
     async moveClaudeQueueItem(sessionId: string, id: string, toIndex: number): Promise<RpcCodexQueueResponse> {
         const response = await this.rpcGateway.moveClaudeQueueItem(sessionId, id, toIndex)
+        return this.attachLocalQueueTextToResponse(sessionId, response)
+    }
+
+    async updateClaudeQueueItem(sessionId: string, id: string, text: string): Promise<RpcCodexQueueResponse> {
+        const response = await this.rpcGateway.updateClaudeQueueItem(sessionId, id, text)
         return this.attachLocalQueueTextToResponse(sessionId, response)
     }
 
@@ -2901,4 +3335,22 @@ Remember: Call review_loop_reviewer_submit when you have formed your assessment.
             }
         })
     }
+}
+
+function toTaskSession(session: Session): TaskSession {
+    const metadata = session.metadata
+    return {
+        id: session.id,
+        active: session.active,
+        machineId: metadata?.machineId ?? null,
+        path: metadata?.path ?? null,
+        name: metadata?.name ?? metadata?.summary?.text ?? null,
+        tags: metadata?.tags ?? [],
+        updatedAt: session.updatedAt
+    }
+}
+
+/** A start failure that another account may not have: a logged-out account, or a session that never came up. */
+function isAccountStartFailure(message: string): boolean {
+    return /尚未在隔离目录登录|claude auth login|账号身份检查失败|会话没能在 15 秒内启动|所选账号不存在或已停用|session_stale_relogin|invalid_grant|OAuth/i.test(message)
 }

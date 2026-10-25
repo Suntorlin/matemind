@@ -21,13 +21,12 @@ import { MemoryPage } from '@/routes/memory'
 import { SessionChat } from '@/components/SessionChat'
 import { SessionFeed, SessionList, formatRelativeTime, type NewSessionPreset } from '@/components/SessionList'
 import { PinnedStoriesStrip } from '@/components/mobile/PinnedStoriesStrip'
-import { AllTasksView, TagTasksSection } from '@/components/SessionTasksPanel'
-import { MobileHeaderIconButton, MobilePageHeader, MobileTabBar } from '@/components/mobile/MobileTabBar'
-import { ChevronLeftIcon, FolderStackIcon, MoreHorizontalIcon, PlusCircleIcon, QueueListIcon, RecentIcon, SearchIcon, TagIcon } from '@/components/mobile/icons'
+import { MobilePageHeader, MobileTabBar } from '@/components/mobile/MobileTabBar'
+import { ChevronLeftIcon, ChevronRightIcon, FolderIcon, MoreHorizontalIcon, PlusCircleIcon, RecentIcon, SearchIcon, TagIcon } from '@/components/mobile/icons'
 import { tagChipClass } from '@/components/ui/tagChip'
 import { MobileSearchField } from '@/components/mobile/MobileSearchField'
 import { GroupAvatar, Orb, PairAvatar } from '@/components/mobile/SessionAvatar'
-import { DesktopIconButton, DesktopPaneHeader } from '@/components/mobile/DesktopPaneHeader'
+import { DesktopPaneHeader } from '@/components/mobile/DesktopPaneHeader'
 import { SubPageHeader } from '@/components/mobile/SubPageHeader'
 import { useIsMobileLayout } from '@/hooks/useIsMobileLayout'
 import { applySessionTagOrder, loadSessionTagOrder, moveSessionTag, persistSessionTagOrder } from '@/components/sessionTagOrder'
@@ -52,7 +51,7 @@ import { useConversationTurns } from '@/hooks/queries/useConversationTurns'
 import { useMachines } from '@/hooks/queries/useMachines'
 import { useSession } from '@/hooks/queries/useSession'
 import { useSessions } from '@/hooks/queries/useSessions'
-import { useSessionTasks } from '@/hooks/queries/useSessionTasks'
+import { useTaskActions, useTasks } from '@/hooks/queries/useTasks'
 import { useSlashCommands } from '@/hooks/queries/useSlashCommands'
 import { useSkills } from '@/hooks/queries/useSkills'
 import { useSendMessage } from '@/hooks/mutations/useSendMessage'
@@ -68,14 +67,21 @@ import { useSessionSidebarVisibility } from '@/hooks/useSessionSidebarVisibility
 import { useLongPress } from '@/hooks/useLongPress'
 import { usePlatform } from '@/hooks/usePlatform'
 import { useChatViewMode } from '@/hooks/useChatViewMode'
-import { SessionActionMenu } from '@/components/SessionActionMenu'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { RenameSessionDialog } from '@/components/RenameSessionDialog'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { FEED_ROW_CLASS } from '@/components/ui/ListRow'
 import { IconButton } from '@/components/ui/IconButton'
 import { TextField } from '@/components/ui/TextField'
-import type { GroupDetail, SessionSummary } from '@/types/api'
+import type { GroupDetail, SessionSummary, TaskStatus, TaskView } from '@/types/api'
+import { Badge, DotBadge } from '@/components/ui/badge'
+import { NewTaskForm } from '@/components/tasks/NewTaskForm'
+import { TaskActionMenu } from '@/components/tasks/TaskActionMenu'
+import { safeCopyToClipboard } from '@/lib/clipboard'
+import { cn } from '@/lib/utils'
+import { ProgressOrb, type ReportTone } from '@/components/report'
 import { filterSessionsBySearch } from '@/lib/session-search'
 import { getUserTags, isSessionPinned, isSessionSnoozed } from '@/lib/session-pins'
 import { useMinuteClock } from '@/hooks/useMinuteClock'
@@ -91,6 +97,8 @@ import GroupDetailPage from '@/routes/groups/detail'
 import { GroupInfoPanelContext } from '@/routes/groups/group-info'
 import ReviewLoopsIndexPage from '@/routes/review-loops/index'
 import ReviewLoopDetailPage from '@/routes/review-loops/detail'
+import ScheduledListPage from '@/routes/scheduled/index'
+import ScheduledDetailPage from '@/routes/scheduled/detail'
 import { useGroups } from '@/hooks/queries/useGroups'
 import { useReviewLoops } from '@/hooks/queries/useReviewLoops'
 import type { ReviewLoop } from '@/types/api'
@@ -184,20 +192,17 @@ function DesktopSplitView(props: { list: ReactNode; listVisible: boolean; childr
     )
 }
 
+/** Desktop detail pane with nothing selected. */
 function DesktopEmptyState(props: { title: string; subtitle?: string; action?: { label: string; onClick: () => void } }) {
     return (
-        <div className="flex h-full flex-col items-center justify-center px-8 text-center">
-            <Orb seed="matemind" size={76} />
-            <div className="mt-5 text-[16px] font-semibold tracking-[-0.01em] text-[var(--social-fg)]">{props.title}</div>
-            {props.subtitle ? (
-                <div className="mt-1.5 max-w-sm text-[13px] leading-relaxed text-[var(--social-fg-muted)]">{props.subtitle}</div>
-            ) : null}
-            {props.action ? (
-                <Button type="button" onClick={props.action.onClick} className="mt-5">
-                    {props.action.label}
-                </Button>
-            ) : null}
-        </div>
+        <EmptyState
+            variant="page"
+            className="h-full py-0"
+            illustration={<Orb seed="matemind" size={76} />}
+            title={props.title}
+            subtitle={props.subtitle}
+            action={props.action}
+        />
     )
 }
 
@@ -229,7 +234,6 @@ function SessionsPage() {
     const { t } = useTranslation()
     const { addToast } = useToast()
     const { sessions, isLoading, error, refetch } = useSessions(api)
-    const { tasks: sessionTasks, isLoading: sessionTasksLoading } = useSessionTasks(api)
     const { spawnSession, isPending: isQuickCreatingSession } = useSpawnSession(api)
     const { density } = useSessionListDensity()
     const { desktopSidebarHidden, setDesktopSidebarHidden, toggleDesktopSidebar } = useSessionSidebarVisibility()
@@ -238,12 +242,7 @@ function SessionsPage() {
     const [sessionSearchQuery, setSessionSearchQuery] = useState('')
     const [sessionSearchOpen, setSessionSearchOpen] = useState(false)
     const [selectedSessionTag, setSelectedSessionTag] = useState<string | null>(null)
-    // "All tasks" replaces the session list with every task, grouped by tag.
-    const [showAllTasks, setShowAllTasks] = useState(false)
-    const selectTagView = useCallback((tag: string | null) => {
-        setSelectedSessionTag(tag)
-        setShowAllTasks(false)
-    }, [])
+    const selectTagView = setSelectedSessionTag
     const [sessionTagOrder, setSessionTagOrder] = useState<string[]>(loadSessionTagOrder)
     const tagSensors = useSensors(
         useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -273,11 +272,10 @@ function SessionsPage() {
         }
     }, [selectedSessionId, sessions])
 
-    // A tag with open tasks keeps its filter even when no session carries it any more.
-    const sessionTags = useMemo(() => Array.from(new Set([
-        ...sessions.flatMap((session) => getUserTags(session)),
-        ...sessionTasks.filter((task) => task.status === 'open').map((task) => task.tag)
-    ])).sort((a, b) => a.localeCompare(b)), [sessions, sessionTasks])
+    const sessionTags = useMemo(
+        () => Array.from(new Set(sessions.flatMap((session) => getUserTags(session)))).sort((a, b) => a.localeCompare(b)),
+        [sessions]
+    )
     const orderedSessionTags = useMemo(
         () => applySessionTagOrder(sessionTags, sessionTagOrder),
         [sessionTags, sessionTagOrder]
@@ -515,25 +513,12 @@ function SessionsPage() {
                     <button
                         type="button"
                         onClick={() => selectTagView(null)}
-                        className={`${tagChipClass(selectedSessionTag === null && !showAllTasks)} inline-flex items-center justify-center px-2.5`}
+                        className={`${tagChipClass(selectedSessionTag === null)} inline-flex items-center justify-center px-2.5`}
                         aria-label={t('sessions.tags.all')}
-                        aria-pressed={selectedSessionTag === null && !showAllTasks}
+                        aria-pressed={selectedSessionTag === null}
                         title={t('sessions.tags.all')}
                     >
                         <TagIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setSelectedSessionTag(null)
-                            setShowAllTasks(true)
-                        }}
-                        className={`${tagChipClass(showAllTasks)} inline-flex items-center justify-center px-2.5`}
-                        aria-label={t('sessions.tags.allTasks')}
-                        aria-pressed={showAllTasks}
-                        title={t('sessions.tags.allTasks')}
-                    >
-                        <QueueListIcon className="h-4 w-4" />
                     </button>
                     {isMobileLayout ? orderedSessionTags.map((tag) => (
                         <button
@@ -561,32 +546,10 @@ function SessionsPage() {
                     )}
                 </div>
             ) : null}
-            {selectedSessionTag && !sessionSearchQuery ? (
-                <TagTasksSection
-                    tag={selectedSessionTag}
-                    tasks={sessionTasks}
-                    sessions={sessions}
-                    selectedSessionId={selectedSessionId}
-                    onSelectSession={selectSession}
-                    api={api}
-                />
-            ) : null}
         </div>
     )
 
-    const listBody = showAllTasks ? (
-        <AllTasksView
-            tasks={sessionTasks}
-            tagOrder={orderedSessionTags}
-            sessions={sessions}
-            selectedSessionId={selectedSessionId}
-            onSelectSession={selectSession}
-            onOpenTag={selectTagView}
-            api={api}
-            isLoading={sessionTasksLoading}
-            header={listHeader}
-        />
-    ) : mobileListMode === 'recent' ? (
+    const listBody = mobileListMode === 'recent' ? (
         <SessionFeed
             sessions={visibleSessions}
             snoozedSessions={snoozedSessions}
@@ -595,7 +558,11 @@ function SessionsPage() {
             onSelect={selectSession}
             api={api}
             listHeader={listHeader}
-            emptyLabel={isLoading ? t('mobile.feed.loading') : t('mobile.feed.empty')}
+            empty={isLoading ? (
+                <div className="px-6 py-16 text-center text-footnote text-[var(--social-fg-muted)]">{t('mobile.feed.loading')}</div>
+            ) : (
+                <EmptyState variant="page" title={t('mobile.feed.empty')} />
+            )}
         />
     ) : (
         <SessionList
@@ -618,24 +585,25 @@ function SessionsPage() {
 
     const listActions = (
         <>
-            <MobileHeaderIconButton label={t('sessions.search.open')} onClick={toggleSessionSearch}>
+            <IconButton className="text-[var(--social-fg)]" label={t('sessions.search.open')} onClick={toggleSessionSearch}>
                 <SearchIcon className="h-[22px] w-[22px]" />
-            </MobileHeaderIconButton>
-            <MobileHeaderIconButton
+            </IconButton>
+            <IconButton
+                className="text-[var(--social-fg)]"
                 label={mobileListMode === 'recent' ? t('mobile.list.switchToProjects') : t('mobile.list.switchToRecent')}
                 onClick={toggleListMode}
             >
                 {mobileListMode === 'recent'
-                    ? <FolderStackIcon className="h-[22px] w-[22px]" />
+                    ? <FolderIcon className="h-[22px] w-[22px]" />
                     : <RecentIcon className="h-[22px] w-[22px]" />}
-            </MobileHeaderIconButton>
-            <MobileHeaderIconButton label={t('sessions.new')} onClick={() => openNewSession()}>
+            </IconButton>
+            <IconButton className="text-[var(--social-fg)]" label={t('sessions.new')} onClick={() => openNewSession()}>
                 <PlusCircleIcon className="h-[24px] w-[24px]" />
-            </MobileHeaderIconButton>
+            </IconButton>
         </>
     )
     const listError = error ? (
-        <div className="px-5 py-2 text-[13px] text-[var(--social-danger)]">{error}</div>
+        <div className="px-5 py-2 text-footnote text-[var(--social-danger)]">{error}</div>
     ) : null
 
     if (isMobileLayout) {
@@ -828,7 +796,7 @@ function SessionPage() {
         if (sessionError && !sessionFetching) {
             return (
                 <div className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center">
-                    <div className="max-w-sm text-[13px] text-[var(--social-fg-muted)]">
+                    <div className="max-w-sm text-footnote text-[var(--social-fg-muted)]">
                         {sessionNotFound ? t('session.load.notFound') : t('session.load.failed')}
                     </div>
                     <div className="flex items-center gap-2">
@@ -846,7 +814,7 @@ function SessionPage() {
         }
         return (
             <div className="flex-1 flex items-center justify-center p-4">
-                <LoadingState label={t('loading.session')} className="text-[13px]" />
+                <LoadingState label={t('loading.session')} className="text-footnote" />
             </div>
         )
     }
@@ -950,7 +918,7 @@ function NewSessionPage() {
 
             <div className="flex-1 min-h-0 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
                 {machinesError ? (
-                    <div className="p-3 text-[13px] text-[var(--social-danger)]">
+                    <div className="p-3 text-footnote text-[var(--social-danger)]">
                         {machinesError}
                     </div>
                 ) : null}
@@ -970,11 +938,53 @@ function NewSessionPage() {
     )
 }
 
-/** Shared look of list rows (sessions, groups, loops): full-bleed on phones, inset pills on desktop. */
-const SOCIAL_ROW_CLASS = 'social-pressable flex w-full items-center gap-3.5 px-5 py-2.5 text-left select-none lg:mx-2 lg:w-[calc(100%-1rem)] lg:rounded-2xl lg:px-3'
+/** The second line of a task group's row: where the guide step is, else the task's tag and goal. */
+function taskRowSubtitle(item: GroupDetail, task: TaskView | undefined, t: ReturnType<typeof useTranslation>['t']): string {
+    if (item.group.status === 'guiding' && task) {
+        if (task.guide.state === 'ready') return t('tasks.guideReady')
+        if (task.guide.state === 'failed') return t('tasks.guideFailed')
+        return t('tasks.guideWorking')
+    }
+    return [item.group.tag ? `#${item.group.tag}` : null, item.group.goal].filter(Boolean).join(' · ')
+}
+
+/**
+ * Who a task's header says is working. The lead only plans: after the split it is stopped, so a running task names
+ * the subtask sessions that work now, else its phase.
+ */
+function taskWorker(task: TaskView, anyoneThinking: boolean, t: ReturnType<typeof useTranslation>['t']): string {
+    const run = task.run
+    if (!run) return anyoneThinking ? t('taskRun.leadWorking') : t('tasks.status.guiding')
+    if (run.phase === 'planning' && anyoneThinking) return t('taskRun.leadWorking')
+    if (run.phase === 'delivering') return t('taskRun.phase.delivering')
+    const working = run.subtasks.filter((s) => s.state === 'running')
+    if (working.length === 1) return t('taskRun.subtaskWorking', { title: working[0]!.title })
+    if (working.length > 1) return t('taskRun.subtasksWorking', { n: working.length })
+    return t(`taskRun.phase.${run.phase}`)
+}
+
+/** A running task's ring: acceptance criteria met (after review) or subtasks done (before). */
+function taskProgress(task: TaskView): number {
+    const run = task.run!
+    if (run.review) return task.acceptance.length ? run.review.results.filter((r) => r.status === 'met').length / task.acceptance.length : 0
+    const subtasks = run.subtasks.filter((s) => !s.fix && s.id !== 'merge')
+    return subtasks.length ? subtasks.filter((s) => s.state === 'done').length / subtasks.length : 0
+}
+
+function taskTone(task: TaskView): ReportTone {
+    const run = task.run!
+    if (run.phase === 'accepted') return 'done'
+    if (run.decisions.some((d) => !d.answer) || run.phase === 'reporting') return 'wait'
+    if (run.subtasks.some((s) => s.state === 'stuck' || s.state === 'stopped')) return 'stuck'
+    return 'live'
+}
+
+const TASK_STATUS_BADGE: Record<TaskStatus, 'warning' | 'info' | 'default'> = { guiding: 'warning', active: 'info', done: 'default', abandoned: 'default' }
 
 function GroupRow(props: {
     item: GroupDetail
+    /** Set for a task group. */
+    task?: TaskView
     members: SessionSummary[]
     selected?: boolean
     onSelect: (groupId: string) => void
@@ -992,28 +1002,43 @@ function GroupRow(props: {
         threshold: 500
     })
     const hasLiveMember = members.some((member) => member.thinking)
+    const status = item.group.kind === 'task' ? item.group.status ?? null : null
+    // "Active" is the normal state of a task: no badge.
+    const badge = status && status !== 'active' ? status : null
 
     return (
         <button
             type="button"
             {...longPressHandlers}
-            className={SOCIAL_ROW_CLASS}
+            className={FEED_ROW_CLASS}
             style={{ WebkitTouchCallout: 'none' }}
             aria-current={props.selected ? 'page' : undefined}
         >
-            <GroupAvatar seed={item.group.id} members={members} size={44} />
+            {props.task?.run && (props.task.status === 'active' || props.task.status === 'done') ? (
+                <ProgressOrb seed={item.group.id} size={44} progress={taskProgress(props.task)} tone={taskTone(props.task)} />
+            ) : (
+                <GroupAvatar seed={item.group.id} members={members} size={44} />
+            )}
             <div className="flex min-w-0 flex-1 flex-col justify-center">
                 <div className="flex items-baseline gap-2">
-                    <span className="min-w-0 flex-1 truncate text-[15px] leading-snug tracking-[-0.01em]">{item.group.name}</span>
-                    <span className="shrink-0 text-[12px] text-[var(--social-fg-subtle)]">{formatRelativeTime(item.group.updatedAt, t)}</span>
+                    <span className="min-w-0 flex-1 truncate text-body leading-snug tracking-[-0.01em]">{item.group.name}</span>
+                    {badge ? <Badge variant={TASK_STATUS_BADGE[badge]} className="shrink-0 self-center">{t(`tasks.status.${badge}`)}</Badge> : null}
+                    <span className="shrink-0 text-caption text-[var(--social-fg-subtle)]">{formatRelativeTime(item.group.updatedAt, t)}</span>
                 </div>
-                <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] leading-snug text-[var(--social-fg-muted)]">
+                <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-footnote leading-snug text-[var(--social-fg-muted)]">
                     {hasLiveMember ? (
                         <span className="shrink-0 font-semibold text-[var(--social-fg)]">{t('mobile.feed.thinking')} ·</span>
                     ) : null}
+                    {status && item.group.status === 'guiding' && props.task?.guide.state === 'ready' ? (
+                        <DotBadge className="shrink-0" />
+                    ) : null}
                     <span className="min-w-0 truncate">
-                        {t('mobile.groups.members', { n: item.members.length })}
-                        {item.group.description?.trim() ? ` · ${item.group.description}` : ''}
+                        {status && (item.group.status === 'guiding' || item.group.goal || item.group.tag) ? taskRowSubtitle(item, props.task, t) : (
+                            <>
+                                {t('mobile.groups.members', { n: item.members.length })}
+                                {item.group.description?.trim() ? ` · ${item.group.description}` : ''}
+                            </>
+                        )}
                     </span>
                 </div>
             </div>
@@ -1046,22 +1071,22 @@ function GroupsLayout() {
     const { desktopSidebarHidden, setDesktopSidebarHidden, toggleDesktopSidebar } = useSessionSidebarVisibility()
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [groupSearchQuery, setGroupSearchQuery] = useState('')
-    const [newGroupName, setNewGroupName] = useState('')
-    const [newGroupDesc, setNewGroupDesc] = useState('')
-    const [createError, setCreateError] = useState<string | null>(null)
-    const [isCreateSubmitting, setIsCreateSubmitting] = useState(false)
     const [actionMenuOpen, setActionMenuOpen] = useState(false)
     const [actionAnchorPoint, setActionAnchorPoint] = useState({ x: 0, y: 0 })
     const [actionGroupId, setActionGroupId] = useState<string | null>(null)
     const [renameModalOpen, setRenameModalOpen] = useState(false)
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
     const [groupInfoOpen, setGroupInfoOpen] = useState(false)
+    const [showArchived, setShowArchived] = useState(false)
     const groupInfoPanel = useMemo(() => ({ open: groupInfoOpen, setOpen: setGroupInfoOpen }), [groupInfoOpen])
-    const { createGroup, isPending: isCreatingGroup } = useGroupActions(api, null)
     const { updateGroup, deleteGroup, isPending: isActionPending } = useGroupActions(api, actionGroupId)
+    const { addToast } = useToast()
     const isMobileLayout = useIsMobileLayout()
     const { sessions: allSessions } = useSessions(api)
     const sessionsById = useMemo(() => new Map(allSessions.map((session) => [session.id, session])), [allSessions])
+    const { tasks } = useTasks(api)
+    const tasksById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks])
+    const { createTask } = useTaskActions(api)
 
     const groupMatch = matchRoute({ to: '/groups/$groupId', fuzzy: true })
     const selectedGroupId = groupMatch ? groupMatch.groupId : null
@@ -1070,14 +1095,16 @@ function GroupsLayout() {
     const selectedGroup = selectedGroupId
         ? groups.find((item) => item.group.id === selectedGroupId) ?? null
         : null
-    const visibleGroups = useMemo(
+    const matchingGroups = useMemo(
         () => filterGroupsBySearch(groups, groupSearchQuery),
         [groups, groupSearchQuery]
     )
+    // Archived ones sit in a folded section at the end of the list.
+    const visibleGroups = useMemo(() => matchingGroups.filter((item) => !item.group.archivedAt), [matchingGroups])
+    const archivedGroups = useMemo(() => matchingGroups.filter((item) => item.group.archivedAt), [matchingGroups])
     const actionTarget = actionGroupId
         ? groups.find((item) => item.group.id === actionGroupId) ?? null
         : null
-    const isCreateRequestInFlight = isCreatingGroup || isCreateSubmitting
 
     // Calculate total member count across all groups
     const totalMemberCount = visibleGroups.reduce((acc, item) => acc + item.members.length, 0)
@@ -1116,33 +1143,6 @@ function GroupsLayout() {
         })
     }, [groups, isGroupsIndex, isLoading, isMobileLayout, navigate])
 
-    const handleCreate = async () => {
-        if (isCreateRequestInFlight) {
-            return
-        }
-        const trimmedName = newGroupName.trim()
-        if (!trimmedName) {
-            setCreateError(t('groups.dialog.nameRequired'))
-            return
-        }
-        setCreateError(null)
-        setIsCreateSubmitting(true)
-        try {
-            const groupId = await createGroup({
-                name: trimmedName,
-                description: newGroupDesc.trim() || undefined
-            })
-            setShowCreateModal(false)
-            setNewGroupName('')
-            setNewGroupDesc('')
-            navigate({ to: '/groups/$groupId', params: { groupId } })
-        } catch (error) {
-            setCreateError(error instanceof Error ? error.message : t('groups.dialog.createFailed'))
-        } finally {
-            setIsCreateSubmitting(false)
-        }
-    }
-
     const handleOpenGroupActions = (groupId: string, point: { x: number; y: number }) => {
         setActionGroupId(groupId)
         setActionAnchorPoint(point)
@@ -1157,6 +1157,25 @@ function GroupsLayout() {
     const handleRenameGroup = async (nextName: string) => {
         if (!actionTarget) return
         await updateGroup({ name: nextName })
+    }
+
+    const handleCopyGroupTitle = async () => {
+        if (!actionTarget) return
+        try {
+            await safeCopyToClipboard(actionTarget.group.name)
+            addToast({ title: t('groups.action.copied'), body: actionTarget.group.name, sessionId: '', url: '' })
+        } catch {
+            addToast({ title: t('groups.action.copyFailed'), body: '', sessionId: '', url: '' })
+        }
+    }
+
+    const handleArchiveGroup = async (archived: boolean) => {
+        if (!actionTarget) return
+        try {
+            await updateGroup({ archived })
+        } catch (error) {
+            addToast({ title: t('groups.action.archiveFailed'), body: error instanceof Error ? error.message : '', sessionId: '', url: '' })
+        }
     }
 
     const handleDeleteGroup = async () => {
@@ -1174,58 +1193,32 @@ function GroupsLayout() {
 
     const groupModals = (
         <>
-            <Dialog
-                open={showCreateModal}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setShowCreateModal(false)
-                        setCreateError(null)
-                    }
-                }}
-            >
-                <DialogContent className="max-w-sm">
+            <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+                {/* Wide enough for the prompt box's toolbar: files, model, thinking, permission, drafting, mic. */}
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>{t('mobile.groups.new')}</DialogTitle>
+                        <DialogTitle>{t('tasks.new')}</DialogTitle>
                     </DialogHeader>
-                    <form
-                        className="mt-4 flex flex-col gap-3"
-                        onSubmit={(event) => {
-                            event.preventDefault()
-                            void handleCreate()
-                        }}
-                    >
-                        <TextField
-                            autoFocus
-                            value={newGroupName}
-                            onChange={(event) => setNewGroupName(event.target.value)}
-                            placeholder={t('groups.dialog.name')}
-                            aria-label={t('groups.dialog.name')}
+                    <div className="mt-4">
+                        <NewTaskForm
+                            api={api}
+                            onCreate={async (input) => {
+                                const task = await createTask(input)
+                                setShowCreateModal(false)
+                                navigate({ to: '/groups/$groupId', params: { groupId: task.id } })
+                            }}
                         />
-                        <TextField
-                            value={newGroupDesc}
-                            onChange={(event) => setNewGroupDesc(event.target.value)}
-                            placeholder={t('groups.dialog.description')}
-                            aria-label={t('groups.dialog.description')}
-                        />
-                        {createError ? <div className="text-[13px] text-[var(--social-danger)]">{createError}</div> : null}
-                        <div className="flex justify-end gap-2">
-                            <Button type="button" variant="secondary" onClick={() => { setShowCreateModal(false); setCreateError(null) }}>
-                                {t('button.cancel')}
-                            </Button>
-                            <Button type="submit" disabled={isCreateRequestInFlight || !newGroupName.trim()}>
-                                {isCreateRequestInFlight ? t('newSession.creating') : t('newSession.create')}
-                            </Button>
-                        </div>
-                    </form>
+                    </div>
                 </DialogContent>
             </Dialog>
 
-            <SessionActionMenu
+            <TaskActionMenu
                 isOpen={actionMenuOpen && Boolean(actionTarget)}
                 onClose={() => setActionMenuOpen(false)}
-                sessionActive={false}
+                archived={Boolean(actionTarget?.group.archivedAt)}
                 onRename={handleOpenRename}
-                onArchive={() => {}}
+                onCopyTitle={() => void handleCopyGroupTitle()}
+                onArchive={(archived) => void handleArchiveGroup(archived)}
                 onDelete={() => {
                     setRenameModalOpen(false)
                     setDeleteModalOpen(true)
@@ -1269,14 +1262,14 @@ function GroupsLayout() {
             title={t('mobile.tab.groups')}
             subtitle={t('mobile.groups.summary', { n: visibleGroups.length, m: totalMemberCount })}
             actions={(
-                <MobileHeaderIconButton label={t('mobile.groups.new')} onClick={() => setShowCreateModal(true)}>
+                <IconButton className="text-[var(--social-fg)]" label={t('mobile.groups.new')} onClick={() => setShowCreateModal(true)}>
                     <PlusCircleIcon className="h-[24px] w-[24px]" />
-                </MobileHeaderIconButton>
+                </IconButton>
             )}
         />
     )
     const listBody = (
-        <div className="session-list-scroll min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="px-5 pb-3 pt-1">
                 <MobileSearchField
                     value={groupSearchQuery}
@@ -1285,28 +1278,62 @@ function GroupsLayout() {
                 />
             </div>
             {isLoading ? (
-                <div className="px-6 py-16 text-center text-[13px] text-[var(--social-fg-muted)]">{t('mobile.feed.loading')}</div>
-            ) : visibleGroups.length === 0 ? (
-                <div className="px-6 py-16 text-center text-[13px] text-[var(--social-fg-muted)]">{t('mobile.groups.empty')}</div>
+                <div className="px-6 py-16 text-center text-footnote text-[var(--social-fg-muted)]">{t('mobile.feed.loading')}</div>
+            ) : visibleGroups.length === 0 && archivedGroups.length === 0 ? (
+                <EmptyState variant="page" title={t('mobile.groups.empty')} />
             ) : (
-                visibleGroups.map((item) => (
-                    <GroupRow
-                        key={item.group.id}
-                        item={item}
-                        members={membersOf(item)}
-                        selected={selectedGroupId === item.group.id}
-                        onSelect={openGroup}
-                        onOpenActions={handleOpenGroupActions}
-                    />
-                ))
+                <>
+                    {visibleGroups.map((item) => (
+                        <GroupRow
+                            key={item.group.id}
+                            item={item}
+                            task={tasksById.get(item.group.id)}
+                            members={membersOf(item)}
+                            selected={selectedGroupId === item.group.id}
+                            onSelect={openGroup}
+                            onOpenActions={handleOpenGroupActions}
+                        />
+                    ))}
+                    {archivedGroups.length > 0 ? (
+                        <>
+                            <button
+                                type="button"
+                                aria-expanded={showArchived || Boolean(groupSearchQuery.trim())}
+                                onClick={() => setShowArchived((open) => !open)}
+                                className="flex min-h-11 w-full items-center gap-1.5 px-5 pt-3 text-left text-footnote font-semibold text-[var(--social-fg-muted)]"
+                            >
+                                <ChevronRightIcon className={cn('h-3.5 w-3.5 transition-transform', showArchived || groupSearchQuery.trim() ? 'rotate-90' : '')} />
+                                {t('groups.archived', { n: archivedGroups.length })}
+                            </button>
+                            {showArchived || groupSearchQuery.trim() ? archivedGroups.map((item) => (
+                                <GroupRow
+                                    key={item.group.id}
+                                    item={item}
+                                    task={tasksById.get(item.group.id)}
+                                    members={membersOf(item)}
+                                    selected={selectedGroupId === item.group.id}
+                                    onSelect={openGroup}
+                                    onOpenActions={handleOpenGroupActions}
+                                />
+                            )) : null}
+                        </>
+                    ) : null}
+                </>
             )}
         </div>
     )
+    // A task's header says who is working and when it last changed, like the lead report; a chat its members.
+    const selectedTask = selectedGroup?.group.kind === 'task' ? tasksById.get(selectedGroup.group.id) : undefined
     const groupSubtitle = selectedGroup
-        ? t('groups.info.summary', {
-            n: selectedGroup.members.length,
-            m: membersOf(selectedGroup).filter((session) => session.active).length
-        })
+        ? selectedTask && (selectedTask.status === 'guiding' || selectedTask.run)
+            ? t('taskRun.header', {
+                who: taskWorker(selectedTask, membersOf(selectedGroup).some((session) => session.thinking), t),
+                time: formatRelativeTime(selectedTask.updatedAt, t) ?? ''
+            })
+            : t('groups.info.summary', {
+                n: selectedGroup.members.length,
+                m: membersOf(selectedGroup).filter((session) => session.active).length
+            })
         : null
     const groupInfoLabel = t('groups.info.title')
 
@@ -1342,10 +1369,10 @@ function GroupsLayout() {
                                 <GroupAvatar seed={selectedGroup.group.id} members={membersOf(selectedGroup)} size={38} />
                             ) : null}
                             <div className="min-w-0 flex-1">
-                                <div className="truncate text-[15px] font-semibold leading-tight tracking-[-0.01em] text-[var(--social-fg)]">
+                                <div className="truncate text-body font-semibold leading-tight tracking-[-0.01em] text-[var(--social-fg)]">
                                     {selectedGroup?.group.name ?? ''}
                                 </div>
-                                <div className="mt-[3px] truncate text-[12px] leading-tight text-[var(--social-fg-muted)]">
+                                <div className="mt-[3px] truncate text-caption leading-tight text-[var(--social-fg-muted)]">
                                     {groupSubtitle}
                                 </div>
                             </div>
@@ -1395,9 +1422,9 @@ function GroupsLayout() {
                             onTitleClick={() => setGroupInfoOpen(true)}
                             titleLabel={groupInfoLabel}
                             actions={(
-                                <DesktopIconButton label={groupInfoLabel} onClick={() => setGroupInfoOpen(true)}>
+                                <IconButton size="sm" label={groupInfoLabel} onClick={() => setGroupInfoOpen(true)}>
                                     <MoreHorizontalIcon className="h-[21px] w-[21px]" />
-                                </DesktopIconButton>
+                                </IconButton>
                             )}
                         />
                         <div className="min-h-0 flex-1">
@@ -1434,6 +1461,38 @@ function filterLoopsBySearch(loops: ReviewLoop[], query: string): ReviewLoop[] {
             || loopId.includes(normalizedQuery)
             || status.includes(normalizedQuery)
     })
+}
+
+/**
+ * Scheduled tasks. Phone: the list page, or one task's page. Desktop: the list column beside the selected task, like
+ * the sessions page; with none selected the pane invites a pick or a new task.
+ */
+function ScheduledLayout() {
+    const { t } = useTranslation()
+    const matchRoute = useMatchRoute()
+    const isMobileLayout = useIsMobileLayout()
+    const [createOpen, setCreateOpen] = useState(false)
+    const detailMatch = matchRoute({ to: '/scheduled/$scheduleId', fuzzy: true })
+    const selectedId = detailMatch ? detailMatch.scheduleId : null
+
+    if (isMobileLayout) {
+        return selectedId ? <Outlet /> : <ScheduledListPage />
+    }
+
+    return (
+        <DesktopSplitView
+            listVisible
+            list={<ScheduledListPage variant="panel" selectedId={selectedId} createOpen={createOpen} onCreateOpenChange={setCreateOpen} />}
+        >
+            {selectedId ? <Outlet /> : (
+                <DesktopEmptyState
+                    title={t('scheduled.desktop.pick')}
+                    subtitle={t('scheduled.desktop.pickHint')}
+                    action={{ label: t('scheduled.new'), onClick: () => setCreateOpen(true) }}
+                />
+            )}
+        </DesktopSplitView>
+    )
 }
 
 function ReviewLoopsLayout() {
@@ -1512,14 +1571,14 @@ function ReviewLoopsLayout() {
             title={t('mobile.tab.loops')}
             subtitle={t('mobile.loops.summary', { n: visibleLoops.length, active: activeCount })}
             actions={(
-                <MobileHeaderIconButton label={t('mobile.loops.new')} onClick={() => setCreateModalOpen(true)}>
+                <IconButton className="text-[var(--social-fg)]" label={t('mobile.loops.new')} onClick={() => setCreateModalOpen(true)}>
                     <PlusCircleIcon className="h-[24px] w-[24px]" />
-                </MobileHeaderIconButton>
+                </IconButton>
             )}
         />
     )
     const listBody = (
-        <div className="session-list-scroll min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="px-5 pb-3 pt-1">
                 <MobileSearchField
                     value={loopSearchQuery}
@@ -1528,29 +1587,29 @@ function ReviewLoopsLayout() {
                 />
             </div>
             {isLoading ? (
-                <div className="px-6 py-16 text-center text-[13px] text-[var(--social-fg-muted)]">{t('mobile.feed.loading')}</div>
+                <div className="px-6 py-16 text-center text-footnote text-[var(--social-fg-muted)]">{t('mobile.feed.loading')}</div>
             ) : visibleLoops.length === 0 ? (
-                <div className="px-6 py-16 text-center text-[13px] text-[var(--social-fg-muted)]">{t('mobile.loops.empty')}</div>
+                <EmptyState variant="page" title={t('mobile.loops.empty')} />
             ) : (
                 visibleLoops.map((item) => (
                     <button
                         key={item.id}
                         type="button"
                         onClick={() => navigate({ to: '/review-loops/$loopId', params: { loopId: item.id } })}
-                        className={SOCIAL_ROW_CLASS}
+                        className={FEED_ROW_CLASS}
                         aria-current={selectedLoopId === item.id ? 'page' : undefined}
                     >
                         {loopAvatar(item, 44)}
                         <div className="flex min-w-0 flex-1 flex-col justify-center">
                             <div className="flex items-baseline gap-2">
-                                <span className="min-w-0 flex-1 truncate text-[15px] leading-snug tracking-[-0.01em]">
+                                <span className="min-w-0 flex-1 truncate text-body leading-snug tracking-[-0.01em]">
                                     {item.requirement}
                                 </span>
-                                <span className="shrink-0 text-[12px] text-[var(--social-fg-subtle)]">
+                                <span className="shrink-0 text-caption text-[var(--social-fg-subtle)]">
                                     {formatRelativeTime(item.updatedAt, t)}
                                 </span>
                             </div>
-                            <div className="mt-1 flex items-center gap-2 text-[12px] text-[var(--social-fg-muted)]">
+                            <div className="mt-1 flex items-center gap-2 text-caption text-[var(--social-fg-muted)]">
                                 <ReviewLoopStatusBadge status={item.status} />
                                 <span>{t('mobile.loops.round', { n: item.currentRound, max: item.maxRounds })}</span>
                             </div>
@@ -1597,11 +1656,11 @@ function ReviewLoopsLayout() {
                         </IconButton>
                         {selectedLoop ? loopAvatar(selectedLoop, 38) : null}
                         <div className="min-w-0 flex-1">
-                            <div className="truncate text-[15px] font-semibold leading-tight tracking-[-0.01em] text-[var(--social-fg)]">
+                            <div className="truncate text-body font-semibold leading-tight tracking-[-0.01em] text-[var(--social-fg)]">
                                 {selectedLoop?.requirement ?? ''}
                             </div>
                             {loopSubtitle ? (
-                                <div className="mt-[3px] truncate text-[12px] leading-tight text-[var(--social-fg-muted)]">
+                                <div className="mt-[3px] truncate text-caption leading-tight text-[var(--social-fg-muted)]">
                                     {loopSubtitle}
                                 </div>
                             ) : null}
@@ -1781,6 +1840,24 @@ const memoryRoute = createRoute({
     component: MemoryPage,
 })
 
+const scheduledRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/scheduled',
+    component: ScheduledLayout,
+})
+
+const scheduledIndexRoute = createRoute({
+    getParentRoute: () => scheduledRoute,
+    path: '/',
+    component: () => null,
+})
+
+const scheduledDetailRoute = createRoute({
+    getParentRoute: () => scheduledRoute,
+    path: '$scheduleId',
+    component: ScheduledDetailPage,
+})
+
 const debugDiffRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/debug/diff',
@@ -1845,6 +1922,10 @@ export const routeTree = rootRoute.addChildren([
         reviewLoopDetailRoute,
     ]),
     memoryRoute,
+    scheduledRoute.addChildren([
+        scheduledIndexRoute,
+        scheduledDetailRoute,
+    ]),
     settingsRoute,
 ])
 

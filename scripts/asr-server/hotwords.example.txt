@@ -1,0 +1,17 @@
+# One hotword per line. The dictation service biases recognition toward these words.
+# Edit ~/.matemind/asr-hotwords.txt; changes apply to the next request.
+Matemind
+Claude
+Codex
+hub
+web
+CLI
+session
+worktree
+commit
+push
+PR
+bun
+CI
+Linear
+Obsidian

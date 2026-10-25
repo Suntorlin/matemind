@@ -20,9 +20,11 @@ import type { HappyChatMessageMetadata } from '@/lib/assistant-runtime'
 import { useTranslation } from '@/lib/use-translation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { HIT_AREA_24_CLASS, HIT_AREA_28_CLASS, TEXT_HIT_AREA_CLASS } from '@/components/AssistantChat/hitArea'
+import { Chip } from '@/components/ui/Chip'
+import { TEXT_HIT_AREA_CLASS } from '@/components/AssistantChat/hitArea'
 import { extractReportLinks } from '@/components/AssistantChat/reportLinks'
-import { FileIcon } from '@/components/mobile/icons'
+import { ChevronRightIcon, FileIcon } from '@/components/mobile/icons'
+import { Spinner } from '@/components/Spinner'
 import { useOpenInPreview } from '@/lib/preview-link'
 import { setFollowingRunningTurn } from '@/lib/message-window-store'
 import { useChatZoom, ZoomMorphText } from '@/components/AssistantChat/chatZoom'
@@ -32,7 +34,7 @@ export function ChatTimeSeparator(props: { at: number }) {
     const { t, locale } = useTranslation()
     return (
         <div className="flex justify-center py-1" role="separator">
-            <span className="text-[12px] leading-[18px] text-[var(--social-fg-subtle)]">
+            <span className="text-caption leading-[1.125rem] text-[var(--social-fg-subtle)]">
                 {formatChatTimestamp(props.at, locale, t('mobile.time.yesterday'))}
             </span>
         </div>
@@ -174,9 +176,9 @@ function ProcessReasoning() {
             <button
                 type="button"
                 onClick={() => setOpen((value) => !value)}
-                className={cn('flex items-center gap-1.5 py-0.5 text-[13px] text-[var(--social-fg-muted)]', TEXT_HIT_AREA_CLASS)}
+                className={cn('flex items-center gap-1.5 py-0.5 text-footnote text-[var(--social-fg-muted)]', TEXT_HIT_AREA_CLASS)}
             >
-                <ChevronIcon className={cn('h-3 w-3 transition-transform', open ? 'rotate-90' : '')} />
+                <ChevronRightIcon className={cn('h-3 w-3 transition-transform', open ? 'rotate-90' : '')} />
                 {t('mobile.turn.reasoning')}
             </button>
             {open ? (
@@ -211,14 +213,6 @@ const PROCESS_COMPONENTS = {
     tools: { Fallback: HappyToolMessage }
 } as const
 
-function ChevronIcon(props: { className?: string }) {
-    return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={props.className} aria-hidden="true">
-            <polyline points="9 6 15 12 9 18" />
-        </svg>
-    )
-}
-
 /**
  * While the agent works: one quiet card with the current step and its latest words. The step count
  * opens the steps done so far, as the footer of a finished turn does.
@@ -239,6 +233,7 @@ function LiveStatusCard(props: {
     const { layout } = props
 
     const describe = (block: ToolCallBlock) => getToolPresentation({
+        t,
         toolName: block.tool.name,
         input: block.tool.input,
         result: block.tool.result,
@@ -270,15 +265,15 @@ function LiveStatusCard(props: {
     ].filter(Boolean).join(' · ')
 
     return (
-        <div {...props.pressProps} className={cn('social-card w-full min-w-0 rounded-2xl rounded-tl-md px-4 py-3', props.pressClass)}>
+        <div {...props.pressProps} className={cn('social-bubble-other w-full min-w-0 rounded-2xl rounded-tl-md px-4 py-3', props.pressClass)}>
             <div className="flex min-w-0 items-center gap-2.5">
-                <span className="social-spinner shrink-0" aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[var(--social-fg)]">{title}</span>
+                <Spinner size="sm" label={null} className="shrink-0 text-[var(--social-fg)]" />
+                <span className="min-w-0 flex-1 truncate text-body font-semibold text-[var(--social-fg)]">{title}</span>
             </div>
             {progress ? (
-                <p className="mt-1.5 line-clamp-3 pl-[24px] text-[15px] leading-relaxed text-[var(--social-fg-muted)]">{progress}</p>
+                <p className="mt-1.5 line-clamp-3 pl-[26px] text-body leading-relaxed text-[var(--social-fg-muted)]">{progress}</p>
             ) : toolDetail ? (
-                <p className="mt-1.5 truncate pl-[24px] font-mono text-[13px] text-[var(--social-fg-muted)]">{toolDetail}</p>
+                <p className="mt-1.5 truncate pl-[26px] font-mono text-footnote text-[var(--social-fg-muted)]">{toolDetail}</p>
             ) : null}
             {props.onToggle ? (
                 <button
@@ -286,13 +281,13 @@ function LiveStatusCard(props: {
                     type="button"
                     onClick={props.onToggle}
                     aria-expanded={props.expanded}
-                    className={cn('ml-[24px] mt-1.5 flex w-fit items-center gap-1 text-[12px] tabular-nums text-[var(--social-fg-subtle)] transition-colors hover:text-[var(--social-fg-muted)] [-webkit-tap-highlight-color:transparent]', TEXT_HIT_AREA_CLASS)}
+                    className={cn('ml-[26px] mt-1.5 flex w-fit items-center gap-1 text-caption tabular-nums text-[var(--social-fg-subtle)] transition-colors hover:text-[var(--social-fg-muted)] [-webkit-tap-highlight-color:transparent]', TEXT_HIT_AREA_CLASS)}
                 >
                     {meta}
-                    <ChevronIcon className={cn('h-3 w-3 transition-transform', props.expanded ? '-rotate-90' : 'rotate-90')} />
+                    <ChevronRightIcon className={cn('h-3 w-3 transition-transform', props.expanded ? '-rotate-90' : 'rotate-90')} />
                 </button>
             ) : (
-                <div className="mt-1.5 pl-[24px] text-[12px] tabular-nums text-[var(--social-fg-subtle)]">{meta}</div>
+                <div className="mt-1.5 pl-[26px] text-caption tabular-nums text-[var(--social-fg-subtle)]">{meta}</div>
             )}
         </div>
     )
@@ -300,7 +295,7 @@ function LiveStatusCard(props: {
 
 /**
  * After the agent finishes: only the conclusion; the footer reveals the process.
- * Phones also long-press the conclusion; desktop keeps the text selectable and copies on hover.
+ * The reply stays selectable everywhere: on phones a long press is the system's select-and-copy.
  */
 export function SocialAssistantMessage() {
     const { t } = useTranslation()
@@ -443,7 +438,7 @@ export function SocialAssistantMessage() {
         },
         threshold: 450
     })
-    // Phones: the card is a long-press target (no text selection or callout). Desktop: plain selectable text.
+    // Phones: the running status card is a long-press target (it has no text worth copying).
     const pressProps = isMobileLayout
         ? { ...longPressHandlers, style: { WebkitTouchCallout: 'none' as const } }
         : {}
@@ -487,9 +482,9 @@ export function SocialAssistantMessage() {
             {hiddenProcessCount > 0 ? (
                 <Button
                     variant="secondary"
-                    size="sm"
+                    size="xs"
                     onClick={showEarlierSteps}
-                    className={cn('h-7 w-fit px-3 text-[12px]', HIT_AREA_28_CLASS)}
+                    className="w-fit"
                 >
                     {t('mobile.turn.showEarlier', { n: hiddenProcessCount })}
                 </Button>
@@ -499,7 +494,7 @@ export function SocialAssistantMessage() {
                     <MessagePrimitive.PartByIndex index={index} components={PROCESS_COMPONENTS} />
                 </div>
             ))}
-            <div className="flex gap-4 pt-1 text-[12px] text-[var(--social-fg-muted)]">
+            <div className="flex gap-4 pt-1 text-caption text-[var(--social-fg-muted)]">
                 {answerText && !isRunning ? (
                     <button type="button" onClick={() => void copy(answerText)} className={TEXT_HIT_AREA_CLASS}>
                         {copied ? t('mobile.turn.copied') : t('mobile.turn.copy')}
@@ -537,13 +532,11 @@ export function SocialAssistantMessage() {
                     <>
                         {layout.answerIndices.length > 0 ? (
                             <div
-                                {...pressProps}
                                 className={cn(
-                                    'social-card min-w-0 max-w-full rounded-2xl rounded-tl-md px-4 py-3 [&>*+*]:mt-3',
+                                    'social-bubble-other min-w-0 max-w-full rounded-2xl rounded-tl-md px-4 py-3 [&>*+*]:mt-3',
                                     // Words keep the width they were measured at while they move: a brief-width card would
                                     // squeeze the longer text into a column. Only long replies morph, so the full row fits them.
-                                    showZoomMorph ? 'w-full' : 'w-fit',
-                                    pressClass
+                                    showZoomMorph ? 'w-full' : 'w-fit'
                                 )}
                             >
                                 {showZoomMorph && zoom && zoomVersions ? (
@@ -553,16 +546,13 @@ export function SocialAssistantMessage() {
                                 ))}
                             </div>
                         ) : (
-                            <div
-                                {...pressProps}
-                                className={cn('social-card w-fit rounded-2xl rounded-tl-md px-4 py-2.5 text-[15px] text-[var(--social-fg-muted)]', pressClass)}
-                            >
+                            <div className="social-bubble-other w-fit rounded-2xl rounded-tl-md px-4 py-2.5 text-body text-[var(--social-fg-muted)]">
                                 {layout.steps > 0 ? t('mobile.turn.done', { n: layout.steps }) : t('mobile.turn.noReply')}
                             </div>
                         )}
 
-                        {zoomSnap !== ZOOM_BRIEF && (hasProcess || reportLinks.length > 0 || (!isMobileLayout && answerText)) ? (
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-1 text-[12px] text-[var(--social-fg-subtle)]">
+                        {zoomSnap !== ZOOM_BRIEF && (hasProcess || reportLinks.length > 0 || answerText) ? (
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-1 text-caption text-[var(--social-fg-subtle)]">
                                 {hasProcess ? (
                                     <button
                                         ref={footerRef}
@@ -572,26 +562,31 @@ export function SocialAssistantMessage() {
                                         className={cn('flex w-fit items-center gap-1 transition-colors hover:text-[var(--social-fg-muted)] [-webkit-tap-highlight-color:transparent]', TEXT_HIT_AREA_CLASS)}
                                     >
                                         {footer}
-                                        <ChevronIcon className={cn('h-3 w-3 transition-transform', expanded ? '-rotate-90' : 'rotate-90')} />
+                                        <ChevronRightIcon className={cn('h-3 w-3 transition-transform', expanded ? '-rotate-90' : 'rotate-90')} />
                                     </button>
                                 ) : null}
                                 {reportLinks.map((url, index) => (
-                                    <button
+                                    <Chip
                                         key={url}
-                                        type="button"
+                                        size="sm"
                                         title={url}
                                         onClick={() => openReport(url)}
-                                        className={cn('flex h-6 items-center gap-1 rounded-full border border-[var(--social-border)] px-2.5 text-[var(--social-fg-muted)] transition-colors hover:bg-[var(--social-hover)] hover:text-[var(--social-fg)] [-webkit-tap-highlight-color:transparent]', HIT_AREA_24_CLASS)}
+                                        className="text-[var(--social-fg-muted)] hover:text-[var(--social-fg)]"
                                     >
                                         <FileIcon className="h-3 w-3" />
                                         {reportLinks.length > 1 ? t('mobile.turn.reportN', { n: index + 1 }) : t('mobile.turn.report')}
-                                    </button>
+                                    </Chip>
                                 ))}
-                                {!isMobileLayout && answerText && !expanded ? (
+                                {answerText && !expanded ? (
                                     <button
                                         type="button"
                                         onClick={() => void copy(answerText)}
-                                        className={cn('opacity-0 transition-opacity hover:text-[var(--social-fg-muted)] focus-visible:opacity-100 group-hover/turn:opacity-100', TEXT_HIT_AREA_CLASS)}
+                                        // Phones have no hover, so the copy action is always shown there.
+                                        className={cn(
+                                            'transition-opacity hover:text-[var(--social-fg-muted)]',
+                                            !isMobileLayout && 'opacity-0 focus-visible:opacity-100 group-hover/turn:opacity-100',
+                                            TEXT_HIT_AREA_CLASS
+                                        )}
                                     >
                                         {copied ? t('mobile.turn.copied') : t('mobile.turn.copy')}
                                     </button>
@@ -665,7 +660,7 @@ export function SocialUserMessage() {
                         </div>
                     ) : null}
                     <div className={cn(
-                        'social-bubble-self min-w-0 max-w-full rounded-2xl rounded-br-md px-4 py-2.5 text-[15px] leading-[1.55] break-words [overflow-wrap:anywhere]',
+                        'social-bubble-self min-w-0 max-w-full rounded-2xl rounded-br-md px-4 py-2.5 text-body leading-[1.55] break-words [overflow-wrap:anywhere]',
                         // Same reason as the reply card: moving words keep their measured width.
                         showZoomMorph ? 'w-full' : ''
                     )}>

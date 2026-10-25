@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, type ComponentType, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { IconButton } from '@/components/ui/IconButton'
 import { TextField } from '@/components/ui/TextField'
@@ -6,9 +6,17 @@ import { Chip } from '@/components/ui/Chip'
 import { Badge, CountBadge, DotBadge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/Switch'
 import { ListGroup, ListRow } from '@/components/ui/ListRow'
+import { CheckRow } from '@/components/ui/CheckRow'
 import { SegmentedControl } from '@/components/ui/FormControls'
 import { SwitchChip } from '@/components/ui/SettingChip'
+import { Card } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Spinner } from '@/components/Spinner'
+import { ActionTile } from '@/components/mobile/ActionTile'
+import { OptionRow } from '@/components/ToolCard/OptionRow'
+import * as Icons from '@/components/mobile/icons'
 import { CONTEXT_MENU_SURFACE, ContextMenuItem } from '@/components/mobile/ContextMenu'
+import { ReportKitSection } from './ReportKitSection'
 import {
     ClearIcon,
     CloseIcon,
@@ -26,8 +34,8 @@ function Section(props: { title: string; note?: string; children: ReactNode }) {
     return (
         <section className="flex flex-col gap-4 border-t border-[var(--social-border)] pt-8">
             <div>
-                <h2 className="text-[20px] font-semibold tracking-[-0.01em]">{props.title}</h2>
-                {props.note ? <p className="mt-1 max-w-2xl text-[14px] text-[var(--social-fg-muted)]">{props.note}</p> : null}
+                <h2 className="text-title font-semibold tracking-[-0.01em]">{props.title}</h2>
+                {props.note ? <p className="mt-1 max-w-2xl text-footnote text-[var(--social-fg-muted)]">{props.note}</p> : null}
             </div>
             {props.children}
         </section>
@@ -37,7 +45,7 @@ function Section(props: { title: string; note?: string; children: ReactNode }) {
 function Spec(props: { label: string; children: ReactNode }) {
     return (
         <div className="flex flex-col gap-2">
-            <div className="text-[12px] font-semibold uppercase tracking-wide text-[var(--social-fg-muted)]">{props.label}</div>
+            <div className="text-caption font-semibold uppercase tracking-wide text-[var(--social-fg-muted)]">{props.label}</div>
             {props.children}
         </div>
     )
@@ -66,11 +74,11 @@ const RADII: Array<[string, string, string, string]> = [
 ]
 
 const TYPE: Array<[string, string, string]> = [
-    ['text-[20px] font-semibold', '20 / 600', '区块标题'],
-    ['text-[16px] font-semibold', '16 / 600', '页面标题 · 输入框文字'],
-    ['text-[15px]', '15 / 400', '正文 · 列表行标题'],
-    ['text-[13px]', '13 / 400', '次要说明 · 按钮(小) · 标签'],
-    ['text-[12px] font-semibold uppercase tracking-wide', '12 / 600', '分组标题 · 辅助']
+    ['text-title font-semibold', '20 / 600', '区块标题'],
+    ['text-headline font-semibold', '16 / 600', '页面标题 · 输入框文字'],
+    ['text-body', '15 / 400', '正文 · 列表行标题'],
+    ['text-footnote', '13 / 400', '次要说明 · 按钮(小) · 标签'],
+    ['text-caption font-semibold uppercase tracking-wide', '12 / 600', '分组标题 · 辅助']
 ]
 
 export function DesignShowcase() {
@@ -78,34 +86,35 @@ export function DesignShowcase() {
     const [chip, setChip] = useState('all')
     const [on, setOn] = useState(true)
     const [direct, setDirect] = useState(true)
+    const [kept, setKept] = useState<Record<string, boolean>>({ a: true, b: true, c: false })
     const [url, setUrl] = useState('http://localhost:3000/')
 
     return (
         <div className="mx-auto flex max-w-[1120px] flex-col gap-10 px-5 py-10 text-[var(--social-fg)]">
             <header>
-                <div className="text-[12px] font-semibold uppercase tracking-wide text-[var(--social-fg-muted)]">Matemind Design System · v1 草案</div>
-                <h1 className="mt-1 text-[32px] font-semibold tracking-[-0.02em]">视觉取 Instagram，交互守 Apple HIG</h1>
-                <p className="mt-2 max-w-2xl text-[15px] text-[var(--social-fg-muted)]">
+                <div className="text-caption font-semibold uppercase tracking-wide text-[var(--social-fg-muted)]">Matemind Design System · v1 草案</div>
+                <h1 className="mt-1 text-display font-semibold tracking-[-0.02em]">视觉取 Instagram，交互守 Apple HIG</h1>
+                <p className="mt-2 max-w-2xl text-body text-[var(--social-fg-muted)]">
                     黑白灰为底、胶囊与大圆角、克制的层级（Instagram）；44px 触控目标、16px 输入字号、4/8 间距、150–200ms 动效（Apple HIG）。
-                    所有业务页面只允许用下面这些基础件，不再手写 <code className="rounded-md bg-[var(--social-muted)] px-1.5 py-0.5 text-[13px]">rounded-xl border px-3</code>。
+                    所有业务页面只允许用下面这些基础件，不再手写 <code className="rounded-md bg-[var(--social-muted)] px-1.5 py-0.5 text-footnote">rounded-xl border px-3</code>。
                 </p>
             </header>
 
-            <Section title="1 · 颜色 Token" note="--social-* 是唯一来源；旧的 --app-* 全部改为别名指向它，Telegram 主题变量已移除。亮 / 暗两套同名。">
+            <Section title="1 · 颜色 Token" note="--social-* 是唯一来源；旧的 --app-* 别名已删除，Telegram 主题变量已移除。亮 / 暗两套同名。">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {SWATCHES.map(([name, label, cls]) => (
                         <div key={name} className="overflow-hidden rounded-2xl border border-[var(--social-border)]">
                             <div className={`h-14 ${cls}`} />
                             <div className="px-3 py-2">
-                                <div className="text-[13px] font-semibold">{label}</div>
-                                <div className="truncate text-[11px] text-[var(--social-fg-muted)]">{name}</div>
+                                <div className="text-footnote font-semibold">{label}</div>
+                                <div className="truncate text-caption text-[var(--social-fg-muted)]">{name}</div>
                             </div>
                         </div>
                     ))}
                 </div>
             </Section>
 
-            <Section title="2 · 圆角 · 字号 · 触控" note="圆角只有四档；字号 12/13/15/16 + 20/32 标题，字重只用 400 与 600；任何可点元素的点击区不小于 44px。">
+            <Section title="2 · 圆角 · 字号 · 触控" note="圆角只有四档；字号只用命名档 text-caption / footnote / body / headline / title / display（rem，跟随字号设置），字重只用 400 与 600；任何可点元素的点击区不小于 44px。">
                 <div className="grid gap-6 sm:grid-cols-2">
                     <Spec label="圆角 4 档">
                         <div className="flex flex-col gap-2">
@@ -113,8 +122,8 @@ export function DesignShowcase() {
                                 <div key={name} className="flex items-center gap-3">
                                     <div className={`h-11 w-16 shrink-0 border border-[var(--social-fg-subtle)] bg-[var(--social-muted)] ${cls}`} />
                                     <div className="min-w-0">
-                                        <div className="text-[14px] font-semibold">{name} <span className="font-normal text-[var(--social-fg-muted)]">{px}px</span></div>
-                                        <div className="truncate text-[12px] text-[var(--social-fg-muted)]">{use}</div>
+                                        <div className="text-footnote font-semibold">{name} <span className="font-normal text-[var(--social-fg-muted)]">{px}px</span></div>
+                                        <div className="truncate text-caption text-[var(--social-fg-muted)]">{use}</div>
                                     </div>
                                 </div>
                             ))}
@@ -125,7 +134,7 @@ export function DesignShowcase() {
                             {TYPE.map(([cls, spec, use]) => (
                                 <div key={spec} className="flex items-baseline justify-between gap-3 border-b border-[var(--social-divider)] pb-2">
                                     <span className={cls}>Matemind 远程协作 Aa</span>
-                                    <span className="shrink-0 text-[12px] text-[var(--social-fg-muted)]">{spec} · {use}</span>
+                                    <span className="shrink-0 text-caption text-[var(--social-fg-muted)]">{spec} · {use}</span>
                                 </div>
                             ))}
                         </div>
@@ -235,7 +244,7 @@ export function DesignShowcase() {
                         <div className="flex items-center gap-6">
                             {[3, 28, 120].map((n) => (
                                 <div key={n} className="relative">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--social-muted)] text-[15px] font-semibold">AI</div>
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--social-muted)] text-body font-semibold">AI</div>
                                     <CountBadge count={n} className="absolute -right-1 -top-1" />
                                 </div>
                             ))}
@@ -248,7 +257,7 @@ export function DesignShowcase() {
                     <Spec label="Switch">
                         <div className="flex items-center gap-3">
                             <Switch checked={on} onCheckedChange={setOn} ariaLabel="demo" />
-                            <span className="text-[14px] text-[var(--social-fg-muted)]">{on ? '开' : '关'}</span>
+                            <span className="text-footnote text-[var(--social-fg-muted)]">{on ? '开' : '关'}</span>
                         </div>
                     </Spec>
                 </div>
@@ -264,6 +273,28 @@ export function DesignShowcase() {
                         <ListRow title="归档会话" destructive onClick={() => undefined} />
                     </ListGroup>
                 </div>
+                <div className="max-w-md">
+                    <p className="pb-2 text-footnote text-[var(--social-fg-muted)]">CheckRow：可勾选的行（任务卡里的验收标准）。取消勾选后划线但仍可见；点右侧铅笔改这一行。</p>
+                    <div className="overflow-hidden rounded-2xl border border-[var(--social-border)] px-2">
+                        {[
+                            { id: 'a', text: 'bun run test 全部通过', how: '验证：bun run test', source: '仓库约定', warn: false },
+                            { id: 'b', text: '报告结论先行，带关键数字', how: '验证：看报告第一段', source: '你的原则', warn: false },
+                            { id: 'c', text: '引导面板 3 秒内出现', how: '验证：Playwright 计时', source: '本次推断', warn: true }
+                        ].map((row) => (
+                            <CheckRow
+                                key={row.id}
+                                checked={kept[row.id] ?? false}
+                                onCheckedChange={(checked) => setKept((current) => ({ ...current, [row.id]: checked }))}
+                                label={row.text}
+                                title={row.text}
+                                subtitle={row.how}
+                                onEdit={() => undefined}
+                                editLabel="改这一行"
+                                tag={<Badge variant={row.warn ? 'warning' : 'default'}>{row.source}</Badge>}
+                            />
+                        ))}
+                    </div>
+                </div>
             </Section>
 
             <Section title="7 · 浮层 · 一键切换 · 停靠面板" note="浮层只有两种：菜单（CONTEXT_MENU_SURFACE，下拉与右键菜单）和浮层卡片（.social-float-card，会话信息）。二选一的设置用 SwitchChip，点一下就切换。终端 / 预览在桌面端停靠在聊天左右，默认右侧。">
@@ -278,11 +309,73 @@ export function DesignShowcase() {
                         </div>
                     </Spec>
                     <Spec label="浮层卡片 .social-float-card">
-                        <div className="social-float-card max-w-xs rounded-3xl p-4 text-[13px] text-[var(--social-fg)]">
-                            悬浮在内容之上，半透明加模糊；只用于锚在按钮下方的小卡片。
+                        <div className="social-float-card max-w-xs rounded-2xl p-4 text-footnote text-[var(--social-fg)]">
+                            不透明底色加浮层阴影；只用于锚在按钮下方的小卡片。底下内容不能透出来，否则影响阅读。
                         </div>
                     </Spec>
                 </div>
+            </Section>
+
+            <Section title="8 · 卡片 · 空状态 · 加载 · 小号控件" note="卡片只有 Card 一种；空列表和空面板一律用 EmptyState；加载只用 Spinner；28px 的小按钮用 size=&quot;xs&quot;，点击区仍是 44px。">
+                <div className="grid gap-6 md:grid-cols-3">
+                    <Spec label="Card">
+                        <Card className="p-4 text-footnote">页面底色、细边框、16px 圆角、无阴影。</Card>
+                    </Spec>
+                    <Spec label="EmptyState · inline">
+                        <Card><EmptyState title="还没有评审循环" /></Card>
+                    </Spec>
+                    <Spec label="EmptyState · page">
+                        <Card>
+                            <EmptyState variant="page" title="选一个会话开始" subtitle="运行中的会话头像带彩色外圈。" action={{ label: '新会话', onClick: () => undefined }} />
+                        </Card>
+                    </Spec>
+                    <Spec label="Spinner · xs / sm / md / lg">
+                        <div className="flex items-center gap-4">
+                            <Spinner size="xs" label={null} />
+                            <Spinner size="sm" label={null} />
+                            <Spinner size="md" label={null} />
+                            <Spinner size="lg" label={null} />
+                        </div>
+                    </Spec>
+                    <Spec label="小号 · Button xs / IconButton xs / Chip sm">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Button size="xs" variant="secondary">复制</Button>
+                            <IconButton size="xs" label="关闭"><CloseIcon className="h-4 w-4" /></IconButton>
+                            <Chip size="sm">报告</Chip>
+                        </div>
+                    </Spec>
+                    <Spec label="ActionTile · OptionRow">
+                        <div className="flex flex-col gap-3">
+                            <div className="grid grid-cols-3 gap-2">
+                                <ActionTile icon={<FileIcon className="h-5 w-5" />} label="文件" onClick={() => undefined} />
+                                <ActionTile icon={<TerminalIcon className="h-5 w-5" />} label="终端" onClick={() => undefined} />
+                                <ActionTile icon={<GlobeIcon className="h-5 w-5" />} label="预览" badge={2} onClick={() => undefined} />
+                            </div>
+                            <OptionRow checked title="方案 A" description="改动最小" disabled={false} onClick={() => undefined} />
+                            <OptionRow checked={false} title="方案 B" disabled={false} onClick={() => undefined} />
+                        </div>
+                    </Spec>
+                </div>
+            </Section>
+
+            <Section title="9 · 图标" note="只从 components/mobile/icons.tsx 引入；同一动作全站用同一个图标。缺图标就加到这个文件，不在组件里另写。">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+                    {Object.entries(Icons)
+                        .filter(([name, Icon]) => name.endsWith('Icon') && typeof Icon === 'function')
+                        .map(([name, Icon]) => {
+                            const Glyph = Icon as ComponentType<{ className?: string }>
+                            return (
+                                <div key={name} className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--social-border)] px-1 py-3">
+                                    <Glyph className="h-5 w-5" />
+                                    <span className="w-full truncate text-center text-caption text-[var(--social-fg-muted)]">{name.replace(/Icon$/, '')}</span>
+                                </div>
+                            )
+                        })}
+                </div>
+            </Section>
+
+            <Section title="10 · 结果报告 Report kit" note="负责人实时报告的组件（components/report/）：决策卡、进度列表、验收清单、风险卡、底部对话与验收栏。业务页用真实数据接入；固定文案走 i18n（report.*）。">
+                <ReportKitSection />
             </Section>
         </div>
     )

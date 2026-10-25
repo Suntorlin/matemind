@@ -243,6 +243,7 @@ export class GroupService {
         this.taskTtlMs = options?.taskTtlMs ?? 30 * 60 * 1000
     }
 
+    /** Every group: chat groups and task groups share one list. */
     getGroupsByNamespace(namespace: string): GroupWithDetails[] {
         return this.store.groups.getGroupsByNamespace(namespace).map((group) => ({
             group,
@@ -383,6 +384,7 @@ export class GroupService {
         name?: string
         description?: string | null
         noteSessionId?: string | null
+        archived?: boolean
     }): GroupWithDetails {
         this.requireGroup(options.groupId, options.namespace)
         if (options.noteSessionId !== undefined && options.noteSessionId !== null) {
@@ -1124,10 +1126,12 @@ export class GroupService {
         explicitTargets: string[] | null,
         originSessionId: string | null
     ): string[] {
-        const sessionMembers = this.store.groups
+        const members = this.store.groups
             .getGroupMembersByNamespace(groupId, namespace)
             .filter((member) => member.memberType === 'session' && typeof member.sessionId === 'string')
-            .map((member) => member.sessionId as string)
+        const sessionMembers = members.map((member) => member.sessionId as string)
+        // A task's lead (its planner) is not a worker: @all leaves it out; an explicit @ still reaches it.
+        const leads = new Set(members.filter((member) => member.role === 'lead').map((member) => member.sessionId as string))
 
         if (sessionMembers.length === 0) {
             return []
@@ -1144,7 +1148,7 @@ export class GroupService {
         }
 
         if (/\B@all\b/i.test(command)) {
-            return onlineSessionMembers.filter((sessionId) => sessionId !== originSessionId)
+            return onlineSessionMembers.filter((sessionId) => sessionId !== originSessionId && !leads.has(sessionId))
         }
 
         const mentions = extractMentionTokens(command)

@@ -6,8 +6,12 @@ import {
     unifiedDiff, claudeAccounts, SLASH, b64, sessionFull
 } from './fixtures'
 import { nextRunTime } from '@matemind/protocol/schedules'
+import { TASK_SESSION_ROWS, DEMO_TASKS, TASK_GROUPS, TASK_EXTRA, TASK_GROUP_MESSAGES } from './taskFixtures'
 
-const state = { tasks: [...TASKS], groupMessages: {} as Record<string, any[]> }
+for (const row of TASK_SESSION_ROWS) SESSIONS[row[0]] = sessionFull(row)
+GROUPS.unshift(...TASK_GROUPS)
+
+const state = { tasks: [...TASKS], groupMessages: { ...TASK_GROUP_MESSAGES } as Record<string, any[]> }
 
 // ---------- one finished turn for every other active session ----------
 const EXTRA = {
@@ -24,6 +28,11 @@ for (const [sid, convo] of Object.entries(EXTRA)) {
     TURNS[sid] = [{ ...b.turn, messages: b.msgs }]
     MESSAGES[sid] = b.msgs
     SESSIONS[sid].thinking = false
+}
+for (const [sid, convo] of Object.entries(TASK_EXTRA)) {
+    const b = buildTurn(sid, 1, 1, SESSIONS[sid].updatedAt - 8 * MIN, convo.user, convo.steps, convo.final)
+    TURNS[sid] = [{ ...b.turn, messages: b.msgs }]
+    MESSAGES[sid] = b.msgs
 }
 for (const sid of Object.keys(SESSIONS)) {
     const msgs = MESSAGES[sid] ?? []
@@ -299,7 +308,8 @@ function handleGet(method, url) {
     if ((m = p.match(/^\/api\/sessions\/([^/]+)\/usage$/))) return json({ error: 'n/a' }, 404)
     if ((m = p.match(/^\/api\/machines\/([^/]+)\/claude-accounts$/))) return json(claudeAccounts)
     if ((m = p.match(/^\/api\/machines\/([^/]+)\/paths\/exists$/))) return json({ exists: {} })
-    if (p === '/api/tasks') return json({ tasks: [] })
+    if (p === '/api/tasks') return json({ tasks: DEMO_TASKS })
+    if ((m = p.match(/^\/api\/tasks\/([^/]+)$/))) { const t = DEMO_TASKS.find((x) => x.id === m[1]); return t ? json({ task: t }) : json({ error: 'not found' }, 404) }
     if (p === '/api/schedules') return json({ schedules: SCHEDULES })
     if ((m = p.match(/^\/api\/schedules\/([^/]+)$/))) {
         const found = SCHEDULES.find((x) => x.id === m[1])
